@@ -1,0 +1,27 @@
+{
+  "name": "distributed-security",
+  "version": "0.0.1",
+  "description": "Signed and encrypted document infrastructure based on public key encryption and self-organizing users.",
+  "main": "index.js",
+  "scripts": {
+    "test": "jasmine"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kilroy-code/distributed-security.git"
+  },
+  "keywords": [
+    "encryption",
+    "pki",
+    "dao"
+  ],
+  "author": "howard@ki1r0y.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kilroy-code/distributed-security/issues"
+  },
+  "homepage": "https://github.com/kilroy-code/distributed-security#readme",
+  "devDependencies": {
+    "jasmine": "^4.5.0"
+  }
+}

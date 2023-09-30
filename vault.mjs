@@ -2,6 +2,38 @@ import MultiKrypto from "./multiKrypto.mjs";
 import Security from "./security.mjs";
 
 export class Vault {
+
+  // A Vault maintains two private keys: signingKey and decryptingKey.
+  sign(message) { // Promise a signature of message, using our private key.
+    return MultiKrypto.sign(this.signingKey, message);
+  }
+  decrypt(encrypted) { // Promise cleartext corresponding to encrypted, using our private key.
+    return MultiKrypto.decrypt(this.decryptingKey, encrypted);
+  }
+  decryptMultikey(multikeyEncrypted) { // If we are a member.
+    let {tag, decryptingKey} = this,
+	multiKey = {[tag]: decryptingKey};
+    return MultiKrypto.decrypt(multiKey, multikeyEncrypted);
+  }
+
+  // The corresponding public keys are available publically, outside the vault.
+  static verifyingKey(tag) { // Promise the ordinary singular public key corresponding to the signing key, directly from the tag without reference to storage.
+    return MultiKrypto.importKey(tag, 'verify');
+  }
+  static async encryptingKey(tag) { // Promise the ordinary singular public key corresponding to the decryption key, which depend on public storage.
+    // Doing a multi-key encryption requires more space for the encryption, and so we don't encrypt EVERY message to be directly decryptable
+    // by members. Instead, we only encrypt (wrap) the TeamVault's key to be readable by each member.
+    let exportedPublicKey = await Security.retrieve('EncryptionKey', tag);
+    return await MultiKrypto.importKey(exportedPublicKey, 'encrypt');
+  }
+
+  static async addEncryptionKeys(tag, signingKey) {
+    let {publicKey:encryptingKey, privateKey:decryptingKey} = await MultiKrypto.generateEncryptingKey(),
+	exportedEncryptingKey = await MultiKrypto.exportKey(encryptingKey),
+	signature = await MultiKrypto.sign(signingKey, exportedEncryptingKey);
+    await Security.store('EncryptionKey', tag, exportedEncryptingKey, signature);
+    return decryptingKey;
+  }
   static vaults = {};
   static async ensure(tag) { // Promise to resolve to a valid vault, else reject.
     let vault = this.vaults[tag] || new TeamVault(tag);
@@ -9,39 +41,14 @@ export class Vault {
     delete this.vaults[tag];
     throw new Error(`You do not have access to the private key corresponding to ${tag}.`)
   }
-  async confirm() { // Is this device still authenticated? Convenient for chaining to answer the tag when true.
+
+  async confirm() { // Is this device still authenticated? Answers vault, which is convenient for chaining to answer the tag when true.
     if (this.signingKey) return this;
     await this.init();
     if (this.signingKey) return this;
   }
   async getTag() {
     if (await this.confirm()) return this.tag;
-  }
-  static verifyingKey(tag) { // Answer the imported key. Does not require access to the valult, nor to public strorage.
-    return MultiKrypto.importKey(tag, 'verify');
-  }
-  static async encryptingKey(tag) { // Answer the imported key. Does not require access to the vault, but does depend on public storage.
-    let exportedPublicKey = await Security.retrieve('EncryptionKey', tag); // FIXME for TeamVaults
-    return await MultiKrypto.importKey(exportedPublicKey, 'encrypt');
-  }
-  decrypt(encrypted) { // Promise cleartext corresponding to encrypted, using our private key.
-    return MultiKrypto.decrypt(this.decryptingKey, encrypted);
-  }
-  sign(message) { // Promise a signature of message, using our private key.
-    return MultiKrypto.sign(this.signingKey, message);
-  }
-  unwrapKey(wrappedKey, use) {
-    let {tag, decryptingKey} = this,
-	unwrappingKey = {};
-    unwrappingKey[tag] = decryptingKey;
-    return MultiKrypto.unwrapKey(wrappedKey, unwrappingKey, use);
-  }
-  static async addEncryptionKeys(tag, signingKey) {
-    let {publicKey:encryptingKey, privateKey:decryptingKey} = await MultiKrypto.generateEncryptingKey(),
-	exportedEncryptingKey = await MultiKrypto.exportKey(encryptingKey),
-	signature = await MultiKrypto.sign(signingKey, exportedEncryptingKey);
-    await Security.store('EncryptionKey', tag, exportedEncryptingKey, signature);
-    return decryptingKey;
   }
 }
 
@@ -78,7 +85,10 @@ export class TeamVault extends Vault { // A Vault corresponding to a team of whi
 	{roster} = JSON.parse(wrapped),
 	memberTags = Object.keys(roster),
 	firstConfirmedMemberVault = await Promise.any(memberTags.map(memberTag => Vault.ensure(memberTag))),
-	keyData = await firstConfirmedMemberVault.unwrapKey(wrapped, {decryptingKey: 'decrypt' , signingKey: 'sign'});
+	use = {decryptingKey: 'decrypt' , signingKey: 'sign'},
+	// The next two lines are basicall unwrapp, but splitting out they decrypt so that string rather than keys are transported between vaults.
+	decrypted = await firstConfirmedMemberVault.decryptMultikey(wrapped),
+	keyData = await MultiKrypto.importKey(decrypted, use);
     Object.assign(this, keyData);
   }
 }

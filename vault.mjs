@@ -27,12 +27,14 @@ export class Vault {
     return await MultiKrypto.importKey(exportedPublicKey, 'encrypt');
   }
 
-  static async addEncryptionKeys(tag, signingKey) {
-    let {publicKey:encryptingKey, privateKey:decryptingKey} = await MultiKrypto.generateEncryptingKey(),
+  static async createKeys() { // Promise a new tag and private keys, and store the encrypting key.
+    let {publicKey:verifyingKey, privateKey:signingKey} = await MultiKrypto.generateSigningKey(),
+	{publicKey:encryptingKey, privateKey:decryptingKey} = await MultiKrypto.generateEncryptingKey(),
 	exportedEncryptingKey = await MultiKrypto.exportKey(encryptingKey),
-	signature = await MultiKrypto.sign(signingKey, exportedEncryptingKey);
+	signature = await MultiKrypto.sign(signingKey, exportedEncryptingKey),
+	tag = await MultiKrypto.exportKey(verifyingKey);
     await Security.store('EncryptionKey', tag, exportedEncryptingKey, signature);
-    return decryptingKey;
+    return {signingKey, decryptingKey, tag};
   }
   static vaults = {};
   static async ensure(tag) { // Promise to resolve to a valid vault, else reject.
@@ -53,12 +55,23 @@ export class Vault {
 }
 
 export class DeviceVault extends Vault { // A Vault corresponding to the current hardware.
-  async init() {
-    let {publicKey:verifyingKey, privateKey:signingKey} = await MultiKrypto.generateSigningKey();
-    this.signingKey = signingKey;
-    let tag = this.tag = await MultiKrypto.exportKey(verifyingKey);
-    this.decryptingKey = await Vault.addEncryptionKeys(tag, signingKey);
+  static localStore = {}; // fixme
+  constructor(tag) {
+    super();
+    this.tag = tag;
     Vault.vaults[tag] = this;
+  }
+  async init() {
+    let exportedKey = DeviceVault.localStore[this.tag];
+    Object.assign(this, await MultiKrypto.importKey(exportedKey, {decryptingKey: 'decrypt', signingKey: 'sign'}));
+  }
+  static async create() { // Create a new locally persisted DeviceVault, promising the newly created tag.
+    let {decryptingKey, signingKey, tag} = await Vault.createKeys(),
+	vaultKey = {decryptingKey, signingKey},
+	exportedKey = await MultiKrypto.exportKey(vaultKey);
+    DeviceVault.localStore[tag] = exportedKey;
+    await (new DeviceVault(tag)).confirm(); // FIXME
+    return tag;
   }
 }
 
@@ -68,10 +81,8 @@ export class TeamVault extends Vault { // A Vault corresponding to a team of whi
     this.tag = tag;
     Vault.vaults[tag] = this;
   }
-  static async create(members) {
-    let {publicKey:verifyingKey, privateKey:signingKey} = await MultiKrypto.generateSigningKey(),
-	tag = await MultiKrypto.exportKey(verifyingKey),
-	decryptingKey = await Vault.addEncryptionKeys(tag, signingKey),
+  static async create(members) { // Create a new publically persisted TeamVault with the specified member tags, promising the newly created tag.
+    let {decryptingKey, signingKey, tag} = await Vault.createKeys(),
 	teamKey = {decryptingKey, signingKey},
 	wrappingKey = {};
     await Promise.all(members.map(memberTag => Vault.encryptingKey(memberTag).then(key => wrappingKey[memberTag] = key)));
@@ -86,7 +97,7 @@ export class TeamVault extends Vault { // A Vault corresponding to a team of whi
 	memberTags = Object.keys(roster),
 	firstConfirmedMemberVault = await Promise.any(memberTags.map(memberTag => Vault.ensure(memberTag))),
 	use = {decryptingKey: 'decrypt' , signingKey: 'sign'},
-	// The next two lines are basicall unwrapp, but splitting out they decrypt so that string rather than keys are transported between vaults.
+	// The next two lines are basicall unwrap, but splitting out the decrypt so that strings rather than keys are transported between vaults.
 	decrypted = await firstConfirmedMemberVault.decryptMultikey(wrapped),
 	keyData = await MultiKrypto.importKey(decrypted, use);
     Object.assign(this, keyData);

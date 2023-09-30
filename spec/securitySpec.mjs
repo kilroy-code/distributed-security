@@ -43,8 +43,8 @@ describe('Distributed Security', function () {
   describe('Security', function () {
     let device, otherDevice, user, team, otherUser, otherTeam, tags;
     beforeAll(async function () {
-      device = await new DeviceVault().getTag();
-      otherDevice = await new DeviceVault().getTag();
+      device = await DeviceVault.create();
+      otherDevice = await DeviceVault.create();
       user = await TeamVault.create([device]);
       otherUser = await TeamVault.create([otherDevice]);
       team = await TeamVault.create([otherUser, user]);

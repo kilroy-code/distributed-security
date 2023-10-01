@@ -37,6 +37,10 @@ export class Vault {
     return {signingKey, decryptingKey, tag};
   }
   static vaults = {};
+  constructor(tag) {
+    this.tag = tag;
+    Vault.vaults[tag] = this;
+  }
   static async ensure(tag) { // Promise to resolve to a valid vault, else reject.
     let vault = this.vaults[tag],
 	stored = DeviceVault.localStore[tag]; // Check local storage first, because it is fast.
@@ -46,23 +50,19 @@ export class Vault {
       vault = new TeamVault(tag);
       stored = await Security.retrieve('Team', tag)
     }
-    await vault.init(stored);
-    if (await vault?.confirm()) return vault;
-    delete this.vaults[tag];
-    throw new Error(`You do not have access to the private key corresponding to ${tag}.`)
+    try {
+      await vault.init(stored); // FIXME: don't re-init if it hasn't chagned
+    } catch (e) {
+      delete this.vaults[tag];
+      throw new Error(`You do not have access to the private key corresponding to ${tag}.`)
+    }
+    return vault;
   }
-
-  async confirm() { // Is this device still authenticated? Answers vault, which is convenient for chaining to answer the tag when true.
-    if (this.signingKey) return this;
-    await this.init();
-    if (this.signingKey) return this;
-  }
-  async getTag() {
-    if (await this.confirm()) return this.tag;
-  }
-  constructor(tag) {
-    this.tag = tag;
-    Vault.vaults[tag] = this;
+  async destroy() {
+    let {tag} = this,
+	signature = await this.sign("x");
+    await Security.store('EncryptionKey', tag, "x", signature);
+    delete Vault.vaults[tag];
   }
 }
 
@@ -77,6 +77,10 @@ export class DeviceVault extends Vault { // A Vault corresponding to the current
   }
   async init(exportedKey) {
     Object.assign(this, await MultiKrypto.importKey(exportedKey, {decryptingKey: 'decrypt', signingKey: 'sign'}));
+  }
+  destroy() {
+    delete DeviceVault.localStore[this.tag];
+    return super.destroy();
   }
 }
 
@@ -100,5 +104,11 @@ export class TeamVault extends Vault { // A Vault corresponding to a team of whi
 	decrypted = await firstConfirmedMemberVault.decryptMultikey(wrapped),
 	keyData = await MultiKrypto.importKey(decrypted, use);
     Object.assign(this, keyData);
+  }
+  async destroy() {
+    let {tag} = this,
+	signature = this.sign("");
+    Security.store('Team', tag, "", signature);
+    await super.destroy();
   }
 }

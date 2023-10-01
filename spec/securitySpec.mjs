@@ -64,9 +64,6 @@ describe('Distributed Security', function () {
 	    tag = tags[tagsKey];
 	    vault = await Vault.ensure(tag);
 	  });
-	  it('vault creation results in something that be retrieved from Vault.ensure.', async function() {
-	    expect(await vault.getTag()).toBe(tag);
-	  });
 	  it('tag is exported verify key, and vault.sign() pairs with it.', async function () {
 	    let tag = vault.tag,
 		verifyKey = await MultiKrypto.importKey(tag, 'verify'),
@@ -126,7 +123,21 @@ describe('Distributed Security', function () {
       }
       test('DeviceVault', 'device', 'otherDevice');
       test('User TeamVault', 'user', 'otherUser');
-      test('Team TeamVault', 'team', 'otherTeam');      
+      test('Team TeamVault', 'team', 'otherTeam');
+      it('can safely be used when a device is removed, but not when all are removed.', async function () {
+	let [d1, d2] = await Promise.all([DeviceVault.create(), DeviceVault.create()]),
+	    u = await TeamVault.create([d1, d2]),
+	    t = await TeamVault.create([u]),
+	    message = makeMessage(),
+	    encrypted = await Security.encrypt(t, message);
+	expect(await Security.decrypt(t, encrypted)).toBe(message);
+	await (await Vault.ensure(d1)).destroy();
+	expect(await Security.decrypt(t, encrypted)).toBe(message);
+	await (await Vault.ensure(d2)).destroy();
+	let errorMessage = await Security.decrypt(t, encrypted).catch(e => e.message);
+	expect(errorMessage).toContain('access');
+	expect(errorMessage).toContain(t);
+      }, 10e3);
     });
   });
 });

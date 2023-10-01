@@ -1,5 +1,6 @@
 import MultiKrypto from "./multiKrypto.mjs";
 import Security from "./security.mjs";
+import Storage from "./storage.mjs";
 
 export class Vault {
 
@@ -23,7 +24,7 @@ export class Vault {
   static async encryptingKey(tag) { // Promise the ordinary singular public key corresponding to the decryption key, which depend on public storage.
     // Doing a multi-key encryption requires more space for the encryption, and so we don't encrypt EVERY message to be directly decryptable
     // by members. Instead, we only encrypt (wrap) the TeamVault's key to be readable by each member.
-    let exportedPublicKey = await Security.retrieve('EncryptionKey', tag);
+    let exportedPublicKey = await Storage.retrieve('EncryptionKey', tag);
     return await MultiKrypto.importKey(exportedPublicKey, 'encrypt');
   }
 
@@ -33,7 +34,7 @@ export class Vault {
 	exportedEncryptingKey = await MultiKrypto.exportKey(encryptingKey),
 	signature = await MultiKrypto.sign(signingKey, exportedEncryptingKey),
 	tag = await MultiKrypto.exportKey(verifyingKey);
-    await Security.store('EncryptionKey', tag, exportedEncryptingKey, signature);
+    await Storage.store('EncryptionKey', tag, exportedEncryptingKey, signature);
     return {signingKey, decryptingKey, tag};
   }
   static vaults = {};
@@ -48,7 +49,7 @@ export class Vault {
       vault = new DeviceVault(tag);
     } else {
       vault = new TeamVault(tag);
-      stored = await Security.retrieve('Team', tag)
+      stored = await Storage.retrieve('Team', tag)
     }
     try {
       await vault.init(stored); // FIXME: don't re-init if it hasn't chagned
@@ -61,7 +62,7 @@ export class Vault {
   async destroy() {
     let {tag} = this,
 	signature = await this.sign("x");
-    await Security.store('EncryptionKey', tag, "x", signature);
+    await Storage.store('EncryptionKey', tag, "x", signature);
     delete Vault.vaults[tag];
   }
 }
@@ -92,7 +93,7 @@ export class TeamVault extends Vault { // A Vault corresponding to a team of whi
     await Promise.all(members.map(memberTag => Vault.encryptingKey(memberTag).then(key => wrappingKey[memberTag] = key)));
     let wrappedKey = await MultiKrypto.wrapKey(teamKey, wrappingKey),
 	signature = await MultiKrypto.sign(signingKey, wrappedKey); // Same as Vault.sign(message), but the Vault doesn't exist yet.
-    await Security.store('Team', tag, wrappedKey, signature);
+    await Storage.store('Team', tag, wrappedKey, signature);
     return tag;
   }
   async init(wrapped) { // fixme verify?
@@ -108,7 +109,7 @@ export class TeamVault extends Vault { // A Vault corresponding to a team of whi
   async destroy() {
     let {tag} = this,
 	signature = this.sign("");
-    Security.store('Team', tag, "", signature);
+    Storage.store('Team', tag, "", signature);
     await super.destroy();
   }
 }

@@ -26,7 +26,10 @@
 import Krypto from "../krypto.mjs";
 import MultiKrypto from "../multiKrypto.mjs";
 import {Vault, DeviceVault, TeamVault} from "../vault.mjs";
-import Security from "../security.mjs";
+import Storage from "../storage.mjs";
+//import Security from "../security.mjs";
+import Security from "../vaultedSecurity.mjs";
+
 import {scale, makeMessage} from "./support/messageText.mjs";
 import testKrypto from "./kryptoTests.mjs";
 import testMultiKrypto from "./multiKryptoTests.mjs";
@@ -78,7 +81,7 @@ describe('Distributed Security', function () {
 	  it('public encryption tag can be retrieved externally, and vault.decrypt() pairs with it.', async function () {
 	    let tag = vault.tag,
 		message = makeMessage(scale),
-		retrieved = await Security.retrieve('EncryptionKey', tag),
+		retrieved = await Storage.retrieve('EncryptionKey', tag),
 		imported = await MultiKrypto.importKey(retrieved, 'encrypt'),
 		encrypted = await MultiKrypto.encrypt(imported, message),
 		decrypted = await vault.decrypt(encrypted);

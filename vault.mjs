@@ -38,7 +38,15 @@ export class Vault {
   }
   static vaults = {};
   static async ensure(tag) { // Promise to resolve to a valid vault, else reject.
-    let vault = this.vaults[tag] || new TeamVault(tag);
+    let vault = this.vaults[tag],
+	stored = DeviceVault.localStore[tag]; // Check local storage first, because it is fast.
+    if (stored) {
+      vault = new DeviceVault(tag);
+    } else {
+      vault = new TeamVault(tag);
+      stored = await Security.retrieve('Team', tag)
+    }
+    await vault.init(stored);
     if (await vault?.confirm()) return vault;
     delete this.vaults[tag];
     throw new Error(`You do not have access to the private key corresponding to ${tag}.`)
@@ -52,35 +60,27 @@ export class Vault {
   async getTag() {
     if (await this.confirm()) return this.tag;
   }
+  constructor(tag) {
+    this.tag = tag;
+    Vault.vaults[tag] = this;
+  }
 }
 
 export class DeviceVault extends Vault { // A Vault corresponding to the current hardware.
   static localStore = {}; // fixme
-  constructor(tag) {
-    super();
-    this.tag = tag;
-    Vault.vaults[tag] = this;
-  }
-  async init() {
-    let exportedKey = DeviceVault.localStore[this.tag];
-    Object.assign(this, await MultiKrypto.importKey(exportedKey, {decryptingKey: 'decrypt', signingKey: 'sign'}));
-  }
   static async create() { // Create a new locally persisted DeviceVault, promising the newly created tag.
     let {decryptingKey, signingKey, tag} = await Vault.createKeys(),
 	vaultKey = {decryptingKey, signingKey},
 	exportedKey = await MultiKrypto.exportKey(vaultKey);
     DeviceVault.localStore[tag] = exportedKey;
-    await (new DeviceVault(tag)).confirm(); // FIXME
     return tag;
+  }
+  async init(exportedKey) {
+    Object.assign(this, await MultiKrypto.importKey(exportedKey, {decryptingKey: 'decrypt', signingKey: 'sign'}));
   }
 }
 
 export class TeamVault extends Vault { // A Vault corresponding to a team of which the current user is a member (if getTag()).
-  constructor(tag) {
-    super();
-    this.tag = tag;
-    Vault.vaults[tag] = this;
-  }
   static async create(members) { // Create a new publically persisted TeamVault with the specified member tags, promising the newly created tag.
     let {decryptingKey, signingKey, tag} = await Vault.createKeys(),
 	teamKey = {decryptingKey, signingKey},
@@ -91,9 +91,8 @@ export class TeamVault extends Vault { // A Vault corresponding to a team of whi
     await Security.store('Team', tag, wrappedKey, signature);
     return tag;
   }
-  async init() {
-    let wrapped = await Security.retrieve('Team', this.tag), // FIXME: verify?
-	{roster} = JSON.parse(wrapped),
+  async init(wrapped) { // fixme verify?
+    let {roster} = JSON.parse(wrapped),
 	memberTags = Object.keys(roster),
 	firstConfirmedMemberVault = await Promise.any(memberTags.map(memberTag => Vault.ensure(memberTag))),
 	use = {decryptingKey: 'decrypt' , signingKey: 'sign'},

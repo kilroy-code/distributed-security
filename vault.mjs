@@ -108,8 +108,8 @@ export class TeamVault extends Vault { // A Vault corresponding to a team of whi
   }
   async destroy() {
     let {tag} = this,
-	signature = this.sign("");
-    Storage.store('Team', tag, "", signature);
+	signature = await this.sign("");
+    await Storage.store('Team', tag, "", signature);
     await super.destroy();
   }
 }

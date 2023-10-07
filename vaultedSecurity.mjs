@@ -6,7 +6,7 @@ const VaultedSecurity = {
     let id = ++this.messageId,
 	request = this.requests[id] = {};
     return new Promise((resolve, reject) => {
-      Object.assign(request, {resolve, reject, method});
+      Object.assign(request, {resolve, reject, method}); // method is for debugging.
       this.worker.postMessage({id, method, params});
     });
   },

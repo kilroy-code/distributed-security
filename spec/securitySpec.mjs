@@ -56,10 +56,16 @@ describe('Distributed Security', function () {
 	  otherTeam = await scope.create([otherUser, user]);   // Note: same members, but a different identity.
       return {device, user, otherDevice, otherUser, team, otherTeam};
     }
+    async function destroyVaults(scope, tags) {
+      await Promise.all(Object.values(tags).map(tag => scope.destroy(tag)));
+    }
    describe('internal machinery', function () {
       let tags;
       beforeAll(async function () {
 	tags = await makeVaults(InternalSecurity);
+      });
+      afterAll(async function () {
+	await destroyVaults(InternalSecurity, tags);
       });
       function vaultTests(label, tagsKey) {
 	describe(label, function () {	
@@ -99,6 +105,9 @@ describe('Distributed Security', function () {
       let tags;
       beforeAll(async function () {
 	tags = await makeVaults(Security);
+      });
+      afterAll(async function () {
+	await destroyVaults(Security, tags);
       });
       function test(label, tagsKey, otherTagsKey) {
 	describe(label, function () {

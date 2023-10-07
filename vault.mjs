@@ -1,5 +1,4 @@
 import MultiKrypto from "./multiKrypto.mjs";
-import Security from "./security.mjs";
 import Storage from "./storage.mjs";
 
 export class Vault {
@@ -59,10 +58,11 @@ export class Vault {
     }
     return vault;
   }
-  async destroy() {
+  async destroy() { // Terminates this vault and 
     let {tag} = this,
-	signature = await this.sign("x");
-    await Storage.store('EncryptionKey', tag, "x", signature);
+	content = "", // Should storage have a separate operation to delete, other than storing empty?
+	signature = await this.sign(content); 
+    await Storage.store('EncryptionKey', tag, content, signature);
     delete Vault.vaults[tag];
   }
 }

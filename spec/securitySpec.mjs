@@ -1,7 +1,7 @@
 /*
   TODO:
 
-  Use webworker
+  shared webworker
 
   Persistence - getWrappedKey/setWrappedKey
   The retrieved value should include the signature so that the recipient can verify. Probably the signature of the storage service, too.
@@ -27,12 +27,15 @@ import Krypto from "../krypto.mjs";
 import MultiKrypto from "../multiKrypto.mjs";
 import {Vault, DeviceVault, TeamVault} from "../vault.mjs";
 import Storage from "../storage.mjs";
-//import Security from "../security.mjs";
+
+import InternalSecurity from "../security.mjs";
 import Security from "../vaultedSecurity.mjs";
 
 import {scale, makeMessage} from "./support/messageText.mjs";
 import testKrypto from "./kryptoTests.mjs";
 import testMultiKrypto from "./multiKryptoTests.mjs";
+
+window.Security = Security;
 
 jasmine.getEnv().configure({random: false});
 
@@ -44,22 +47,20 @@ describe('Distributed Security', function () {
     testMultiKrypto(MultiKrypto);
   });
   describe('Security', function () {
-    let device, otherDevice, user, team, otherUser, otherTeam, tags;
-    beforeAll(async function () {
-      device = await DeviceVault.create();
-      otherDevice = await DeviceVault.create();
-      user = await TeamVault.create([device]);
-      otherUser = await TeamVault.create([otherDevice]);
-      team = await TeamVault.create([otherUser, user]);
-      otherTeam = await TeamVault.create([otherUser, user]);   // Note: same members, but a different identity.
-      tags = {device, user, otherDevice, otherUser, team, otherTeam};
-      //console.log('before tests, Teams:', Security.Team, Vault.vaults);
-    });
-    afterAll(async function () { // Just report for debugging.
-      //await Promise.all([device, /*'missing',*/ otherUser, user, team].map(async tag => console.log(tag, Vault.vaults[tag])));
-      //console.log(Security.EncryptionKey)
-    });
-    describe('internal machinery', function () {
+    async function makeVaults(scope) { // Create a standard set of test vaults through context.
+      let device = await scope.create(),
+	  otherDevice = await scope.create(),
+	  user = await scope.create([device]),
+	  otherUser = await scope.create([otherDevice]),
+	  team = await scope.create([otherUser, user]),
+	  otherTeam = await scope.create([otherUser, user]);   // Note: same members, but a different identity.
+      return {device, user, otherDevice, otherUser, team, otherTeam};
+    }
+   describe('internal machinery', function () {
+      let tags;
+      beforeAll(async function () {
+	tags = await makeVaults(InternalSecurity);
+      });
       function vaultTests(label, tagsKey) {
 	describe(label, function () {	
 	  let vault, tag;
@@ -91,8 +92,14 @@ describe('Distributed Security', function () {
       }
       vaultTests('DeviceVault', 'device');
       vaultTests('TeamVault', 'user');
+      // FIXME: prove that importing a module and modifying it does not effect modules imported from a worker.
+      // Or if we can't prove that, make vaults inaccessible.
     });
     describe("Usage", function () {
+      let tags;
+      beforeAll(async function () {
+	tags = await makeVaults(Security);
+      });
       function test(label, tagsKey, otherTagsKey) {
 	describe(label, function () {
 	  let tag, otherTag;
@@ -128,15 +135,15 @@ describe('Distributed Security', function () {
       test('User TeamVault', 'user', 'otherUser');
       test('Team TeamVault', 'team', 'otherTeam');
       it('can safely be used when a device is removed, but not when all are removed.', async function () {
-	let [d1, d2] = await Promise.all([DeviceVault.create(), DeviceVault.create()]),
-	    u = await TeamVault.create([d1, d2]),
-	    t = await TeamVault.create([u]),
-	    message = makeMessage(),
-	    encrypted = await Security.encrypt(t, message);
+	let [d1, d2] = await Promise.all([Security.create(), Security.create()]),
+	    u = await Security.create([d1, d2]),
+	    t = await Security.create([u]),
+	    message = makeMessage();
+	let encrypted = await Security.encrypt(t, message);
 	expect(await Security.decrypt(t, encrypted)).toBe(message);
-	await (await Vault.ensure(d1)).destroy();
+	await Security.destroy(d1);
 	expect(await Security.decrypt(t, encrypted)).toBe(message);
-	await (await Vault.ensure(d2)).destroy();
+	await Security.destroy(d2);
 	let errorMessage = await Security.decrypt(t, encrypted).catch(e => e.message);
 	expect(errorMessage).toContain('access');
 	expect(errorMessage).toContain(t);

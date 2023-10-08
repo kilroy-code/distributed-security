@@ -27,15 +27,12 @@ import Krypto from "../krypto.mjs";
 import MultiKrypto from "../multiKrypto.mjs";
 import {Vault, DeviceVault, TeamVault} from "../vault.mjs";
 import Storage from "../storage.mjs";
-
 import InternalSecurity from "../security.mjs";
 import Security from "../vaultedSecurity.mjs";
 
 import {scale, makeMessage} from "./support/messageText.mjs";
 import testKrypto from "./kryptoTests.mjs";
 import testMultiKrypto from "./multiKryptoTests.mjs";
-
-window.Security = Security;
 
 jasmine.getEnv().configure({random: false});
 
@@ -59,9 +56,10 @@ describe('Distributed Security', function () {
     async function destroyVaults(scope, tags) {
       await Promise.all(Object.values(tags).map(tag => scope.destroy(tag)));
     }
-   describe('internal machinery', function () {
+    describe('internal machinery', function () {
       let tags;
       beforeAll(async function () {
+	InternalSecurity.Storage = Storage;
 	tags = await makeVaults(InternalSecurity);
       });
       afterAll(async function () {

@@ -1,15 +1,5 @@
+import Storage from "./storage.mjs";
 const VaultedSecurity = {
-  worker: new Worker('/@kilroy-code/distributed-security/worker.mjs', {type: "module"}),
-  requests: {},
-  messageId: 0,
-  send(method, ...params) {
-    let id = ++this.messageId,
-	request = this.requests[id] = {};
-    return new Promise((resolve, reject) => {
-      Object.assign(request, {resolve, reject, method}); // method is for debugging.
-      this.worker.postMessage({id, method, params});
-    });
-  },
   create(optionalMembers) {
     return this.send('create', optionalMembers);
   },
@@ -27,13 +17,30 @@ const VaultedSecurity = {
   },
   async destroy(tag) { //
     return this.send('destroy', tag);
+  },
+  worker: new Worker('/@kilroy-code/distributed-security/worker.mjs', {type: "module"}),
+  requests: {},
+  messageId: 0,
+  send(method, ...params) {
+    let id = ++this.messageId,
+	request = this.requests[id] = {};
+    return new Promise((resolve, reject) => {
+      Object.assign(request, {resolve, reject});
+      this.worker.postMessage({id, method, params});
+    });
   }
 };
 
-VaultedSecurity.worker.onmessage = event => {
+VaultedSecurity.worker.onmessage = async event => {
   // FIXME: check event.origin. But don't we get that automatically when we switch to shared worker and ports? Also use worker-src 'self'
-  let {id, result, error} = event.data,
-      request = VaultedSecurity.requests[id];
+  let {id, result, error, method, params} = event.data;
+  if (method) {
+    let error = null,
+	result = await Storage[method](...params).catch(e => error = {name: e.name, message: e.message}),
+	response = error ? {id, error} : {id, result};
+    return VaultedSecurity.worker.postMessage(response);
+  }
+  let request = VaultedSecurity.requests[id];
   delete VaultedSecurity.requests[id];
   if (error) request.reject(error);
   else request.resolve(result);

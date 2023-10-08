@@ -9,10 +9,11 @@ const Storage = {
     if (!string) {
       // FIXME? Is it ever meaningful to store an empty payload? If so, we'll need a separate delete operation.
       delete this[resourceTag][ownerTag];
-      return;
+      return null;
     }
     this[resourceTag][ownerTag] = string;
     // FIXME: Return a receipt consisting of a signed message+timestamp from us.
+    return null;
   },
   async retrieve(resourceTag, ownerTag) {
     return this[resourceTag][ownerTag];

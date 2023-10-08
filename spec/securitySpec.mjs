@@ -1,12 +1,15 @@
 /*
   TODO:
 
+  prove that localStorage is not shared with workers
+  use credential mechanism for device keys
   shared webworker
 
   Persistence - getWrappedKey/setWrappedKey
   The retrieved value should include the signature so that the recipient can verify. Probably the signature of the storage service, too.
 
   Module
+  Clean up paths involving @kilroy-code
   Make configurable for NodeJS
 
   security concerns for web workers?
@@ -30,9 +33,11 @@ import Storage from "../storage.mjs";
 import InternalSecurity from "../security.mjs";
 import Security from "../vaultedSecurity.mjs";
 
-import {scale, makeMessage} from "./support/messageText.mjs";
 import testKrypto from "./kryptoTests.mjs";
 import testMultiKrypto from "./multiKryptoTests.mjs";
+import testModule from "./support/testModuleWithFoo.mjs";
+import dispatch from "../../jsonrpc/index.mjs";
+import {scale, makeMessage} from "./support/messageText.mjs";
 
 jasmine.getEnv().configure({random: false});
 
@@ -96,8 +101,26 @@ describe('Distributed Security', function () {
       }
       vaultTests('DeviceVault', 'device');
       vaultTests('TeamVault', 'user');
-      // FIXME: prove that importing a module and modifying it does not effect modules imported from a worker.
-      // Or if we can't prove that, make vaults inaccessible.
+      describe('workers', function () {
+	let isolatedWorker, request;
+	beforeAll(function () {
+	  isolatedWorker = new Worker("/@kilroy-code/distributed-security/spec/support/testWorkerWithModule.mjs", {type: 'module'});
+	  request = dispatch(isolatedWorker);
+	});
+	afterAll(function () {
+	  isolatedWorker.terminate();
+	});
+	it('do not share modules of the same name with applications.', async function () {
+	  let workerInitialFoo = await request('getFoo'),
+	      ourInitialFoo = testModule.foo,
+	      ourNewFoo = 17;
+	  expect(workerInitialFoo).toBe(ourInitialFoo);
+	  expect(ourInitialFoo).not.toBe(ourNewFoo);
+	  testModule.foo = ourNewFoo;
+	  expect(testModule.foo).toBe(ourNewFoo);
+	  expect(await request('getFoo')).toBe(workerInitialFoo);
+	});
+      });
     });
     describe("Usage", function () {
       let tags;

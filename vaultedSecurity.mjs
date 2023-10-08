@@ -1,49 +1,26 @@
 import Storage from "./storage.mjs";
+import dispatch from "@kilroy-code/jsonrpc/index.mjs";
+const worker = new Worker('/@kilroy-code/distributed-security/worker.mjs', {type: "module"});
+
 const VaultedSecurity = {
+  request: dispatch(worker, Storage),
   create(optionalMembers) {
-    return this.send('create', optionalMembers);
+    return this.request('create', optionalMembers);
   },
   verify(tag, signature, message) { // Promise true if signature was made by tag, else false.
-    return this.send('verify', tag, signature, message);
+    return this.request('verify', tag, signature, message);
   },
   async encrypt(tag, message) { // Promise text that can only be decrypted back to message by the keypair designated by tag.
-    return this.send('encrypt', tag, message);
+    return this.request('encrypt', tag, message);
   },
   async decrypt(tag, encrypted) { // Promise the original text given to encrypt() IFF the current user has access to the keypair designated by tag, else reject.
-    return this.send('decrypt', tag, encrypted);
+    return this.request('decrypt', tag, encrypted);
   },
   async sign(tag, message) { // Promise a signature for message suitable for verify() IFF the current user has access to the keypair designated by tag, else reject.
-    return this.send('sign', tag, message);
+    return this.request('sign', tag, message);
   },
   async destroy(tag) { //
-    return this.send('destroy', tag);
-  },
-  worker: new Worker('/@kilroy-code/distributed-security/worker.mjs', {type: "module"}),
-  requests: {},
-  messageId: 0,
-  send(method, ...params) {
-    let id = ++this.messageId,
-	request = this.requests[id] = {};
-    return new Promise((resolve, reject) => {
-      Object.assign(request, {resolve, reject});
-      this.worker.postMessage({id, method, params});
-    });
+    return this.request('destroy', tag);
   }
 };
-
-VaultedSecurity.worker.addEventListener('message', async event => {
-  // FIXME: check event.origin. But don't we get that automatically when we switch to shared worker and ports? Also use worker-src 'self'
-  let {id, result, error, method, params} = event.data;
-  if (method) {
-    let error = null,
-	result = await Storage[method](...params).catch(e => error = {name: e.name, message: e.message}),
-	response = error ? {id, error} : {id, result};
-    return VaultedSecurity.worker.postMessage(response);
-  }
-  let request = VaultedSecurity.requests[id];
-  delete VaultedSecurity.requests[id];
-  if (error) request.reject(error);
-  else request.resolve(result);
-});
-
 export default VaultedSecurity;

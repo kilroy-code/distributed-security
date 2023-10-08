@@ -1,5 +1,5 @@
 {
-  "name": "distributed-security",
+  "name": "@kilroy-code/distributed-security",
   "version": "0.0.1",
   "description": "Signed and encrypted document infrastructure based on public key encryption and self-organizing users.",
   "main": "index.js",
@@ -24,6 +24,9 @@
     "url": "https://github.com/kilroy-code/distributed-security/issues"
   },
   "homepage": "https://github.com/kilroy-code/distributed-security#readme",
+  "dependencies": {
+    "@kilroy-code/jsonrpc": "^0.0.1"
+  },
   "devDependencies": {
     "jasmine": "^4.5.0"
   }

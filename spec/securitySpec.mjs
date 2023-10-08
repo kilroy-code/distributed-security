@@ -49,6 +49,7 @@ describe('Distributed Security', function () {
     testMultiKrypto(MultiKrypto);
   });
   describe('Security', function () {
+    const slowKeyCreation = 15e3; // e.g., Safari
     async function makeVaults(scope) { // Create a standard set of test vaults through context.
       let device = await scope.create(),
 	  otherDevice = await scope.create(),
@@ -66,7 +67,7 @@ describe('Distributed Security', function () {
       beforeAll(async function () {
 	InternalSecurity.Storage = Storage;
 	tags = await makeVaults(InternalSecurity);
-      });
+      }, slowKeyCreation);
       afterAll(async function () {
 	await destroyVaults(InternalSecurity, tags);
       });
@@ -126,7 +127,7 @@ describe('Distributed Security', function () {
       let tags;
       beforeAll(async function () {
 	tags = await makeVaults(Security);
-      });
+      }, slowKeyCreation);
       afterAll(async function () {
 	await destroyVaults(Security, tags);
       });
@@ -177,7 +178,7 @@ describe('Distributed Security', function () {
 	let errorMessage = await Security.decrypt(t, encrypted).catch(e => e.message);
 	expect(errorMessage).toContain('access');
 	expect(errorMessage).toContain(t);
-      }, 10e3);
+      }, slowKeyCreation);
     });
   });
 });

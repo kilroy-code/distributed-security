@@ -60,7 +60,7 @@ export class Vault {
   async destroy() { // Terminates this vault and 
     let {tag} = this,
 	content = "", // Should storage have a separate operation to delete, other than storing empty?
-	signature = await this.sign(content); 
+	signature = await this.sign(content);
     await Vault.Storage.store('EncryptionKey', tag, content, signature);
     delete Vault.vaults[tag];
   }
@@ -78,9 +78,9 @@ export class DeviceVault extends Vault { // A Vault corresponding to the current
   async init(exportedKey) {
     Object.assign(this, await MultiKrypto.importKey(exportedKey, {decryptingKey: 'decrypt', signingKey: 'sign'}));
   }
-  destroy() {
+  async destroy() {
+    await super.destroy();
     delete DeviceVault.localStore[this.tag];
-    return super.destroy();
   }
 }
 
@@ -108,7 +108,7 @@ export class TeamVault extends Vault { // A Vault corresponding to a team of whi
   async destroy() {
     let {tag} = this,
 	signature = await this.sign("");
-    await Vault.Storage.store('Team', tag, "", signature);
     await super.destroy();
+    await Vault.Storage.store('Team', tag, "", signature);
   }
 }

@@ -31,7 +31,7 @@ const VaultedSecurity = {
   }
 };
 
-VaultedSecurity.worker.onmessage = async event => {
+VaultedSecurity.worker.addEventListener('message', async event => {
   // FIXME: check event.origin. But don't we get that automatically when we switch to shared worker and ports? Also use worker-src 'self'
   let {id, result, error, method, params} = event.data;
   if (method) {
@@ -44,6 +44,6 @@ VaultedSecurity.worker.onmessage = async event => {
   delete VaultedSecurity.requests[id];
   if (error) request.reject(error);
   else request.resolve(result);
-};
+});
 
 export default VaultedSecurity;

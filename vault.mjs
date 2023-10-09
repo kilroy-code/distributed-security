@@ -78,13 +78,24 @@ export class Vault {
 
 export class DeviceVault extends Vault { // A Vault corresponding to the current hardware.
   static collection = 'Device';
+  static async getSecret() { // FIXME use app-supplied secret
+    let {secret} = this;
+    if (!secret) {
+      secret = this.secret = await MultiKrypto.generateEncryptingKey();
+    }
+    return secret;
+  }
   static async wrap(keys) { // FIXME use app-supplied secret
     let {decryptingKey, signingKey, tag} = keys,
-	vaultKey = {decryptingKey, signingKey};
-    return await MultiKrypto.exportKey(vaultKey);
+	vaultKey = {decryptingKey, signingKey},
+	exported = await MultiKrypto.exportKey(vaultKey),
+	secret = await this.getSecret();
+    return await MultiKrypto.encrypt(secret.publicKey, exported);
   }
-  async unwrap(exportedKey) { // FIXME use app-supplied secret
-    return await MultiKrypto.importKey(exportedKey, {decryptingKey: 'decrypt', signingKey: 'sign'});
+  async unwrap(wrapped) {
+    let secret = await this.constructor.getSecret(),
+	exported = await MultiKrypto.decrypt(secret.privateKey, wrapped);
+    return await MultiKrypto.importKey(exported, {decryptingKey: 'decrypt', signingKey: 'sign'});
   }
 }
 

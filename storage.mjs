@@ -19,6 +19,7 @@ const Storage = {
     return this[resourceTag][ownerTag];
   },
   Team: {},
+  Device: {},
   EncryptionKey: {}
 };
 export default Storage;

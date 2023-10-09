@@ -42,73 +42,68 @@ export class Vault {
   }
   static async ensure(tag) { // Promise to resolve to a valid vault, else reject.
     let vault = this.vaults[tag],
-	stored = DeviceVault.localStore[tag]; // Check local storage first, because it is fast.
+	stored = await Vault.Storage.retrieve(DeviceVault.collection, tag);
     if (stored) {
       vault = new DeviceVault(tag);
     } else {
       vault = new TeamVault(tag);
-      stored = await Vault.Storage.retrieve('Team', tag)
+      stored = await Vault.Storage.retrieve(TeamVault.collection, tag)
     }
     try {
-      await vault.init(stored); // FIXME: don't re-init if it hasn't chagned
+      let unwrapped = await vault.unwrap(stored); // FIXME: don't re-init if it hasn't chagned
+      Object.assign(vault, unwrapped);
     } catch (e) {
       delete this.vaults[tag];
       throw new Error(`You do not have access to the private key corresponding to ${tag}.`)
     }
     return vault;
   }
+  static async create(wrappingData) { // Create a persisted Vault of the correct type, promising the newly created tag.
+    let keys = await this.createKeys(),
+	{signingKey, tag} = keys,
+	wrapped = await this.wrap(keys, wrappingData),
+	signature = await MultiKrypto.sign(signingKey, wrapped);
+    await Vault.Storage.store(this.collection, tag, wrapped, signature);
+    return tag;
+  }
   async destroy() { // Terminates this vault and 
     let {tag} = this,
 	content = "", // Should storage have a separate operation to delete, other than storing empty?
 	signature = await this.sign(content);
     await Vault.Storage.store('EncryptionKey', tag, content, signature);
+    await Vault.Storage.store(this.constructor.collection, tag, content, signature);
     delete Vault.vaults[tag];
   }
 }
 
 export class DeviceVault extends Vault { // A Vault corresponding to the current hardware.
-  static localStore = {}; // fixme
-  static async create() { // Create a new locally persisted DeviceVault, promising the newly created tag.
-    let {decryptingKey, signingKey, tag} = await Vault.createKeys(),
-	vaultKey = {decryptingKey, signingKey},
-	exportedKey = await MultiKrypto.exportKey(vaultKey);
-    DeviceVault.localStore[tag] = exportedKey;
-    return tag;
+  static collection = 'Device';
+  static async wrap(keys) { // FIXME use app-supplied secret
+    let {decryptingKey, signingKey, tag} = keys,
+	vaultKey = {decryptingKey, signingKey};
+    return await MultiKrypto.exportKey(vaultKey);
   }
-  async init(exportedKey) {
-    Object.assign(this, await MultiKrypto.importKey(exportedKey, {decryptingKey: 'decrypt', signingKey: 'sign'}));
-  }
-  async destroy() {
-    await super.destroy();
-    delete DeviceVault.localStore[this.tag];
+  async unwrap(exportedKey) { // FIXME use app-supplied secret
+    return await MultiKrypto.importKey(exportedKey, {decryptingKey: 'decrypt', signingKey: 'sign'});
   }
 }
 
 export class TeamVault extends Vault { // A Vault corresponding to a team of which the current user is a member (if getTag()).
-  static async create(members) { // Create a new publically persisted TeamVault with the specified member tags, promising the newly created tag.
-    let {decryptingKey, signingKey, tag} = await Vault.createKeys(),
+  static collection = 'Team';
+  static async wrap(keys, members) { // Create a new publically persisted TeamVault with the specified member tags, promising the newly created tag.
+    let {decryptingKey, signingKey, tag} = keys,
 	teamKey = {decryptingKey, signingKey},
 	wrappingKey = {};
     await Promise.all(members.map(memberTag => Vault.encryptingKey(memberTag).then(key => wrappingKey[memberTag] = key)));
-    let wrappedKey = await MultiKrypto.wrapKey(teamKey, wrappingKey),
-	signature = await MultiKrypto.sign(signingKey, wrappedKey); // Same as Vault.sign(message), but the Vault doesn't exist yet.
-    await Vault.Storage.store('Team', tag, wrappedKey, signature);
-    return tag;
+    return await MultiKrypto.wrapKey(teamKey, wrappingKey);
   }
-  async init(wrapped) { // fixme verify?
+  async unwrap(wrapped) { // fixme verify?
     let {roster} = JSON.parse(wrapped),
 	memberTags = Object.keys(roster),
 	firstConfirmedMemberVault = await Promise.any(memberTags.map(memberTag => Vault.ensure(memberTag))),
-	use = {decryptingKey: 'decrypt' , signingKey: 'sign'},
+	use = {decryptingKey: 'decrypt', signingKey: 'sign'},
 	// The next two lines are basicall unwrap, but splitting out the decrypt so that strings rather than keys are transported between vaults.
-	decrypted = await firstConfirmedMemberVault.decryptMultikey(wrapped),
-	keyData = await MultiKrypto.importKey(decrypted, use);
-    Object.assign(this, keyData);
-  }
-  async destroy() {
-    let {tag} = this,
-	signature = await this.sign("");
-    await super.destroy();
-    await Vault.Storage.store('Team', tag, "", signature);
+	decrypted = await firstConfirmedMemberVault.decryptMultikey(wrapped);
+    return await MultiKrypto.importKey(decrypted, use);
   }
 }

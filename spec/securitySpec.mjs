@@ -1,52 +1,15 @@
-/*
-  TODO:
+import dispatch from "../../jsonrpc/index.mjs";
+import Storage from "../lib/storage.mjs";
+import Security from "../index.mjs";
 
-  device key should be wrapped into the same storage as everything else, but with a leading . to indicate it is a device.
-    get a secret from application and derive a key from that, kept in memory.
-    use that in create and init
-    to get the secret, we generate a new keypair and send the public, the app must encode the secret with that and send it back.
-
-  VaultedSecurity.request should be moved to a module-local var so that the app cannot change. Doesn't really matter for the uses here, but still a red-flag for casual observers.
-  
-  shared webworker
-  use auth credential api for devices that support it
-
-  changes to teams
-  security questions as PBKDF2 derived keys
-
-  Persistence - getWrappedKey/setWrappedKey
-  Protect against replay of storage to old values
-  The retrieved value should include the signature so that the recipient can verify. Probably the signature of the storage service, too.
-
-  Module
-  Clean up paths involving @kilroy-code
-  Make configurable for NodeJS
-
-  security concerns for web workers?
-  e.g., we have a team worker ask a member worker to unwrap or decrypt stuff. Is that response visible to other workers?
-
-
-  Demo
-  ki1r0y package with GHA
-  Doc and comments
-
-  hidden rosters - can we make it so each tag key in the roster dictionary can only be read by the members?
-  Can we do this "bottom up"?
-    The current implementation starts with a team publicKey and lets you try to find a path down to your device key. That has two problems:
-    - It exposes member publicKeys to all (because you need to be able to read the publicKeys before you have established membership).
-    - It goes down a lot of wrong paths, each with a branching set of network calls.
-*/
-import Krypto from "../krypto.mjs";
-import MultiKrypto from "../multiKrypto.mjs";
-import {Vault, DeviceVault, TeamVault} from "../vault.mjs";
-import Storage from "../storage.mjs";
-import InternalSecurity from "../security.mjs";
-import Security from "../vaultedSecurity.mjs";
+import Krypto from "../lib/krypto.mjs";
+import MultiKrypto from "../lib/multiKrypto.mjs";
+import {Vault, DeviceVault, TeamVault} from "../lib/vault.mjs";
+import InternalSecurity from "../lib/security.mjs";
 
 import testKrypto from "./kryptoTests.mjs";
 import testMultiKrypto from "./multiKryptoTests.mjs";
 import testModule from "./support/testModuleWithFoo.mjs";
-import dispatch from "../../jsonrpc/index.mjs";
 import {scale, makeMessage} from "./support/messageText.mjs";
 
 jasmine.getEnv().configure({random: false});

@@ -1,6 +1,6 @@
-import Storage from './storage.mjs';
+import Storage from './lib/storage.mjs';
 import dispatch from '@kilroy-code/jsonrpc/index.mjs';
-const worker = new Worker('/@kilroy-code/distributed-security/worker.mjs', {type: 'module'});
+const worker = new Worker('@kilroy-code/distributed-security/lib/worker.mjs', {type: 'module'});
 
 const VaultedSecurity = {
   request: dispatch(worker, Storage),

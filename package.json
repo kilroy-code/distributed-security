@@ -2,7 +2,7 @@
   "name": "@kilroy-code/distributed-security",
   "version": "0.0.1",
   "description": "Signed and encrypted document infrastructure based on public key encryption and self-organizing users.",
-  "main": "index.js",
+  "main": "index.mjs",
   "scripts": {
     "test": "jasmine"
   },

@@ -1,10 +1,10 @@
 # Distributed System Implementation
 
-The source code is made to express a set of stepwise concepts in short separate pieces. This guide to the source code assumes the background knowledge of [README.md](README.md).
+The source code is made to express a set of stepwise concepts in short separate pieces. This guide to the source code assumes the background knowledge of [README.md](../README.md).
 
 ## Wrapping SubtleKrypto
 
-[krypto.mjs](krypto.mjs) is by far the longest, but it is mostly just a wrapper around SubtleCrypto:
+[krypto.mjs](../lib/krypto.mjs) is by far the longest, but it is mostly just a wrapper around SubtleCrypto:
 
 1. SubtleCrypto provides functions for each of the four basic operations, plus [export](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/exportKey)/[import](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/importKey) and [wrap](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/wrapKey)/[unwrap](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/unwrapKey) of keys, all taking a key object, a binary buffer, and various parameters. The methods in our Krypto module also take a key as argument, but they work on strings rather than buffers, and the other parameters are hardcoded to use particular algorithms. (For sign/verify, it uses the same ECDSA algorithm and parameters as blockchains.)
 2. Not mentioned in the README.md, is that in addition to encrypt/decrypt using a public/private keypair, SubtleCrypto can use a particular type of single key called a symmetric key for both the encrypt and decrypt operations. This isn't terribly useful at the application level because both sides must have a copy of the same key, which isn't very safe. However, we do use it in a very specific way _internally_, as will be shown below. However, SubtleCrypto splits symmetric keys into two parts: a secret and buffer of random bits called an iv. Krypto combines both parts into a single key object.
@@ -14,7 +14,7 @@ The reason that SubtleCrypto separates the parts of a symmetric key is that the 
 
 ## Combining Keys
 
-[multiKrypto.mjs](multiKrypto.mjs) extends [Krypto](#wrapping-subtlekrypto) in three ways:
+[multiKrypto.mjs](../lib/multiKrypto.mjs) extends [Krypto](#wrapping-subtlekrypto) in three ways:
 
 ### 1. Hybrid encryption to provide longer encrypted messages
 The algorithm used by Krypto can only encrypt messages up to 446 bytes. MultiKrypto uses a _hybrid_ technique, such that any request to encrypt with a public key, will instead generate a new symmetric key to encrypt the arbitrarilly sized message, and then use the public key to encrypt the symmetric key itself, and include both in the output. Decryption with a public key is the reverse.  The encryption looks like this (without any newlines):
@@ -29,7 +29,7 @@ The algorithm used by Krypto can only encrypt messages up to 446 bytes. MultiKry
 The maximum memory size is not limited by the algorithm this way, but only by available memory. We unit-test with 10 MB messages.
 
 ### 2. Sets of Keys
-From an application standpoint, a [tag](README.md#operations-and-tags) represents _the key_. But in fact, SubtleCrypto does not let you use the same keypair for encrypt/decrypt as for sign/verify. So Distributed Security must manage a _set_ of keys under a single tag. MultiKrypto allows a set of keys to be exported and imported as JSON. For example, a keyset of 
+From an application standpoint, a [tag](../README.md#operations-and-tags) represents _the key_. But in fact, SubtleCrypto does not let you use the same keypair for encrypt/decrypt as for sign/verify. So Distributed Security must manage a _set_ of keys under a single tag. MultiKrypto allows a set of keys to be exported and imported as JSON. For example, a keyset of 
 
 ```
 {myDecryptingKey: [a private RSA algorithm key], 
@@ -77,7 +77,7 @@ This is roughly the same total size for one member, and about 4.5 kbytes less fo
 
 ## Vaults: Object-Oriented Keys
 
-In [vault.mjs](vault.mjs), we define objects that manage each individual identity.
+In [vault.mjs](../lib/vault.mjs), we define objects that manage each individual identity.
 
 The vault keeps the private signing key and the private encrypting key.
 
@@ -87,7 +87,7 @@ The vaullt's public signing key is exported and used as the tag. For example, if
 
 Thus copies of mesages can be verified forever, even if the application is no longer providing storage, but new message can only be encrypted for application tags as long as the application is still providing storage. Of course, storage may be third-party storage or a p2p file sharing network.
 
-Of the six operations provided by [security.mjs](security.mjs), `create`, `encrypt`, and `verify` can all be done without needing to create a vault. However, `destroy`, `decrypt`, and `sign` all need to `ensure` a vault corresponding to the given tag. To do so, `ensure` either has one cached for the given key or creates one. It then verifies that the vault is still good:
+Of the six operations provided by [security.mjs](../lib/security.mjs), `create`, `encrypt`, and `verify` can all be done without needing to create a vault. However, `destroy`, `decrypt`, and `sign` all need to `ensure` a vault corresponding to the given tag. To do so, `ensure` either has one cached for the given key or creates one. It then verifies that the vault is still good:
 
 - If the tag corresponds to the device the software is running on, there will be a locally stored key that never leaves the device. (There is no reason to export it elsewhere.) The stored key is then used directly, and the vault is ready.
 - Otherwise, if there is an encrypted team key in public storage for this tag, it is retrieve and Security will attempt to unwrap it using by checking to see if this computer has access to any of the specified members, recursively applying this whole search down to finding either this device or failing.
@@ -99,6 +99,6 @@ This search for valid keys is repeated for each new operation, because an indivi
 
 Everyone has access to the encrypted team keys, but one can decrypt it other than its member. We also want to make sure that application software itself cannot read the decrypted key. (Its not just a matter of trusting the intent of the application, but also that the application has not been compromised.) To do this, the [vaults](#vaults-object-oriented-keys) do not run in the same environment as the application, but in a separate sandbox called a [Web Worker](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API). Communication between the application and the worker is by means of messages defined by the worker, and we do not define any messages that export unencrypted keys. While desktop browser extensions generally have unfettered access to the application code and data, they do not have access to the worker data. The same is true for any malevolent code that has wormed its way into the application from dependendencies or other attacks. However, desktop users must still be vigilant to not be dupped into using various developer tools by which some browser-makers expose worker data to interactive inspection.
 
-This is implemented by the pair [vaultedSecurity.mjs](vaultedSecurity.mjs)/[worker.mjs](worker.mjs).
+This is implemented by the pair [index.mjs](../lib/index.mjs)/[worker.mjs](../lib/worker.mjs).
 
 But all of this is only safe to the extent that device keys are safe. _(This is **TBD**, but the general idea is that the keys are stored locally. Ideally, we will find a way to persist data that can only be read by the webworker that saved them._)

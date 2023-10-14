@@ -66,7 +66,7 @@ All distributed security operations are asynchronous - the call immediately retu
 
 That's it. The only other operations are for creating and destroying tags.
 
-## Devices, Individual, and Teams
+## Devices, Individuals, and Teams
 
 To create a new set of keypairs, an application calls `create() -> tag`.  An application will typically create just one tag for each device used by an individual, although there is nothing preventing an application from creating more.  When no longer needed (e.g., in respect of the EU [Right to be Forgotten](https://gdpr.eu/right-to-be-forgotten/)), an application can permanently and globally destroy a tag with `destroy(tag)`.
 
@@ -97,10 +97,12 @@ We use this to store _**encrypted**_ keys as the text.
 There are no custodial copies of device keys, and none are needed. If a device is lost, an individual can still access his individual key in the cloud using his other devices, or by a virtual team made up of security-question "members".
 
 
-_[[Details of storeage are **TBD**. I am likely to require an additional signature from the individual, and probably also including a signed timestamp. This information would also be be part of what is returned by retrieve. Such extra stuff is important for applications, but is not (yet) imporant for the distributed security operations so far. It will probably be important for modifying team membership. (E.g., right now, it is enough that the the system verify that a request to destroy a tag must be made with a signature that can be verified as being by the owner of tag.)]]_
+_[[Details of storage are **TBD**. I am likely to require an additional signature from the individual, and probably also including a signed timestamp. This information would also be be part of what is returned by retrieve. Such extra stuff is important for applications, but is not (yet) imporant for the distributed security operations so far. It will probably be important for modifying team membership. (E.g., right now, it is enough that the the system verify that a request to destroy a tag must be made with a signature that can be verified as being by the owner of tag.)]]_
 
 ## Implementation
 
-The above is everything one needs to know to use the distributed security operations. However, to understand the nature of what distributed security can do, it is also necessary to understand a bit about how it works. Fortunately, this is easily covered [here](IMPLEMENTATION.md), and there is no math.
+The above is everything one needs to know to use the distributed security operations. However, to understand the nature of what distributed security can do, it is also necessary to understand a bit about how it works. Fortunately, this is easily covered [here](docs/implementation.md), and there is no math.
+
+Also see [risks.md](docs/risks.md) and (for now) [todo.md](docs/todo.md).
 
 

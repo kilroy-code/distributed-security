@@ -1,6 +1,6 @@
 # Distributed System Implementation
 
-The source code is made to express a set of stepwise concepts in short separate pieces. This guide to the source code assumes the background knowledge of [README.md](Readme.md).
+The source code is made to express a set of stepwise concepts in short separate pieces. This guide to the source code assumes the background knowledge of [README.md](README.md).
 
 ## Wrapping SubtleKrypto
 
@@ -98,5 +98,7 @@ This search for valid keys is repeated for each new operation, because an indivi
 ## Web Worker
 
 Everyone has access to the encrypted team keys, but one can decrypt it other than its member. We also want to make sure that application software itself cannot read the decrypted key. (Its not just a matter of trusting the intent of the application, but also that the application has not been compromised.) To do this, the [vaults](#vaults-object-oriented-keys) do not run in the same environment as the application, but in a separate sandbox called a [Web Worker](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API). Communication between the application and the worker is by means of messages defined by the worker, and we do not define any messages that export unencrypted keys. While desktop browser extensions generally have unfettered access to the application code and data, they do not have access to the worker data. The same is true for any malevolent code that has wormed its way into the application from dependendencies or other attacks. However, desktop users must still be vigilant to not be dupped into using various developer tools by which some browser-makers expose worker data to interactive inspection.
+
+This is implemented by the pair [vaultedSecurity.mjs](vaultedSecurity.mjs)/[worker.mjs](worker.mjs).
 
 But all of this is only safe to the extent that device keys are safe. _(This is **TBD**, but the general idea is that the keys are stored locally. Ideally, we will find a way to persist data that can only be read by the webworker that saved them._)

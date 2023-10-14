@@ -8,8 +8,8 @@ const Security = {
   set Storage(storage) {
     Vault.Storage = storage;
   },
-  async create(members) { // debatable...
-    if (members) return await TeamVault.create(members);
+  async create(...members) { // ...
+    if (members.length) return await TeamVault.create(members);
     else return await DeviceVault.create();
   },
   async verify(tag, signature, message) { // Promise true if signature was made by tag, else false.

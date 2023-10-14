@@ -241,8 +241,6 @@ const Krypto = {
 function str2ab(str) {
   // Convert a string into an ArrayBuffer
   // from https://developers.google.com/web/updates/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
-  //let encoder = new TextEncoder();
-  //return encoder.decode(str);
   const buf = new ArrayBuffer(str.length);
   const bufView = new Uint8Array(buf);
   for (let i = 0, strLen = str.length; i < strLen; i++) {
@@ -253,7 +251,8 @@ function str2ab(str) {
 function ab2str(buf) {
   // Convert an ArrayBuffer into a string
   // from https://developer.chrome.com/blog/how-to-convert-arraybuffer-to-and-from-string/
-  //return String.fromCharCode.apply(null, new Uint8Array(buf));
+  // However, the code there doesn't work on large buf:
+  //    return String.fromCharCode.apply(null, new Uint8Array(buf));
   let byteArray = new Uint8Array(buf),
       byteString = '';
   for (var i = 0, bufLength = byteArray.byteLength; i < bufLength; i++) {

@@ -4,8 +4,8 @@ const worker = new Worker('/@kilroy-code/distributed-security/worker.mjs', {type
 
 const VaultedSecurity = {
   request: dispatch(worker, Storage),
-  create(optionalMembers) {
-    return this.request('create', optionalMembers);
+  create(...optionalMembers) {
+    return this.request('create', ...optionalMembers);
   },
   verify(tag, signature, message) { // Promise true if signature was made by tag, else false.
     return this.request('verify', tag, signature, message);

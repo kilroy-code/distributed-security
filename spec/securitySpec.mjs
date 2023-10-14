@@ -1,11 +1,21 @@
 /*
   TODO:
 
-  prove that localStorage is not shared with workers
-  use credential mechanism for device keys
+  device key should be wrapped into the same storage as everything else, but with a leading . to indicate it is a device.
+    get a secret from application and derive a key from that, kept in memory.
+    use that in create and init
+    to get the secret, we generate a new keypair and send the public, the app must encode the secret with that and send it back.
+
+  VaultedSecurity.request should be moved to a module-local var so that the app cannot change. Doesn't really matter for the uses here, but still a red-flag for casual observers.
+  
   shared webworker
+  use auth credential api for devices that support it
+
+  changes to teams
+  security questions as PBKDF2 derived keys
 
   Persistence - getWrappedKey/setWrappedKey
+  Protect against replay of storage to old values
   The retrieved value should include the signature so that the recipient can verify. Probably the signature of the storage service, too.
 
   Module
@@ -51,13 +61,20 @@ describe('Distributed Security', function () {
   describe('Security', function () {
     const slowKeyCreation = 15e3; // e.g., Safari
     async function makeVaults(scope) { // Create a standard set of test vaults through context.
-      let device = await scope.create(),
-	  otherDevice = await scope.create(),
-	  user = await scope.create([device]),
-	  otherUser = await scope.create([otherDevice]),
-	  team = await scope.create([otherUser, user]),
-	  otherTeam = await scope.create([otherUser, user]);   // Note: same members, but a different identity.
-      return {device, user, otherDevice, otherUser, team, otherTeam};
+      let tags = {};
+      await Promise.all([
+	tags.device = await scope.create(),
+	tags.otherDevice = await scope.create()
+      ]);
+      await Promise.all([
+	tags.user = await scope.create(tags.device),
+	tags.otherUser = await scope.create(tags.otherDevice)
+      ]);
+      await Promise.all([
+	tags.team = await scope.create(tags.otherUser, tags.user),
+	tags.otherTeam = await scope.create(tags.otherUser, tags.user)   // Note: same members, but a different identity.
+      ]);
+      return tags;
     }
     async function destroyVaults(scope, tags) {
       await Promise.all(Object.values(tags).map(tag => scope.destroy(tag)));
@@ -167,8 +184,8 @@ describe('Distributed Security', function () {
       test('Team TeamVault', 'team', 'otherTeam');
       it('can safely be used when a device is removed, but not when all are removed.', async function () {
 	let [d1, d2] = await Promise.all([Security.create(), Security.create()]),
-	    u = await Security.create([d1, d2]),
-	    t = await Security.create([u]),
+	    u = await Security.create(d1, d2),
+	    t = await Security.create(u),
 	    message = makeMessage();
 	let encrypted = await Security.encrypt(t, message);
 	expect(await Security.decrypt(t, encrypted)).toBe(message);

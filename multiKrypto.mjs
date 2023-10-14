@@ -1,11 +1,37 @@
 import Krypto from "./krypto.mjs";
 
 const MultiKrypto = {
-  isMultiKey(key) {
+  isMultiKey(key) { // A SubtleCrypto CryptoKey is an object with a type property. Our multikeys are
+    // objects with a specific type or no type property at all.
     return (key.type || 'multi') === 'multi';
   },
+  mapAllTagsInParallel(from, to, operator) {
+    let tags = Object.keys(from),
+	wrappingPromises = tags.map(tag => {
+	  if (tag === 'type') return;
+	  return operator(from[tag], tag).then(result => to[tag] = result);
+	}),
+	promise = Promise.all(wrappingPromises);
+    return promise;
+  },
+  async exportKey(key) {
+    if (!this.isMultiKey(key)) return super.exportKey(key);
+    let roster = {};
+    await this.mapAllTagsInParallel(key, roster, memberKey => this.exportKey(memberKey));
+    return JSON.stringify(roster);
+  },
+  async importKey(exported, use) {
+    if (!exported.startsWith('{')) return super.importKey(exported, use);
+    let roster = JSON.parse(exported),
+	key = {},
+	isSingleUse = typeof use === 'string';
+    await this.mapAllTagsInParallel(roster, key, (exportedMember, memberTag) => this.importKey(exportedMember, isSingleUse ? use : use[memberTag]));
+    return key;
+  },
   async encrypt(key, message) {
-    if (key.type === 'public') {
+    if (key.type === 'public') { // The Krypto way of encrypting with a public key will only work
+      // (be decryptable) for messages up to 446 bytes! Instead, MultiKrypto always generates a symmetric
+      // key to encrypt the message, and uses the public key to encrypt just the symmetric key.
       let symmetric = await this.generateSymmetricKey(),
 	  wrapped = await Krypto.wrapKey(symmetric, key);
       return wrapped + '.' + await super.encrypt(symmetric, message);
@@ -21,15 +47,6 @@ const MultiKrypto = {
 	result = {roster, body};
     await this.mapAllTagsInParallel(key, roster, wrappingKey => this.wrapKey(secret, wrappingKey));
     return JSON.stringify(result);
-  },
-  mapAllTagsInParallel(from, to, operator) {
-    let tags = Object.keys(from),
-	wrappingPromises = tags.map(tag => {
-	  if (tag === 'type') return;
-	  return operator(from[tag], tag).then(result => to[tag] = result);
-	}),
-	promise = Promise.all(wrappingPromises);
-    return promise;
   },
   async decrypt(key, encrypted) {
     if (key.type === 'private') {
@@ -54,20 +71,6 @@ const MultiKrypto = {
       secret => this.decrypt(secret, body),
       fail => undefined
     );
-  },
-  async exportKey(key) {
-    if (!this.isMultiKey(key)) return super.exportKey(key);
-    let roster = {};
-    await this.mapAllTagsInParallel(key, roster, memberKey => this.exportKey(memberKey));
-    return JSON.stringify(roster);
-  },
-  async importKey(exported, use) {
-    if (!exported.startsWith('{')) return super.importKey(exported, use);
-    let roster = JSON.parse(exported),
-	key = {},
-	isSingleUse = typeof use === 'string';
-    await this.mapAllTagsInParallel(roster, key, (exportedMember, memberTag) => this.importKey(exportedMember, isSingleUse ? use : use[memberTag]));
-    return key;
   }
 };
 Object.setPrototypeOf(MultiKrypto, Krypto);

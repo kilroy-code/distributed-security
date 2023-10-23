@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html style="font-family: sans-serif">
+  <head>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+
+    <h3>Vault</h3>
+
+    <script>
+      let hostOrigin = new URL(document.referrer).origin;
+      self.onmessage = event => {
+	if (event.source !== parent || event.origin !== hostOrigin) return console.warn(`Bad source or origin ${event.origin}`);
+	if (event.data === 'delete secret') {
+	  localStorage.clear();
+	  return parent.postMessage('Deleted secret. Now refreshing the page should store again.', hostOrigin);
+	}
+	parent.postMessage(`Vault echoes '${event.message}'`, hostOrigin);
+      }
+      let secret = localStorage.getItem('secret');
+      if (secret) {
+	parent.postMessage(`Vault read '${secret}' from previous session`, hostOrigin);
+      } else {
+	localStorage.setItem('secret', 'pssst!');
+	secret = localStorage.getItem('secret');
+	parent.postMessage(`Vault stored secret and read it as '${secret}'`, hostOrigin);
+      }
+    </script>
+  </body>
+</html>

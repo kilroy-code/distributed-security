@@ -2,8 +2,12 @@ import Storage from './lib/storage.mjs';
 import dispatch from '@kilroy-code/jsonrpc/index.mjs';
 const worker = new Worker('@kilroy-code/distributed-security/lib/worker.mjs', {type: 'module'});
 
+// Do we need this? Errors that occur in the evalution of a jsonrpc message posted to the worker will come back as a jsonrpc error,
+// and thus a rejected promise from request. However, error asynchronous to that will, I think come here:
+worker.onerror = error => console.error(`${error.filename}:${error.lineno} - ${error.message}`);
+
 const VaultedSecurity = {
-  request: dispatch(worker, Storage),
+  request: dispatch({target: worker, namespace: Storage}),
   create(...optionalMembers) {
     return this.request('create', ...optionalMembers);
   },

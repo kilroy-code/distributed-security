@@ -86,7 +86,7 @@ describe('Distributed Security', function () {
 	let isolatedWorker, request;
 	beforeAll(function () {
 	  isolatedWorker = new Worker("/@kilroy-code/distributed-security/spec/support/testWorkerWithModule.mjs", {type: 'module'});
-	  request = dispatch(isolatedWorker);
+	  request = dispatch({target: isolatedWorker});
 	});
 	afterAll(function () {
 	  isolatedWorker.terminate();

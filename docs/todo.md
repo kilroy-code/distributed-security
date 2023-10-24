@@ -1,13 +1,13 @@
 # Remaining Work for Distributed Security
 
-### core
+### critical core
 - [ ] device key persistence
 - [ ] split out distributed storage so that applications can use the module of their choice that implements the api
 - [ ] changing the roster
 - [ ] decrypting old content after a membership change
 - [ ] recovery vault, using PBKDF2 derived keys
 
-### easy details
+### details
 - [ ] track symmetric key cycles live and through export so that they're not reused. include unit test in subsystem
 - [ ] move request reference to module-local var in index.mjs
 
@@ -20,6 +20,7 @@
 - [ ] break source files into even smaller pieces, one concept each, and update implementation.md and unit tests to match
 - [ ] write [risks.md](risks.md)
 - [ ] document storage requirements and usage
+- [ ] document application requirements on usage - e.g., same origin, https (or localhost), browser not in private browsing or similar modes (all of which are required for the underlying technolgies), as well as any caching complications
 - [ ] document application control over recovery vaults
 - [ ] document application control over device secrets
 
@@ -33,6 +34,7 @@
 - [ ] integrate into toplevel ki1r0y test suites
 
 ### release
+- [ ] feature-detection and messaging for unsupportable browsers
 - [ ] jsdeliver, unpkg or the like
 - [ ] quick usage section in README with with importmap stuff like https://thingster.app/things/ctUhszB47Wb52JgHeMV9m
 - [ ] version 1.0 release

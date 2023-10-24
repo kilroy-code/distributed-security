@@ -25,9 +25,12 @@ maybe also cover how distributed storage relies on distributed security?
 - xss hijack usage, but not steal keys
 - developer tools
 - browser bugs
-- roster membership is not secret
+- privacy
+  - roster membership is not secret
+  - tags are stable, which is a blessing and a curse. no built-in mechanism for rotating
+  - tracking by device key
 
-internal: review literature, e.g.:
+## internal: review literature, e.g.:
 
 - https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity
 - https://web.dev/csp/
@@ -36,3 +39,4 @@ internal: review literature, e.g.:
   - https://owasp.org/www-community/attacks/Man-in-the-browser_attack
   - https://owasp.org/www-community/attacks/xss/
   - https://www.geeksforgeeks.org/clickjacking-ui-redressing/
+  - https://auth0.com/blog/cross-site-scripting-xss/

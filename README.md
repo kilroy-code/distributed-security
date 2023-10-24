@@ -5,21 +5,21 @@ This is Javascript browser code that makes it easy for developers to correctly a
 1. ... use the four standard cryptographic operations: encrypt, decrypt, sign, and verify.
 2. ... provide simple and secure key management to users.
 
-We take advantage of a number of separate APIs that all modern browsers now support, combined with a new approach to key management. The reslt is that any Web applications can finally offer the long-promised benefits of cryptography:
+We take advantage of a number of separate APIs that all modern browsers now support, combined with a new approach to key management. The result is that any Web applications can finally offer the long-promised benefits of cryptography:
 
 - No site logins needed.
 - A receipt for activity that proves who authorized the activity (by pseudonym), and when.
 - Private data that cannot be read by anyone other than the group for which it is intended, regardless of where it is stored.
 - All without dependendence on any centralized authority.
 
-While these benefits have been available in some installable apps, desktop browser extensions, and in blockchain, they are now available in ordinary desktop _and mobile_ web pages _with no operating or transaction costs_.
+While these benefits have been available in some installable apps, desktop browser extensions, and in blockchain, they are now available in ordinary _desktop and mobile_ web pages _with no operating or transaction costs_.
 
 We call it "distributed security" because:
 
-- it is security that powers decentralized Web applications,
-- verified information and private information can be securely distributed to [the cloud](https://en.wikipedia.org/wiki/Cloud_computing) and to [p2p networks](https://en.wikipedia.org/wiki/Peer-to-peer_file_sharing),
-- users are not represented by a single keypair that can be lost, but are rather distributed over different keypairs for each device used by that individual,
-- arbitrary teams of user can have their own keypairs, managed by their members in accordance with the rules of whatever app they are for, with the encrypted keypairs stored in the cloud rather than by any one member of the team.  (In the blockchain community, teams are called [DAO](https://en.wikipedia.org/wiki/Decentralized_autonomous_organization)s.)
+- It is security that powers decentralized Web applications.
+- Verified information and private information can be securely distributed to [the cloud](https://en.wikipedia.org/wiki/Cloud_computing) and to [p2p networks](https://en.wikipedia.org/wiki/Peer-to-peer_file_sharing).
+- Users are not represented by a single keypair that can be lost, but are rather distributed over different keypairs for each device used by that individual.
+- Arbitrary teams of user can have their own keypairs, managed by their members in accordance with the rules of whatever app they are for, with the encrypted keypairs stored in the cloud rather than by any one member of the team.  (In the blockchain community, teams are called [DAO](https://en.wikipedia.org/wiki/Decentralized_autonomous_organization)s.)
 
 
 ## Operations and Tags

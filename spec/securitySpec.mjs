@@ -137,8 +137,9 @@ describe('Distributed Security', function () {
 	  it('cannot decrypt what is encrypted for a different key.', async function () {
 	    let message = makeMessage(446),
 		encrypted = await Security.encrypt(otherTag, message),
-		decrypted = await Security.decrypt(tag, encrypted).catch(_ => null);
-	    expect(decrypted).toBeFalsy();
+		errorMessage = await Security.decrypt(tag, encrypted).catch(e => e.message);
+	    expect(errorMessage).toContain('decrypt');
+	    expect(errorMessage).toContain('OperationError');
 	  });
 	});
       }

@@ -2,7 +2,9 @@ import dispatch from '../jsonrpc/index.mjs';
 
 const vaultUrl = new URL('vault.html', import.meta.url),
       iframe = document.createElement('iframe'),
-      resourcesForIframe = {}, // Will get handlers for messages from the iframe.
+      resourcesForIframe = {
+	log(...args) { console.log(...args); }
+      }, // Will get handlers for messages from the iframe.
       api = {
 	create(...optionalMembers) { return postIframe('create', ...optionalMembers); },
 	encrypt(tag, message) { return postIframe('encrypt', tag, message); },

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html style="font-family: sans-serif">
+  <head>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+
+    <h3>Vault</h3>
+
+    <script type="module">
+      import dispatch from '/@kilroy-code/jsonrpc/index.mjs';
+      import pkg from './package.json' assert {type: 'json'};
+      const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
+	    api = {
+	      create(...optionalMembers) { return postWorker('create', ...optionalMembers); },
+	      verify(tag, signature, message) { return postWorker('verify', tag, signature, message); },
+	      encrypt(tag, message) { return postWorker('encrypt', tag, message); },
+	      decrypt(tag, encrypted) { return postWorker('decrypt', tag, encrypted); },
+	      sign(tag, message) { return postWorker('sign', tag, message); },
+	      destroy(tag) { return postWorker('destroy', tag); }
+	    },
+	    postClient = dispatch({target:parent, receiver:self, namespace:api, origin:hostOrigin}),
+	    Storage = {
+	      store(resourceTag, ownerTag, string, signature) { return postClient('store', resourceTag, ownerTag, string, signature); },
+	      retrieve(resourceTag, ownerTag) { return postClient('retrieve', resourceTag, ownerTag); }
+	    },
+	    worker = new Worker(new URL('./lib/worker.mjs', import.meta.url), {type: 'module'}),
+	    postWorker = dispatch({target: worker, namespace: Storage});
+      postClient('ready', `${pkg.name} ${pkg.version}`);
+    </script>
+  </body>
+</html>

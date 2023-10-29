@@ -14,6 +14,8 @@ import {scale, makeMessage} from "./support/messageText.mjs";
 
 jasmine.getEnv().configure({random: false});
 
+InternalSecurity.Storage = Security.Storage = Storage;
+
 describe('Distributed Security', function () {
   describe('Krypto', function () {
     testKrypto(Krypto);
@@ -45,7 +47,6 @@ describe('Distributed Security', function () {
     describe('internal machinery', function () {
       let tags;
       beforeAll(async function () {
-	InternalSecurity.Storage = Storage;
 	tags = await makeVaults(InternalSecurity);
       }, slowKeyCreation);
       afterAll(async function () {

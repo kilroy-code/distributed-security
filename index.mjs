@@ -1,30 +1,25 @@
-import Storage from './lib/storage.mjs';
-import dispatch from '@kilroy-code/jsonrpc/index.mjs';
-const worker = new Worker('@kilroy-code/distributed-security/lib/worker.mjs', {type: 'module'});
+import dispatch from '/@kilroy-code/jsonrpc/index.mjs';
 
-// Do we need this? Errors that occur in the evalution of a jsonrpc message posted to the worker will come back as a jsonrpc error,
-// and thus a rejected promise from request. However, error asynchronous to that will, I think come here:
-worker.onerror = error => console.error(`${error.filename}:${error.lineno} - ${error.message}`);
+const vaultUrl = new URL('vault.html', import.meta.url),
+      iframe = document.createElement('iframe'),
+      resourcesForIframe = {}, // Will get handlers for messages from the iframe.
+      api = {
+	create(...optionalMembers) { return postIframe('create', ...optionalMembers); },
+	encrypt(tag, message) { return postIframe('encrypt', tag, message); },
+	decrypt(tag, encrypted) { return postIframe('decrypt', tag, encrypted); },
+	sign(tag, message) { return postIframe('sign', tag, message); },
+	verify(tag, signature, message) { return postIframe('verify', tag, signature, message); },
+	destroy(tag) { return postIframe('destroy', tag); },
 
-const VaultedSecurity = {
-  request: dispatch({target: worker, namespace: Storage}),
-  create(...optionalMembers) {
-    return this.request('create', ...optionalMembers);
-  },
-  verify(tag, signature, message) { // Promise true if signature was made by tag, else false.
-    return this.request('verify', tag, signature, message);
-  },
-  async encrypt(tag, message) { // Promise text that can only be decrypted back to message by the keypair designated by tag.
-    return this.request('encrypt', tag, message);
-  },
-  async decrypt(tag, encrypted) { // Promise the original text given to encrypt() IFF the current user has access to the keypair designated by tag, else reject.
-    return this.request('decrypt', tag, encrypted);
-  },
-  async sign(tag, message) { // Promise a signature for message suitable for verify() IFF the current user has access to the keypair designated by tag, else reject.
-    return this.request('sign', tag, message);
-  },
-  async destroy(tag) { //
-    return this.request('destroy', tag);
-  }
-};
-export default VaultedSecurity;
+	set Storage(storage) { Object.assign(resourcesForIframe, storage); },
+	ready: new Promise((resolve, reject) => {
+	  //iframe.setAttribute('width', '100%'); // When using a free reverse proxy service like ngrok, there may be a click through. Give enough space to read it.
+	  iframe.style.display = 'none';
+	  document.body.append(iframe); // Before referencing its contentWindow.
+	  resourcesForIframe.ready = resolve;
+	  iframe.setAttribute('src', vaultUrl);
+	})
+      },
+      postIframe = dispatch({target: iframe.contentWindow, receiver: self, origin: vaultUrl.origin, namespace: resourcesForIframe});
+
+export default api;

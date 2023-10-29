@@ -1,4 +1,4 @@
-import dispatch from '/@kilroy-code/jsonrpc/index.mjs';
+import dispatch from '../jsonrpc/index.mjs';
 
 const vaultUrl = new URL('vault.html', import.meta.url),
       iframe = document.createElement('iframe'),

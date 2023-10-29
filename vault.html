@@ -8,7 +8,7 @@
     <h3>Vault</h3>
 
     <script type="module">
-      import dispatch from '/@kilroy-code/jsonrpc/index.mjs';
+      import dispatch from '../jsonrpc/index.mjs';
       import pkg from './package.json' assert {type: 'json'};
       const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
 	    api = {

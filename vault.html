@@ -9,7 +9,11 @@
 
     <script type="module">
 import dispatch from '../jsonrpc/index.mjs';
-import pkg from './package.json' assert {type: 'json'};
+// import assert isn't yet supported across browsers...
+// import pkg from './package.json' assert {type: 'json'};
+// so hardcode the label.
+const pkg = {name: "@kilroy-code/distributed-security", version: "0.0.1"};
+
 const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
       api = {
 	create(...optionalMembers) { return postWorker('create', ...optionalMembers); },

@@ -2,17 +2,17 @@
 
 This is Javascript browser code that makes it easy for developers to correctly and safely...
 
-1. ... use the four standard cryptographic operations: encrypt, decrypt, sign, and verify.
-2. ... provide simple and secure key management to users.
+1. ... use the four standard cryptographic operations: **encrypt, decrypt, sign, and verify**.
+2. ... provide simple and secure **key management** directly to users.
 
-We take advantage of a number of separate APIs that all modern browsers now support, combined with a new approach to key management. The result is that any Web applications can finally offer the long-promised benefits of cryptography:
+We take advantage of a number of separate APIs that **all modern browsers now support**, combined with a **new approach to key management**. The result is that any Web applications can finally offer the long-promised benefits of cryptography:
 
 - No site logins needed.
 - A receipt for activity that proves who authorized the activity (by pseudonym), and when.
 - Private data that cannot be read by anyone other than the group for which it is intended, regardless of where it is stored.
 - All without dependendence on any centralized authority.
 
-While these benefits have been available in some installable apps, desktop browser extensions, and in blockchain, they are now available in ordinary _desktop and mobile_ web pages _with no operating or transaction costs_.
+While these benefits have been available in some installable apps, desktop browser extensions, and in blockchain, they are now available in ordinary **desktop and mobile web pages with zero operating or transaction costs**.
 
 We call it "distributed security" because:
 
@@ -78,7 +78,7 @@ There can also be teams of individuals (or even of other teams). A team's tag ca
 
 ## Stored Keys
 
-Individuals and teams automatically work across devices because the team's key is stored in the cloud by the application, and made available to everyone. However, the key is encrypted in such a way that it can be decrypted by any member (and only the members).
+Individuals and teams automatically work across devices because the individual or team's key is stored in the cloud by the application, and made available to everyone. However, the key is encrypted in such a way that it can be [decrypted by any member](https://github.com/kilroy-code/distributed-security/blob/main/docs/implementation.md#3-encrypting-for-members) (and only the members).
 
 The application must supply (_**TBD**_) an object with two methods: 
 
@@ -87,35 +87,31 @@ retrieve(collectionName, tag) -> text
 store(collectionName, tag, text, textSignedByTag)
 ```
 
-We use this to store _**encrypted**_ keys as the `text`.
+We use this to store _**encrypted**_ keys as the `text` to `retrieve`:
 
 
 ```
      computing device D1 belonging to individual I1                                  cloud
 +----------------------------------------------------+             +-------------------------+
 |   vault                               app/page     |             | key(I1, {D1, D2, D3}    |
-| +-----------+                       +------------+ |             |  key(I1) is encrypted   |
-| |           |   sign(I1, someText)  |            | |             |  for only D1, D2, or D3 |
-| |           |<----------------------| START      | |             |  to read                |
+| +-----------+                       +------------+ |             |    is key(I1) encrypted |
+| | key(D1)   |                       |            | |             |    for only D1, D2, or  |
+| |           |                       |            | |             |    D3 to read           |
+| |           |   sign(I1, someText)  |            | |             |                         |
+| |           |<<---------------------| START      | |             |       key(I2, {D4, D5}) |
 | |           |                       |            | |             |                         |
-| |           |                       |            | |             |      key(I2, {D4, D5})  |
-| |           |                       |            | |             |                         |
-| |           |   retrieve('key', I1) |            | retrieve('key', I1)                     |
-| |           |---------------------->| > > > > >  |-------------->|          key(I3, {D6})  |
+| |           |  retrieve('key', I1)  |            | retrieve('key', I1)                     |
+| |           |--------------------->>| > > > > >  |------------->>|           key(I3, {D6}) |
 | |           |                       |            |               |                         |       
 | |           | key(I1, {D1, D2, D3}) |            | key(I1, {D1, D2, D3})                   |
-| |           | <---------------------| < < < < <  |<--------------|       key(T1, {I1, I2}) |
+| |           | <<--------------------| < < < < <  |<<-------------|       key(T1, {I1, I2}) |
 | |           |                       |            | |             |                         |
-| | get key(D1)                       |            | |             |       key(T2, {I1, I3}) |
-| | from within                       |            | |             |                         |
-| | vault     |                       |            | |             |       key(T3, {T1, I3}) |
-| |           |                       |            | |             |                         |
-| | use key(D1)                       |            | |             |                   etc.  |
+| | use key(D1)                       |            | |             |       key(T2, {I1, I3}) |
 | | to decrypt|                       |            | |             |                         |
-| | key(I1, {D1, D2, D3})             |            | |             |                         |
+| | key(I1, {D1, D2, D3})             |            | |             |       key(T3, {T1, I3}) |
 | |           |                       |            | |             |                         |
-| | sign M w/ |                       |            | |             |                         |
-| | key(I1)   |                       |            | |             |                         |
+| | sign someText                     |            | |             |                     etc.|
+| | w/ key(I1)                        |            | |             |                         |
 | |           | signature(I1, M)      |            | |             |                         |
 | |           |---------------------->| END        | |             |                         |
 | +-----------+                       +------------+ |             |                         |
@@ -125,7 +121,7 @@ We use this to store _**encrypted**_ keys as the `text`.
 **This is the "secret sauce" of distributed security:** Instead of expecting individuals to manage copies of keys or giving unencrypted keys to centralized or third-party "custodians", we arrange things so that:
 
 - Device keys are stored only the device that created them, in a way that no one can read: not the application (nor by compromised application code), not the authors of distributed security, and not even by the by the users (who might be phished).
-- An individual's keys are stored in the cloud, but the vault encrypts it through a technique that only allows it to only be read by one of the member device, and not by the application (nor by compromised application code), not by the cloud, and not by the authors of distributed security.
+- An individual's keys are stored in the cloud, but the vault encrypts it through a technique that only allows it to only be read by one of the member devices, not by the authors of distributed security, and not by the application (nor by compromised application code), not by the cloud.
 - Team keys are encrypted to be read only by their members, etc.
 
 There are no custodial copies of device keys, and none are needed. If a device is lost, an individual can still access his individual key in the cloud using his other devices, or by a virtual device made up of security-question "members".

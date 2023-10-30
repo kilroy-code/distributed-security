@@ -8,13 +8,15 @@
 - [ ] recovery vault, using PBKDF2 derived keys
 
 ### details
+- [ ] Display an ugly warning if vault is used from same origin as application.
 - [ ] track symmetric key cycles live and through export so that they're not reused. include unit test in subsystem
-- [ ] move request reference to module-local var in index.mjs
+- [ ] worker should be a shared worker, with indexDB storage in the worker, so that multiple pages that use the same vault can share keys.
+- [ ] implement a defense against those browsers that do not enforce, [dynamic state paritioning](https://developer.mozilla.org/en-US/docs/Web/Privacy/State_Partitioning). Store vault document.referrer alongside device keys. Refuse to act if accessed from a different document.referrer.
 
 ### dependencies
-- [ ] jsonrpc as proper package with readme and unit tests
+- [ ] unit tests for jsonrpc
 - [ ] distributed storage unit tests, including check for replay attacks that would revert to earlier version
-- [ ] distributed storage as proper pacage with readme
+- [ ] distributed storage as proper package with readme
 
 ### doc
 - [ ] break source files into even smaller pieces, one concept each, and update implementation.md and unit tests to match
@@ -25,11 +27,8 @@
 - [ ] document application control over device secrets
 
 ### internal infrastructure
-- [ ] nodejs usage
-- [ ] nodify test suite
-- [ ] test suite github actions, like other parts of ki1r0y
-- [ ] version 0.1 release
-- [ ] separate storage package as codependency
+- [ ] GitHub Action to run test suite (using puppeteer?), like other parts of ki1r0y
+- [ ] version 0.1 package release
 - [ ] replace older ki1r0y storage scaffolding
 - [ ] integrate into toplevel ki1r0y test suites
 

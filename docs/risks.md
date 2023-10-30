@@ -1,16 +1,46 @@
 # Risks facing Distributed Security, and how they are mitigated
 
-_This is just an outline right now_
+**Scope**: Clearly we cannot guarantee that a computer will continue to work after, say, an asteroid hits the earth. In our case, the asteroid is the possibility that quantum computing will break encryption. We're not discussing that here.
 
-assertions, why they are true, and why it comes down to protecting locally stored device keys, and why that comes down to xss
+**Encryption**: Distributed Security uses the standard, recommended encryption algorithms and parameters. See [krypto.mjs](../lib/krypto.mjs). Note that when we say "key", we are really referring to a set consisting of an RSA-OAEP keypair for encrypt/decrypt, and an ECDSA keypair for sign/verify. Encryption of messages and wrapping of keys is done with a one-time use AES-GCM symmetric key for the payload, and an RSA-OAEP asymmetric encryption of the symmetric key for each intended decryptor. See [implementation.md](implementation.md).
 
-## distributed storage co-dependency
-assertions by distributed storage that are required by distributed security
+**Durability**: If a user's key is lost, they can't do anything. Similarly and expensively for a key representing some role or authority in an enterprise. Distributed Security does not follow the popular approach of trusting a third party to hold an unencrypted custodial copy of the key. Such arrangements create a risk to the user that the custodian might not keep the key safe, and a risk to the custodian that they may be forced to divulge the key under threat of violence or legal action. Instead, we ask only that an application provide durable storage of encrypted keys that the storage provider cannot themselves make use of. This allows the application to construct or join in some long-term, highly-durable distributed general key-value store. Our use is constructed in such a way that the performance demands are minimal.
 
-- authorization for change
-- replay protection
+**Loss and Recovery**: Users change their devices fairly often, and individual device are lost or otherwise fail to work. In such cases, a user still needs to be able to access their individual user key. 
+- The most convenient safeguard for this is to simply have multiple devices. Any member of a team - or any device of an individual - can unlock the team key and update it for a new set of members.
+- However, not everyone can have multiple devices, and in the case of total catastrophic losses, it is best to reclaim one's identity (one's key) based on something you know rather than only on something you have. To this end, applications are encouraged to instist that each individual have not only one or more device vaults, but also a virtual device based on security factors. (**TBD**) Distributed Security allows for the creation of team key whose "member" is a pubic encryption key tag associated with a key, but rather "security question" tag (or a hash of a standardized question), associated with a key derived from the text of a "security question answer". In the simplest form, any correct answer would unlock the key. Questions can also be ordered (e.g., alphabetically) and then all combinations of pairs can be used, where each pair of answers is concatenated to form the key.
 
-maybe also cover how distributed storage relies on distributed security?
+**Unauthorized Changes to Membership**: We depend on team keys being unencrypted only by the members, and for the members to be changeable over time without changing the key or tag itself. The key wrapping technique (see [implementation.md](implementation.md)) works in part by encrypting N copies of text for N members, each using the public key for the Nth member tag. This ensures that only a member can read the key, but allows any member to wrap the key for a new set of members. However, accepting a new wrapped key for storage is up to the application. (**TBD** The most basic idea is that the writing member must sign the wrapping when submitting it for storage, so that the application's storing system can be certain which member is making the change.)
+
+**Team Key Theft**: Having an unencrypted copy of a key would allow the possessor to sign for a user or team, and read text that was encrypted for the sole use of the user or team. This is not possible as long as *encryption* holds, and that a member *device key* has not been stolen. All team keys are wrapped (encrypted) within the *vault* when they are created or when their membership is modified. Only the wrapped keys is sent through the application code to storage provided by the application. It can then only be decrypted within a vault that has one of the member keys.
+
+**Device Key Theft**: Device keys are not used by the application, but are used within the *vault* to gain access to the encrypted *team keys* that are stored in the cloud. Device keys are created within the *vault* and spend their entire lifetime there.
+
+**Vault Penetration**: The vault provides runtime isolation and persistent storage isolation:
+
+- If external software could be made to alter the vault software or gain access to its data structures, keys could be stolen. Ordinarily, such software could be poorly-written or malicious application code, or such code introduced by a [library dependency](https://cdn2.hubspot.net/hub/203759/file-1100864196-pdf/docs/Contrast_-_Insecure_Libraries_2014.pdf), a [cross-site scripting](https://owasp.org/www-community/attacks/xss/) attack, or a browser extension. **Runtime isolation** prevents this through a multi-layer defense:
+ - The vault runs in an `iframe` dynamically created by the distributed security code itself, with the API accessed only through `postMessage`. Browsers do not expose any iframe code or data to other frames that are in different domains, nor to extensions.
+ - Applications must host the iframe in a second https domain that is different from the application. The distributed security code verifies this at runtime, displaying an explanation to the user warning them not to proceed. (Such warnings can be ignored during development.) The code also confirms that each postMessage originated from the parent frame.
+ - Code and data are then further isolated by running in a worker within the iframe.
+ - The distributed security software itself is open source and has no external dependencies.
+- The device key is persisted from one session to the next using browser storage. If an attacker could gain access to this, they could unlock the individual user's key, and then their teams. This is prevented through several layers of **persistent storage isolation**:
+ - Browsers do not let application code or extensions read persisted data from workers and iframes that are in a different domain. (See *runtime isolation*, above.)
+ - Browsers are beginning to also enforce [dynamic state partitioning](https://developer.mozilla.org/en-US/docs/Web/Privacy/State_Partitioning), which prevents one domain that includes our vault from hijacking the same keys of the vault used by another domain. But not every browser does this yet. An application can also prevent this using content-security policy on their hosted vault domain. Additionally, the distributed security software stores the referrer origin alongside the device keys (**TBD**), effectively creating its own dynamic state partitioning.
+ - Finally, we don't trust the browser's persistent storage on disk - we encrypt each device key using a secret provided by the application. (**TBD**) The application could do a poor job, of course, but we recommend using some combination of the Credentials API with an application server-provided token. Our weak requirement is only that the application always provide Distributed Security with the same secret string for the same user+device. We use the string to create a PBKDF2 derived key, that is then used to encrypt the device key for persistent storage, and to decrypt it for use in the next session.
+
+Note:
+
+- Browsers and operating systems do have bugs. However, to exploit such a bug, an attacker would need to simultaneously penetrate each of these layers. One is not enough.
+- Browsers have developer tools by which iframes and workers may be debugged. While an application might be created at a time where the above isolation techniques keep, e.g., runtime data secret, it not impossible for some browser maker to introduce an "improvement" that could make users succeptible to a phishing attack. (e.g., by cuting and pasting to or from a developer tool).
+- Browsers and operating systems may also have [back doors](https://en.wikipedia.org/wiki/Backdoor_(computing)) (e.g., for administrative or government use). Distributed Security has no special protection for this case.
+- Finally, developers could accidentally obtain a malicious or incompetent version of Distributed Security that has none of these provisions, but a similar API. We want to encourage forks and improvements, but want to try to protect developers against crapware. Our license and terms of service (**TBD**) are intended to make improper implementations prosecutable if they are publically shared.
+
+**Privacy**: A key tag is pseudonymous, in that it does not by itself indicate a particular individual's identity. However, tags are stable over time, and with additional information, a tag could come to be associated with a particular human, making their activities known via public documents bearing their tag's signature. This can be disirable in some cases, and not in others. There are two imperfect mitigations against this:
+- There is no technical reason why an indvidual cannot have multiple identities, each associated with the same set of devices or with multiple devices. The Distributed Security API allows the creation of either, and allows multiple device keys to be created on the same physical device for the same vault URL. It is up to the application as to how this is managed. (For example, an application could create a new device tag and a new individual tag for each transaction, as is done in Bitcoin.)
+- However, if the same devices are used for each individual, someone might try to track the individuals via their devices. Similarly for individuals with team activity. For this reason, the team member tags are encrypted. (**TBD**)
+ 
+-----
+notes to self
 
 ## non-problems
 
@@ -29,6 +59,14 @@ maybe also cover how distributed storage relies on distributed security?
   - roster membership is not secret
   - tags are stable, which is a blessing and a curse. no built-in mechanism for rotating
   - tracking by device key
+
+## distributed storage co-dependency
+assertions by distributed storage that are required by distributed security
+
+- authorization for change
+- replay protection
+
+maybe also cover how distributed storage relies on distributed security?
 
 ## internal: review literature, e.g.:
 

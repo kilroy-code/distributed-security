@@ -18,8 +18,8 @@ We call it "distributed security" because:
 
 - It is security that powers decentralized Web applications.
 - Verified information and private information can be securely distributed to [the cloud](https://en.wikipedia.org/wiki/Cloud_computing) and to [p2p networks](https://en.wikipedia.org/wiki/Peer-to-peer_file_sharing).
-- Users are not represented by a single keypair that can be lost, but are rather distributed over different keypairs for each device used by that individual.
-- Arbitrary teams of user can have their own keypairs, managed by their members in accordance with the rules of whatever app they are for, with the encrypted keypairs stored in the cloud rather than by any one member of the team.  (In the blockchain community, teams are called [DAO](https://en.wikipedia.org/wiki/Decentralized_autonomous_organization)s.)
+- Individuals are not represented by a single keypair that can be lost, but are rather distributed over different keypairs for each device used by that individual.
+- Arbitrary teams of individuals can have their own keypairs, managed by their members in accordance with the rules of whatever app they are for, with the encrypted keypairs stored in the cloud rather than by any one member of the team.  (In the blockchain community, teams are called [DAO](https://en.wikipedia.org/wiki/Decentralized_autonomous_organization)s.)
 
 
 ## Operations and Tags
@@ -35,11 +35,11 @@ mathEncrypt(publicKey, originalData) -> encryptedData
 mathDecrypt(privateKey, encryptedData) -> originalData
 ```
 
-And it allows the holder of the privateKey to sign a message so that anyone can verify that the message they see is unaltered from what was definitely sent by the holder of the privateKey (and absolutely not by anyone else):
+And it allows the holder of a privateKey to sign a message so that anyone can verify that the message they see is unaltered from what was definitely sent by the holder of the privateKey (and absolutely not by anyone else):
 
 ```
 mathSign(privateKey, data) => signature
-mathVerify(publicKey, data, signature) => true (and false for signature that was not made from the same data)
+mathVerify(publicKey, data, signature) => true if signature was from the exact same data, else false
 ```
 
 Implementing this requires some pretty amazing math. Browsers now implement these operations, through an API called "SubtleCrypto", so called [because](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto):
@@ -48,18 +48,18 @@ Implementing this requires some pretty amazing math. Browsers now implement thes
 > Even assuming you use the basic cryptographic functions correctly, secure key management and overall security system design are extremely hard to get right, and are generally the domain of specialist security experts.
 > Errors in security system design and implementation can make the security of the system completely ineffective.
 
-For example, SubtleCrypt provides a number of different kinds of keys, and of algorithms for performing each of the four operations. Text must be converted to particular forms of binary data before it can be operated on. The keypair for encrypt/decrypt must be a different keypair than for sign/verify.
+For example, SubtleCrypto provides a number of different kinds of keys, and of algorithms for performing each of the four operations. The keypair for encrypt/decrypt must be a different keypair than for sign/verify. Text must be converted to particular forms of binary data before it can be operated on.
 
 #### Distributed Security Basics
 
-**In distributed security, all the various kinds of keys are represented by single string of characters called a tag.**  The distributed security operators work directly on tags and ordinary Javascript text strings:
+**In distributed security, all the various kinds of keys are represented by a single string of characters called a tag.**  The distributed security operators work directly on tags and ordinary Javascript text strings:
 
 ```
 encrypt(tag, originalClearText) -> encryptedText
 decrypt(tag, encryptedText) -> originalClearText
 
 sign(tag, someText) -> signature
-verify(tag, someText, signature) -> true (and false for signature that was not made from someText)
+verify(tag, someText, signature) -> true if signature was from someText precisely, else false
 ```
 
 All distributed security operations are asynchronous - the call immediately returns a Javascript [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises) that resolves to the specified value.
@@ -72,7 +72,7 @@ To create a new set of keypairs, an application calls `create() -> tag`.  An app
 
 Tags are public, and can be safely shared anywhere. Text can be encrypted and verified by anyone who has the tag. It can only be decrypted or signed on the device on which this tag was created.
 
-An individual user is simply a "team" of devices. A new team can be created with one or more constitutent device tags: `create(tag1, tag2, ...) -> tag`.  The resulting tag is unique to the individual -- i.e., not the same as any of the device tags. However, the application can decrypt and sign with that tag on any of that user's devices. Applications can add or remove a device with _**TBD**_.
+An individual user is simply a "team" of devices. A new team can be created with one or more constitutent device tags: `create(tag1, tag2, ...) -> tag`.  The resulting tag is unique to the individual -- i.e., not the same as any of the device tags. However, the application can decrypt and sign with that tag on any of that individual's devices. Applications can add or remove a device with _**TBD**_.
 
 There can also be teams of individuals (or even of other teams). A team's tag can be used to decrypt or sign on any computer on which any member was created (or member of a member, etc.).
 
@@ -87,17 +87,48 @@ retrieve(collectionName, tag) -> text
 store(collectionName, tag, text, textSignedByTag)
 ```
 
-We use this to store _**encrypted**_ keys as the text.
-
-**This is the "secret sauce" of distributed security:** Instead of expecting users to manage copies of keys or giving keys to centralized or third-party "custodians", we arrange for:
-
-- device keys are stored only the device that created them, in a way that no one can read: not users, not the application (nor by compromised application code), and not the authors of distributed security.
-- team keys are stored in the cloud, as specified by the application that uses the distributed security code, but it is stored encrypted through a technique that only allows it to be read by its team or device members, and not by the application (nor by compromised application code), and not by the authors of distributed security.
-
-There are no custodial copies of device keys, and none are needed. If a device is lost, an individual can still access his individual key in the cloud using his other devices, or by a virtual team made up of security-question "members".
+We use this to store _**encrypted**_ keys as the `text`.
 
 
-_[[Details of storage are **TBD**. I am likely to require an additional signature from the individual, and probably also including a signed timestamp. This information would also be be part of what is returned by retrieve. Such extra stuff is important for applications, but is not (yet) imporant for the distributed security operations so far. It will probably be important for modifying team membership. (E.g., right now, it is enough that the the system verify that a request to destroy a tag must be made with a signature that can be verified as being by the owner of tag.)]]_
+```
+     computing device D1 belonging to individual I1                                  cloud
++----------------------------------------------------+             +-------------------------+
+|   vault                               app/page     |             | key(I1, {D1, D2, D3}    |
+| +-----------+                       +------------+ |             |  key(I1) is encrypted   |
+| |           |   sign(I1, someText)  |            | |             |  for only D1, D2, or D3 |
+| |           |<----------------------| START      | |             |  to read                |
+| |           |                       |            | |             |                         |
+| |           |                       |            | |             |      key(I2, {D4, D5})  |
+| |           |                       |            | |             |                         |
+| |           |   retrieve('key', I1) |            | retrieve('key', I1)                     |
+| |           |---------------------->| > > > > >  |-------------->|          key(I3, {D6})  |
+| |           |                       |            |               |                         |       
+| |           | key(I1, {D1, D2, D3}) |            | key(I1, {D1, D2, D3})                   |
+| |           | <---------------------| < < < < <  |<--------------|       key(T1, {I1, I2}) |
+| |           |                       |            | |             |                         |
+| | get key(D1)                       |            | |             |       key(T2, {I1, I3}) |
+| | from within                       |            | |             |                         |
+| | vault     |                       |            | |             |       key(T3, {T1, I3}) |
+| |           |                       |            | |             |                         |
+| | use key(D1)                       |            | |             |                   etc.  |
+| | to decrypt|                       |            | |             |                         |
+| | key(I1, {D1, D2, D3})             |            | |             |                         |
+| |           |                       |            | |             |                         |
+| | sign M w/ |                       |            | |             |                         |
+| | key(I1)   |                       |            | |             |                         |
+| |           | signature(I1, M)      |            | |             |                         |
+| |           |---------------------->| END        | |             |                         |
+| +-----------+                       +------------+ |             |                         |
++----------------------------------------------------+             +-------------------------+
+```
+
+**This is the "secret sauce" of distributed security:** Instead of expecting individuals to manage copies of keys or giving unencrypted keys to centralized or third-party "custodians", we arrange things so that:
+
+- Device keys are stored only the device that created them, in a way that no one can read: not the application (nor by compromised application code), not the authors of distributed security, and not even by the by the users (who might be phished).
+- An individual's keys are stored in the cloud, but the vault encrypts it through a technique that only allows it to only be read by one of the member device, and not by the application (nor by compromised application code), not by the cloud, and not by the authors of distributed security.
+- Team keys are encrypted to be read only by their members, etc.
+
+There are no custodial copies of device keys, and none are needed. If a device is lost, an individual can still access his individual key in the cloud using his other devices, or by a virtual device made up of security-question "members".
 
 ## Implementation
 

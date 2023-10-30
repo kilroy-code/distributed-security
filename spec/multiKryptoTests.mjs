@@ -2,7 +2,7 @@ import {scale, makeMessage} from "./support/messageText.mjs";
 import testKrypto from "./kryptoTests.mjs";
 
 export default function testMultiKrypto(multiKrypto) {
-
+  const slowKeyCreation = 20e3; // Android
   testKrypto(multiKrypto, scale);
 
   describe('multikey', function () {
@@ -14,7 +14,7 @@ export default function testMultiKrypto(multiKrypto) {
 	symmetric = await multiKrypto.generateSymmetricKey();
 	keypair = await multiKrypto.generateEncryptingKey();
 	encrypted = await multiKrypto.encrypt({a: symmetric, b: keypair.publicKey}, message);
-      });
+      }, slowKeyCreation);
       it('works for symmetric members.', async function () {
 	let decrypted = await multiKrypto.decrypt({a: symmetric}, encrypted);
 	expect(decrypted).toBe(message);
@@ -39,7 +39,7 @@ export default function testMultiKrypto(multiKrypto) {
 	encryptingMultikey = {a: keypair1.publicKey, b: keypair2.publicKey};
 	decryptingMultikey = {c: keypair3.privateKey, b: keypair2.privateKey};
 	message = makeMessage();
-      });
+      }, slowKeyCreation);
       it('can be exported/imported with a single use for all members.', async function () {
 	let exported = await multiKrypto.exportKey(encryptingMultikey),
 	    imported = await multiKrypto.importKey(exported, 'encrypt'),
@@ -102,7 +102,7 @@ export default function testMultiKrypto(multiKrypto) {
 	    signature = await multiKrypto.sign(unwrapped.mySign, message);
 	expect(decrypted).toBe(message),
 	expect(await multiKrypto.verify(signingKeypair.publicKey, signature, message)).toBeTruthy();
-      });
+      }, slowKeyCreation);
     });
   });
 }

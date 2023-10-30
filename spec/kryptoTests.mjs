@@ -1,6 +1,9 @@
 import {makeMessage} from "./support/messageText.mjs";
 
 export default function testKrypto (krypto, encryptableSize = 446) {
+  const bigEncryptable = encryptableSize > 1000,
+	slowKeyCreation = 10e3,
+	slowHybrid = bigEncryptable ? slowKeyCreation : 5e3; // Needed on Android
 
   describe('signing', function () {
     it('can be verified at scale with a keypair using RSA-PSS.', async function () {
@@ -13,13 +16,13 @@ export default function testKrypto (krypto, encryptableSize = 446) {
   });
 
   describe('encryption', function () {
-    it(`can work up through ${encryptableSize} bytes with a keypair using ${encryptableSize > 1000 ? "hybrid symmetric and " : ""}RSA-OAEP.`, async function () {
+    it(`can work up through ${encryptableSize} bytes with a keypair using ${bigEncryptable ? "hybrid symmetric and " : ""}RSA-OAEP.`, async function () {
       let keypair = await krypto.generateEncryptingKey(),
 	  message = makeMessage(encryptableSize),
 	  encrypted = await krypto.encrypt(keypair.publicKey, message);
       expect(typeof encrypted).toBe('string');
       expect(await krypto.decrypt(keypair.privateKey, encrypted)).toBe(message)
-    });
+    }, slowHybrid);
     it('can work on much larger data with a symmetric key using AES-GCM.', async function () {
       let key = await await krypto.generateSymmetricKey(),
 	  message = makeMessage(),
@@ -114,5 +117,5 @@ export default function testKrypto (krypto, encryptableSize = 446) {
 	encryptedMessage = await krypto.encrypt(unwrapped, message),
 	decryptedMessage = await krypto.decrypt(imported, encryptedMessage);
     expect(decryptedMessage).toBe(message);
-  });
+  }, slowKeyCreation);
 }

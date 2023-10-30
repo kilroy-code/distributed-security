@@ -1,6 +1,8 @@
 import dispatch from "../../jsonrpc/index.mjs";
 import Storage from "../lib/storage.mjs";
-import Security from "../index.mjs";
+
+//import Security from "../index.mjs";
+import Security from "https://kilroy-code.github.io/distributed-security/index.mjs";
 
 import Krypto from "../lib/krypto.mjs";
 import MultiKrypto from "../lib/multiKrypto.mjs";
@@ -24,7 +26,7 @@ describe('Distributed Security', function () {
     testMultiKrypto(MultiKrypto);
   });
   describe('Security', function () {
-    const slowKeyCreation = 15e3; // e.g., Safari
+    const slowKeyCreation = 25e3; // e.g., Safari needs about 15 seconds. Android needs more
     async function makeVaults(scope) { // Create a standard set of test vaults through context.
       let tags = {};
       await Promise.all([
@@ -51,7 +53,7 @@ describe('Distributed Security', function () {
       }, slowKeyCreation);
       afterAll(async function () {
 	await destroyVaults(InternalSecurity, tags);
-      });
+      }, slowKeyCreation);
       function vaultTests(label, tagsKey) {
 	describe(label, function () {	
 	  let vault, tag;
@@ -107,11 +109,12 @@ describe('Distributed Security', function () {
     describe("Usage", function () {
       let tags;
       beforeAll(async function () {
+	console.log(await Security.ready);
 	tags = await makeVaults(Security);
       }, slowKeyCreation);
       afterAll(async function () {
 	await destroyVaults(Security, tags);
-      });
+      }, slowKeyCreation);
       function test(label, tagsKey, otherTagsKey) {
 	describe(label, function () {
 	  let tag, otherTag;
@@ -139,8 +142,10 @@ describe('Distributed Security', function () {
 	    let message = makeMessage(446),
 		encrypted = await Security.encrypt(otherTag, message),
 		errorMessage = await Security.decrypt(tag, encrypted).catch(e => e.message);
-	    expect(errorMessage).toContain('decrypt');
-	    expect(errorMessage).toContain('OperationError');
+	    expect(errorMessage.toLowerCase()).toContain('operation');
+	    // Some browsers supply a generic message, such as 'The operation failed for an operation-specific reason'
+	    // IF there's no message at all, our jsonrpc supplies one with the jsonrpc 'method' name.
+	    //expect(errorMessage).toContain('decrypt');
 	  });
 	});
       }

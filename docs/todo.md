@@ -8,6 +8,7 @@
 - [ ] recovery vault, using PBKDF2 derived keys
 
 ### details
+- [ ] Change the vault.mjs and its contients to some other name, since we are using vault.html to mean the iframe isolation mechanism.
 - [ ] Display an ugly warning if vault is used from same origin as application.
 - [ ] track symmetric key cycles live and through export so that they're not reused. include unit test in subsystem
 - [ ] worker should be a shared worker, with indexDB storage in the worker, so that multiple pages that use the same vault can share keys.

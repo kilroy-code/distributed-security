@@ -95,10 +95,14 @@ Of the six operations provided by [security.mjs](../lib/security.mjs), `create`,
 
 This search for valid keys is repeated for each new operation, because an individual may lose their membership in a team at any time. Thus each operation involves a number of round trips corresponding to the depth of membership in the team, which is rarely more than a few levels. (The fan out of each team having multiple members increases the traffic, but not the latency, because each member at the same level of a team is verified in parallel.)
 
-## Web Worker
+## Web Worker and IFrame.
 
 Everyone has access to the encrypted team keys, but one can decrypt it other than its member. We also want to make sure that application software itself cannot read the decrypted key. (Its not just a matter of trusting the intent of the application, but also that the application has not been compromised.) To do this, the [vaults](#vaults-object-oriented-keys) do not run in the same environment as the application, but in a separate sandbox called a [Web Worker](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API). Communication between the application and the worker is by means of messages defined by the worker, and we do not define any messages that export unencrypted keys. While desktop browser extensions generally have unfettered access to the application code and data, they do not have access to the worker data. The same is true for any malevolent code that has wormed its way into the application from dependendencies or other attacks. However, desktop users must still be vigilant to not be dupped into using various developer tools by which some browser-makers expose worker data to interactive inspection.
 
-This is implemented by the pair [index.mjs](../lib/index.mjs)/[worker.mjs](../lib/worker.mjs).
+This is implemented by [worker.mjs](../lib/worker.mjs).
 
-But all of this is only safe to the extent that device keys are safe. _(This is **TBD**, but the general idea is that the keys are stored locally. Ideally, we will find a way to persist data that can only be read by the webworker that saved them._)
+But all of this is only safe to the extent that device keys are safe. These use the browser's persistent storage, and are therefore accessible to an application running at the same origin as the worker. Browsers require workers to be in the same domain as their page, so we run the worker from a new page in an iframe. This iframe (in [vault.hml](vault.html)) can and should be in a different domain, so that the application cannot read the data that the worker stores.
+
+The iframe is dynamically created by [index.mjs](../lib/index.mjs).
+
+The communication between index.mjs and the vault.html iframe, and between vault.html and worker.mjs, are provided by postMessage/message carrying jsonrpc, using [@kilroy-code/jsonrpc](../../jsonrpc).

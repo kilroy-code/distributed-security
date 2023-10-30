@@ -10,7 +10,7 @@
 - The most convenient safeguard for this is to simply have multiple devices. Any member of a team - or any device of an individual - can unlock the team key and update it for a new set of members.
 - However, not everyone can have multiple devices, and in the case of total catastrophic losses, it is best to reclaim one's identity (one's key) based on something you know rather than only on something you have. To this end, applications are encouraged to instist that each individual have not only one or more device vaults, but also a virtual device based on security factors. (**TBD**) Distributed Security allows for the creation of team key whose "member" is a pubic encryption key tag associated with a key, but rather "security question" tag (or a hash of a standardized question), associated with a key derived from the text of a "security question answer". In the simplest form, any correct answer would unlock the key. Questions can also be ordered (e.g., alphabetically) and then all combinations of pairs can be used, where each pair of answers is concatenated to form the key.
 
-**Unauthorized Changes to Membership**: We depend on team keys being unencrypted only by the members, and for the members to be changeable over time without changing the key or tag itself. The key wrapping technique (see [implementation.md](implementation.md)) works in part by encrypting N copies of text for N members, each using the public key for the Nth member tag. This ensures that only a member can read the key, but allows any member to wrap the key for a new set of members. However, accepting a new wrapped key for storage is up to the application. (**TBD** The most basic idea is that the writing member must sign the wrapping when submitting it for storage, so that the application's storing system can be certain which member is making the change.)
+**Unauthorized Changes to Membership**: We depend on team keys being unencrypted only by the members, and for the members to be changeable over time without changing the key or tag itself. The key wrapping technique (see [implementation.md](implementation.md)) works in part by encrypting N copies of text for N members, each using the public key for the Nth member tag. This ensures that only a member can read the key, but allows any member to wrap the key for a new set of members. However, accepting a new wrapped key for storage is up to the application. (**TBD** The most basic idea is that the writing member must sign the wrapping combined with a hash of the previous existing version when submitting it for storage, so that the application's storing system can be certain which member is making the change, and so that a clear order of changes is agreed to by multiple submitters and as protection against replay by a bad actor to undo a change by restoring a previous version.)
 
 **Team Key Theft**: Having an unencrypted copy of a key would allow the possessor to sign for a user or team, and read text that was encrypted for the sole use of the user or team. This is not possible as long as *encryption* holds, and that a member *device key* has not been stolen. All team keys are wrapped (encrypted) within the *vault* when they are created or when their membership is modified. Only the wrapped keys is sent through the application code to storage provided by the application. It can then only be decrypted within a vault that has one of the member keys.
 
@@ -39,34 +39,6 @@ Note:
 - There is no technical reason why an indvidual cannot have multiple identities, each associated with the same set of devices or with multiple devices. The Distributed Security API allows the creation of either, and allows multiple device keys to be created on the same physical device for the same vault URL. It is up to the application as to how this is managed. (For example, an application could create a new device tag and a new individual tag for each transaction, as is done in Bitcoin.)
 - However, if the same devices are used for each individual, someone might try to track the individuals via their devices. Similarly for individuals with team activity. For this reason, the team member tags are encrypted. (**TBD**)
  
------
-notes to self
-
-## non-problems
-
-- the asteroid headed towards earth: all bets are off if quantum computing breaks crypto
-- lifecycle: create, modify, destroy of teams
-- durability, loss, and recovery of teams and devices, and effect on outstanding persistent content
-- desktop browser extensions (at least, by design, but see browser bugs)
-
-## real problems
-
-- false implementations of distributed security (e.g., on a pkg distribution site)
-- xss hijack usage, but not steal keys
-- developer tools
-- browser bugs
-- privacy
-  - roster membership is not secret
-  - tags are stable, which is a blessing and a curse. no built-in mechanism for rotating
-  - tracking by device key
-
-## distributed storage co-dependency
-assertions by distributed storage that are required by distributed security
-
-- authorization for change
-- replay protection
-
-maybe also cover how distributed storage relies on distributed security?
 
 ## internal: review literature, e.g.:
 

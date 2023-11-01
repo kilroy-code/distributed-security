@@ -12,7 +12,7 @@ We take advantage of a number of separate APIs that **all modern browsers now su
 - Private data that cannot be read by anyone other than the group for which it is intended, regardless of where it is stored.
 - All without dependendence on any centralized authority.
 
-While these benefits have been available in some installable apps, desktop browser extensions, and in blockchain, they are now available in ordinary **desktop and mobile web pages with zero operating or transaction costs**.
+While these benefits have been available in some installable apps, desktop browser extensions, and in blockchain, they are now available in ordinary **desktop and mobile web pages** with **zero operating or transaction costs and no browser extensions**.
 
 We call it "distributed security" because:
 

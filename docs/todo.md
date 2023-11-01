@@ -1,18 +1,31 @@
 # Remaining Work for Distributed Security
 
 ### critical core
-- [ ] device key persistence
-- [ ] split out distributed storage so that applications can use the module of their choice that implements the api
+- [x] device key persistence
+- [x] split out distributed storage so that applications can use the module of their choice that implements the api
 - [ ] changing the roster
 - [ ] decrypting old content after a membership change
 - [ ] recovery vault, using PBKDF2 derived keys
 
 ### details
+- [ ] worker should be a shared worker, with indexDB storage in the worker, so that multiple pages that use the same vault can share keys.
 - [ ] Change the vault.mjs and its contients to some other name, since we are using vault.html to mean the iframe isolation mechanism.
+- [ ] **Demo**:
+ - [ ] Page at https://howard-stearns.github.io/personal/experiments/
+ - [ ] Page has columns for steps (linear on mobile, side by side on desktop):
+ - [ ] tag display of you and someone else => switch between the two
+ - [ ] text box => button => encrypted display => decrypted display
+ - [ ] text box => button => signed display => verified display
+ - [ ] storage as shared worker, so that all tabs use same storage and are remembered as long as one tab lives (Note to self: check several devices at beginning of development how reload of one tab effects this.)
+ - [ ] store user tag name so that other tabs pick it up.
+ - [ ] add and remove device?
+ - [ ] recover?
+ - [ ] how to demonstrate secret?
 - [ ] Display an ugly warning if vault is used from same origin as application.
 - [ ] track symmetric key cycles live and through export so that they're not reused. include unit test in subsystem
-- [ ] worker should be a shared worker, with indexDB storage in the worker, so that multiple pages that use the same vault can share keys.
-- [ ] implement a defense against those browsers that do not enforce, [dynamic state paritioning](https://developer.mozilla.org/en-US/docs/Web/Privacy/State_Partitioning). Store vault document.referrer alongside device keys. Refuse to act if accessed from a different document.referrer.
+- [ ] Remove iframeTrampoline.html and lib/storage distractions
+- [ ] rename lib/security.mjs -> lib/core.mjs, and unify request() to something more explicit as to target, such as requestClient()/requestWorker().
+- [ ] implement a defense against those browsers that do not enforce [dynamic state paritioning](https://developer.mozilla.org/en-US/docs/Web/Privacy/State_Partitioning). Store vault document.referrer alongside device keys. Refuse to act if accessed from a different document.referrer.
 
 ### dependencies
 - [ ] unit tests for jsonrpc
@@ -36,9 +49,9 @@
 ### release
 - [ ] feature-detection and messaging for unsupportable browsers
 - [ ] jsdeliver, unpkg or the like
-- [ ] quick usage section in README with with importmap stuff like https://thingster.app/things/ctUhszB47Wb52JgHeMV9m
+- [ ] quick usage section in README (or demo?) with with importmap stuff like https://thingster.app/things/ctUhszB47Wb52JgHeMV9m
+- [ ] Include final license in each file, because that's what the license says to do.
 - [ ] version 1.0 release
 
 ### future
-- [ ] demo, especially showing how it produces verifiable authoriship (maybe show how this is better than rostr?)
 - [ ] hidden rosters - can we make it so each tag key in the roster dictionary can only be read by the members? 

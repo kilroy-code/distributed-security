@@ -6,6 +6,8 @@
   <body>
 
     <h3>Vault</h3>
+    <div id="log"></div>
+
 
     <script type="module">
 import dispatch from '../jsonrpc/index.mjs';
@@ -14,6 +16,16 @@ import dispatch from '../jsonrpc/index.mjs';
 // so hardcode the label.
 const pkg = {name: "@kilroy-code/distributed-security", version: "0.0.1"};
 
+function log(...args) { // Log message to element named "log".
+  // Use a fragment: browser will only render/reflow once.
+  let message = args.join(' '),
+      fragment = document.createDocumentFragment();
+  fragment.appendChild(document.createTextNode(message));
+  fragment.appendChild(document.createElement('br'));
+  document.querySelector("#log").appendChild(fragment);
+}
+
+log(`vault location: ${location.href}, referrer: ${document.referrer}`);
 const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
       api = {
 	create(...optionalMembers) { return postWorker('create', ...optionalMembers); },
@@ -23,7 +35,7 @@ const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
 	sign(tag, message) { return postWorker('sign', tag, message); },
 	destroy(tag) { return postWorker('destroy', tag); }
       },
-      postClient = dispatch({target:parent, receiver:self, namespace:api, origin:hostOrigin}),
+      postClient = dispatch({target:parent, receiver:self, namespace:api, origin:hostOrigin/*, log: (...args) => log('vault postClient', ...args)*/}),
       deviceCollection = 'Device',
       Storage = {
 	store(resourceTag, ownerTag, string, signature) {
@@ -32,9 +44,6 @@ const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
 	    // TODO: storing empty means delete
 	    // TODO: unit tests seem to be leaking two team tags.
 	    localStorage.setItem(ownerTag, string);
-	    let note = `stored ${location.href} ${localStorage.length}`;
-	    console.log(note);
-	    postClient('log', note);
 	  }
 	  return postClient('store', resourceTag, ownerTag, string, signature);
 	},
@@ -46,7 +55,7 @@ const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
 	}
       },
       worker = new Worker(new URL('./lib/worker.mjs', import.meta.url), {type: 'module'}),
-      postWorker = dispatch({target: worker, namespace: Storage});
+      postWorker = dispatch({target: worker, namespace: Storage/*, log: (...args) => log('vault postWorker', ...args)*/});
 postClient('ready', `${pkg.name} ${pkg.version}`);
     </script>
   </body>

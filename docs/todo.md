@@ -1,5 +1,7 @@
 # Remaining Work for Distributed Security
 
+- [ ] device local storage leak in tests
+
 ### critical core
 - [x] device key persistence
 - [x] split out distributed storage so that applications can use the module of their choice that implements the api
@@ -8,15 +10,14 @@
 - [ ] recovery vault, using PBKDF2 derived keys
 
 ### details
-- [ ] worker should be a shared worker, with indexDB storage in the worker, so that multiple pages that use the same vault can share keys.
+- [ ] _**No change needed?**_ worker should be a shared worker, with indexDB storage in the worker, so that multiple pages that use the same vault can share keys.
 - [ ] Change the vault.mjs and its contients to some other name, since we are using vault.html to mean the iframe isolation mechanism.
 - [ ] **Demo**:
- - [ ] Page at https://howard-stearns.github.io/personal/experiments/
- - [ ] Page has columns for steps (linear on mobile, side by side on desktop):
- - [ ] tag display of you and someone else => switch between the two
- - [ ] text box => button => encrypted display => decrypted display
- - [ ] text box => button => signed display => verified display
- - [ ] storage as shared worker, so that all tabs use same storage and are remembered as long as one tab lives (Note to self: check several devices at beginning of development how reload of one tab effects this.)
+ - [x] Page at https://howard-stearns.github.io/personal/experiments/
+ - [x] tag display of you and someone else => switch between the two
+ - [x] text box => button => encrypted display => decrypted display
+ - [x] text box => button => signed display => verified display
+ - [ ] All tabs use same storage and are remembered
  - [ ] store user tag name so that other tabs pick it up.
  - [ ] add and remove device?
  - [ ] recover?
@@ -34,7 +35,7 @@
 
 ### doc
 - [ ] break source files into even smaller pieces, one concept each, and update implementation.md and unit tests to match
-- [ ] write [risks.md](risks.md)
+- [x] write [risks.md](risks.md)
 - [ ] document storage requirements and usage
 - [ ] document application requirements on usage - e.g., same origin, https (or localhost), browser not in private browsing or similar modes (all of which are required for the underlying technolgies), as well as any caching complications
 - [ ] document application control over recovery vaults

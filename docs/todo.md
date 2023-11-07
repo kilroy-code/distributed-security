@@ -49,6 +49,8 @@
 
 ### release
 - [ ] feature-detection and messaging for unsupportable browsers
+- [ ] give specialized error messages for common mistakes: not waiting for ready, passing a promise for a tag, ....
+- [ ] make sure logging is effective but secure in "tracing"
 - [ ] jsdeliver, unpkg or the like
 - [ ] quick usage section in README (or demo?) with with importmap stuff like https://thingster.app/things/ctUhszB47Wb52JgHeMV9m
 - [ ] Include final license in each file, because that's what the license says to do.

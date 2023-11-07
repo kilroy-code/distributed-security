@@ -11,12 +11,17 @@ const vaultUrl = new URL('vault.html', import.meta.url),
 	decrypt(tag, encrypted) { return postIframe('decrypt', tag, encrypted); },
 	sign(tag, message) { return postIframe('sign', tag, message); },
 	verify(tag, signature, message) { return postIframe('verify', tag, signature, message); },
-	destroy(tag) { return postIframe('destroy', tag); },
+	changeMembership(tag, {add, remove} = {}) { return postIframe('changeMembership', tag, {add, remove}); },
+	destroy(tag, {recursiveMembers} = {}) { return postIframe('destroy', tag, {recursiveMembers}); },
 
 	set Storage(storage) { Object.assign(resourcesForIframe, storage); },
+	set getUserDeviceSecret(thunk) { resourcesForIframe.getUserDeviceSecret = thunk; },
 	ready: new Promise((resolve, reject) => {
-	  //iframe.setAttribute('width', '100%'); // When using a free reverse proxy service like ngrok, there may be a click through. Give enough space to read it.
+
+	  // TODO: Make these css rules that the application can override.
+	  iframe.setAttribute('width', '100%'); // When using a free reverse proxy service like ngrok, there may be a click through. Give enough space to read it.
 	  iframe.style.display = 'none';
+
 	  document.body.append(iframe); // Before referencing its contentWindow.
 	  resourcesForIframe.ready = resolve;
 	  iframe.setAttribute('src', vaultUrl);

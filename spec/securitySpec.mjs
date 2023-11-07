@@ -1,8 +1,8 @@
 import dispatch from "../../jsonrpc/index.mjs";
 import Storage from "../lib/storage.mjs";
 
-//import Security from "../index.mjs";
-import Security from "https://kilroy-code.github.io/distributed-security/index.mjs";
+import Security from "../index.mjs";
+//import Security from "https://kilroy-code.github.io/distributed-security/index.mjs";
 
 import Krypto from "../lib/krypto.mjs";
 import MultiKrypto from "../lib/multiKrypto.mjs";
@@ -17,6 +17,8 @@ import {scale, makeMessage} from "./support/messageText.mjs";
 jasmine.getEnv().configure({random: false});
 
 InternalSecurity.Storage = Security.Storage = Storage;
+InternalSecurity.getUserDeviceSecret = () => "test secret";
+Security.getUserDeviceSecret = () => "another secret";
 
 describe('Distributed Security', function () {
   describe('Krypto', function () {
@@ -152,19 +154,28 @@ describe('Distributed Security', function () {
       test('DeviceVault', 'device', 'otherDevice');
       test('User TeamVault', 'user', 'otherUser');
       test('Team TeamVault', 'team', 'otherTeam');
-      it('can safely be used when a device is removed, but not when all are removed.', async function () {
+      it('can safely be used when a device is removed, but not after being entirely destroyed.', async function () {
 	let [d1, d2] = await Promise.all([Security.create(), Security.create()]),
 	    u = await Security.create(d1, d2),
 	    t = await Security.create(u),
 	    message = makeMessage();
+	// fixme: once we have recovery, we can test an existing team for which we have no active keys, yet recover it in order to destroy it.
+
 	let encrypted = await Security.encrypt(t, message);
 	expect(await Security.decrypt(t, encrypted)).toBe(message);
-	await Security.destroy(d1);
+	// Remove the first deep emember
+	await Security.changeMembership(u, {remove: [d1]});
 	expect(await Security.decrypt(t, encrypted)).toBe(message);
+	// Put it back.
+	await Security.changeMembership(u, {add: [d1]});
+	expect(await Security.decrypt(t, encrypted)).toBe(message);
+	// Make the other unavailable
 	await Security.destroy(d2);
-	let errorMessage = await Security.decrypt(t, encrypted).catch(e => e.message);
-	expect(errorMessage).toContain('access');
-	expect(errorMessage).toContain(t);
+	expect(await Security.decrypt(t, encrypted)).toBe(message);
+	// Destroy it all the way down.
+	await Security.destroy(t, {recursiveMembers: true});
+	let errorMessage = await Security.decrypt(t, encrypted).then(_ => null, e => e.message);
+	expect(errorMessage).toBeTruthy();
       }, slowKeyCreation);
     });
   });

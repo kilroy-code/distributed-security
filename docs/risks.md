@@ -1,6 +1,6 @@
 # Risks facing Distributed Security, and how they are mitigated
 
-**Scope**: Clearly we cannot guarantee that a computer will continue to work after, say, an asteroid hits the earth. In our case, the asteroid is the possibility that quantum computing will break encryption. We're not discussing that here.
+**Scope**: Clearly we cannot guarantee that a computer will continue to work after, say, an asteroid hits the earth. In our case, the asteroid is the possibility that [quantum computing or other advances will break encryption](https://www.technologyreview.com/2023/10/19/1081389/unbreakable-encryption-quantum-computers-cryptography-math-problems/). We're not discussing that here.
 
 **Encryption**: Distributed Security uses the standard, recommended encryption algorithms and parameters. See [krypto.mjs](../lib/krypto.mjs). Note that when we say "key", we are really referring to a set consisting of an RSA-OAEP keypair for encrypt/decrypt, and an ECDSA keypair for sign/verify. Encryption of messages and wrapping of keys is done with a one-time use AES-GCM symmetric key for the payload, and an RSA-OAEP asymmetric encryption of the symmetric key for each intended decryptor. See [implementation.md](implementation.md).
 
@@ -39,8 +39,7 @@ Note:
 - There is no technical reason why an indvidual cannot have multiple identities, each associated with the same set of devices or with multiple devices. The Distributed Security API allows the creation of either, and allows multiple device keys to be created on the same physical device for the same vault URL. It is up to the application as to how this is managed. (For example, an application could create a new device tag and a new individual tag for each transaction, as is done in Bitcoin.)
 - However, if the same devices are used for each individual, someone might try to track the individuals via their devices. Similarly for individuals with team activity. For this reason, the team member tags are encrypted. (**TBD**)
 
-**[Confused Deputy](https://en.wikipedia.org/wiki/Confused_deputy_problem)**: While the keys themselves are secure by encryption and the vault, the use of the keys is entirely under the control of the application. A poorly written application can itself be penetrated such that it the application code is tricked into signing or decrypting text that the application did not intend. This is the biggest risk, and is outside the scope of the Distributed Security API.
- 
+**[Confused Deputy](https://en.wikipedia.org/wiki/Confused_deputy_problem)**: While the *keys* are secure by encryption and the vault, the *use* of the keys is entirely under the control of the application. One form of this is where a malicious actor is able to insert their own code into the application itself, and from there call the Distributed Security operations using the keys that had been generated for the application. This is the biggest risk, and the prevention through good application programming and deployment policies is outside the scope of the Distributed Security API. Another variation would be where a separate malicious application attempts to directly use the same vault as the application (e.g, by importing the same url as the application's vault module). This is prevented by having the application host its own https vault (i.e., not the demo vault at [github](https://kilroy-code.github.io/distributed-security/index.mjs) with **TBD** same-origin headers, and by supplying its own **TBD** application-specific secret response. 
 
 ## internal: review literature, e.g.:
 

@@ -23,13 +23,22 @@ export default function testKrypto (krypto, encryptableSize = 446) {
       expect(typeof encrypted).toBe('string');
       expect(await krypto.decrypt(keypair.privateKey, encrypted)).toBe(message)
     }, slowHybrid);
-    it('can work on much larger data with a symmetric key using AES-GCM.', async function () {
-      let key = await await krypto.generateSymmetricKey(),
-	  message = makeMessage(),
-	  encrypted = await krypto.encrypt(key, message);
-      expect(typeof encrypted).toBe('string');
-      expect(await krypto.decrypt(key, encrypted)).toBe(message);
-    });
+    function testSymmetric(label, promise, decryptPromise = promise) {
+      it(`can work on much larger data with a symmetric key using ${label}.`, async function () {
+	let key = await promise,
+	    decryptKey = await decryptPromise,
+	    message = makeMessage(),
+	    encrypted = await krypto.encrypt(key, message);
+	expect(typeof encrypted).toBe('string');
+	expect(await krypto.decrypt(decryptKey, encrypted)).toBe(message);
+      });
+    }
+    testSymmetric('AES-GCM',
+		  krypto.generateSymmetricKey());
+    testSymmetric('PBKDF2 => AES-GCM',
+		  krypto.generateSymmetricKey("secret", {salt: "xyzpdq", iv: "123456789012"}),
+		  krypto.generateSymmetricKey("secret", {salt: "xyzpdq", iv: "123456789012"}));
+
   });
 
   describe('base64 export/import', function () {

@@ -17,6 +17,7 @@ import dispatch from '../jsonrpc/index.mjs';
 const pkg = {name: "@kilroy-code/distributed-security", version: "0.0.1"};
 
 function log(...args) { // Log message to element named "log".
+  console.log(...args);
   // Use a fragment: browser will only render/reflow once.
   let message = args.join(' '),
       fragment = document.createDocumentFragment();
@@ -25,7 +26,7 @@ function log(...args) { // Log message to element named "log".
   document.querySelector("#log").appendChild(fragment);
 }
 
-log(`vault location: ${location.href}, referrer: ${document.referrer}`);
+//log(`vault location: ${location.href}, referrer: ${document.referrer}`);
 const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
       api = {
 	create(...optionalMembers) { return postWorker('create', ...optionalMembers); },
@@ -33,29 +34,34 @@ const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
 	encrypt(tag, message) { return postWorker('encrypt', tag, message); },
 	decrypt(tag, encrypted) { return postWorker('decrypt', tag, encrypted); },
 	sign(tag, message) { return postWorker('sign', tag, message); },
-	destroy(tag) { return postWorker('destroy', tag); }
+	changeMembership(tag, options) { return postWorker('changeMembership', tag, options); },
+	destroy(tag, options) { return postWorker('destroy', tag, options); }
       },
       postClient = dispatch({target:parent, receiver:self, namespace:api, origin:hostOrigin/*, log: (...args) => log('vault postClient', ...args)*/}),
-      deviceCollection = 'Device',
-      Storage = {
+      storeLocally = resourceTag => ['Device', 'DeviceIV'].includes(resourceTag),
+      hostAPI = {
 	store(resourceTag, ownerTag, string, signature) {
-	  if (resourceTag === deviceCollection) {
+	  if (storeLocally(resourceTag)) {
 	    // TODO: check signature
-	    // TODO: storing empty means delete
-	    // TODO: unit tests seem to be leaking two team tags.
-	    localStorage.setItem(ownerTag, string);
+	    //log(string ? 'storing' : 'deleting', 'device', ownerTag);
+	    if (string) localStorage.setItem(ownerTag, string);
+	    else localStorage.removeItem(ownerTag);
+	    return;
 	  }
 	  return postClient('store', resourceTag, ownerTag, string, signature);
 	},
 	retrieve(resourceTag, ownerTag) {
-	  if (resourceTag === deviceCollection) {
+	  if (storeLocally(resourceTag)) {
 	    return localStorage.getItem(ownerTag);
 	  }
 	  return postClient('retrieve', resourceTag, ownerTag);
+	},
+	getUserDeviceSecret() {
+	  return postClient('getUserDeviceSecret');
 	}
       },
       worker = new Worker(new URL('./lib/worker.mjs', import.meta.url), {type: 'module'}),
-      postWorker = dispatch({target: worker, namespace: Storage/*, log: (...args) => log('vault postWorker', ...args)*/});
+      postWorker = dispatch({target: worker, namespace: hostAPI/*, log: (...args) => log('vault postWorker', ...args)*/});
 postClient('ready', `${pkg.name} ${pkg.version}`);
     </script>
   </body>

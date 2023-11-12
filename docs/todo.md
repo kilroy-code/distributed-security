@@ -5,23 +5,15 @@
 ### critical core
 - [x] device key persistence
 - [x] split out distributed storage so that applications can use the module of their choice that implements the api
-- [ ] changing the roster
+- [x] changing the roster
 - [ ] decrypting old content after a membership change
-- [ ] recovery vault, using PBKDF2 derived keys
+- [x] recovery vault, using PBKDF2 derived keys
 
 ### details
 - [ ] _**No change needed?**_ worker should be a shared worker, with indexDB storage in the worker, so that multiple pages that use the same vault can share keys.
 - [ ] Change the vault.mjs and its contients to some other name, since we are using vault.html to mean the iframe isolation mechanism.
-- [ ] **Demo**:
- - [x] Page at https://howard-stearns.github.io/personal/experiments/
- - [x] tag display of you and someone else => switch between the two
- - [x] text box => button => encrypted display => decrypted display
- - [x] text box => button => signed display => verified display
- - [ ] All tabs use same storage and are remembered
- - [ ] store user tag name so that other tabs pick it up.
- - [ ] add and remove device?
- - [ ] recover?
- - [ ] how to demonstrate secret?
+- [-] **Demo**:
+- [ ] Pass device tag to getUserDeviceSecret, and disallow resetting get or storage.
 - [ ] Display an ugly warning if vault is used from same origin as application.
 - [ ] track symmetric key cycles live and through export so that they're not reused. include unit test in subsystem
 - [ ] Remove iframeTrampoline.html and lib/storage distractions
@@ -58,3 +50,4 @@
 
 ### future
 - [ ] hidden rosters - can we make it so each tag key in the roster dictionary can only be read by the members? 
+- [ ] media - Currently, an app must convert media to a string, and then internally Distributed Security converts it back to binary for signing or encrypting. It would be nice to just hand it binary media directly.

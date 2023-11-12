@@ -12,6 +12,7 @@ const vaultUrl = new URL('vault.html', import.meta.url),
 	sign(tag, message) { return postIframe('sign', tag, message); },
 	verify(tag, signature, message) { return postIframe('verify', tag, signature, message); },
 	changeMembership(tag, {add, remove} = {}) { return postIframe('changeMembership', tag, {add, remove}); },
+	clear(tag = null) { return postIframe('clear', tag); },
 	destroy(tag, {recursiveMembers} = {}) { return postIframe('destroy', tag, {recursiveMembers}); },
 
 	set Storage(storage) { Object.assign(resourcesForIframe, storage); },

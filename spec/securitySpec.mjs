@@ -177,6 +177,16 @@ describe('Distributed Security', function () {
 	let errorMessage = await Security.decrypt(t, encrypted).then(_ => null, e => e.message);
 	expect(errorMessage).toBeTruthy();
       }, slowKeyCreation);
+      it('device is useable as soon as it resolves.', async function () {
+	let device= await Security.create();
+	expect(await Security.sign(device, "anything")).toBeTruthy();
+	await Security.destroy(device);
+      });
+      it('team is useable as soon as it resolves.', async function () {
+	let team = await Security.create(tags.device); // There was a bug once: awaiting a function that did return its promise.
+	expect(await Security.sign(team, "anything")).toBeTruthy();
+	await Security.destroy(team);
+      });
     });
   });
 });

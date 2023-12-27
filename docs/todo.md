@@ -5,17 +5,20 @@
 - [x] split out distributed storage so that applications can use the module of their choice that implements the api
 - [x] changing the roster
 - [ ] decrypting old content after a membership change
-- [ ] recovery vault, using PBKDF2 derived keys
+- [x] recovery vault, using PBKDF2 derived keys
 
 ### details
 - [x] device local storage leak in tests
 - [ ] _**No change needed?**_ worker should be a shared worker, with indexDB storage in the worker, so that multiple pages that use the same vault can share keys.
 - [ ] Change the vault.mjs and its contients to some other name, since we are using vault.html to mean the iframe isolation mechanism.
 - [-] **Demo**
- - Andreas' rule
+ - explanation
+ - recovery
  - fixmes
+- [ ] We currently use base64 for all serialization, including tags, which works with atob()/btoa(). But should we use url-safe base64 instead? ('+/=' => '._-') For tags only (so that they can appear in URLs), or for everything (for uniformity, including data: URLs)? 
 - [ ] Good error messages for badly formatted tags, signature, encrypted. Include tests.
 - [ ] Error messages should state issue up front with shortened tag at end.
+- [ ] Make sure that improper operations fail, e.g., changeMembership of a device tag.
 - [ ] Consider changing order of signature, message arguments to verify, on the grounds that is more important to make sense to our users than it is to match the order in crypto.subtle.
 - [ ] Pass device tag to getUserDeviceSecret. Include tests.
 - [ ] disallow resetting get or storage. Include tests.
@@ -34,7 +37,7 @@
 - [ ] distributed storage as proper package with readme
 
 ### doc
-- [ ] the term of art for muli is "multiparty encryption". Are there places where I should use that term?
+- [ ] the term of art for multi is "multiparty encryption". Are there places where I should use that term?
 - [ ] break source files into even smaller pieces, one concept each, and update implementation.md and unit tests to match
 - [x] write [risks.md](risks.md)
 - [x] document storage requirements and usage

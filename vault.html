@@ -39,7 +39,7 @@ const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
 	destroy(tag, options) { return postWorker('destroy', tag, options); }
       },
       postClient = dispatch({target:parent, receiver:self, namespace:api, origin:hostOrigin/*, log: (...args) => log('vault postClient', ...args)*/}),
-      localKey = (resourceTag, ownerTag) => { return ['Device', 'DeviceIV'].includes(resourceTag) && `${resourceTag}/${ownerTag}`; },
+      localKey = (resourceTag, ownerTag) => { return (resourceTag === 'Device') && `${resourceTag}/${ownerTag}`; },
       hostAPI = {
 	store(resourceTag, ownerTag, string, signature) {
 	  let local = localKey(resourceTag, ownerTag);

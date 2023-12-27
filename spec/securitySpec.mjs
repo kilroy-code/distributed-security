@@ -8,6 +8,7 @@ import Krypto from "../lib/krypto.mjs";
 import MultiKrypto from "../lib/multiKrypto.mjs";
 import {Vault, DeviceVault, TeamVault} from "../lib/vault.mjs";
 import InternalSecurity from "../lib/security.mjs";
+Object.assign(window, {Krypto, MultiKrypto, Security, Storage}); // export to browser console for development/debugging experiments.
 
 import testKrypto from "./kryptoTests.mjs";
 import testMultiKrypto from "./multiKryptoTests.mjs";
@@ -17,8 +18,8 @@ import {scale, makeMessage} from "./support/messageText.mjs";
 jasmine.getEnv().configure({random: false});
 
 InternalSecurity.Storage = Security.Storage = Storage;
-InternalSecurity.getUserDeviceSecret = () => "test secret";
-Security.getUserDeviceSecret = () => "another secret";
+InternalSecurity.getUserDeviceSecret = (tag, recoveryPrompt) => recoveryPrompt ? recoveryPrompt + " is true" : "test secret";
+Security.getUserDeviceSecret = (tag, recoveryPrompt) => "another secret";
 
 describe('Distributed Security', function () {
   describe('Krypto', function () {
@@ -34,6 +35,10 @@ describe('Distributed Security', function () {
       await Promise.all([
 	tags.device = await scope.create(),
 	tags.otherDevice = await scope.create()
+      ]);
+      await Promise.all([
+	tags.recovery = await scope.create({prompt: "what?"}),
+	tags.otherRecovery = await scope.create({prompt: "nope!"})
       ]);
       await Promise.all([
 	tags.user = await scope.create(tags.device),
@@ -152,6 +157,7 @@ describe('Distributed Security', function () {
 	});
       }
       test('DeviceVault', 'device', 'otherDevice');
+      test('RecoveryVault', 'recovery', 'otherRecovery');
       test('User TeamVault', 'user', 'otherUser');
       test('Team TeamVault', 'team', 'otherTeam');
       it('can safely be used when a device is removed, but not after being entirely destroyed.', async function () {

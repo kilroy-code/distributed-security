@@ -68,7 +68,7 @@ All distributed security operations are asynchronous - the call immediately retu
 
 That's it. The only other operations are for creating and destroying tags.
 
-## Devices, Individuals, and Teams
+## Devices, Individuals and Teams, and Recovery
 
 To create a new set of keypairs, an application calls `create() -> tag`.  An application will typically create just one tag for each device used by an individual, although there is nothing preventing an application from creating more.  When no longer needed (e.g., in respect of the EU [Right to be Forgotten](https://gdpr.eu/right-to-be-forgotten/)), an application can permanently and globally destroy a tag with `destroy(tag)`.
 
@@ -84,6 +84,8 @@ changeMembership(teamTag, {
 ```
 
 There can also be teams of individuals (or even of other teams). A team's tag can be used to decrypt, sign, or changeMembership on any computer on which any member was created (or member of a member, etc.).
+
+What happens if you loose access to all your devices at once? No problem! One or more of the member tags of your individual tag can be a "recovery" tag, which is encrypted using the answer to one or more security questions. By calling `createTag({prompt: "some security question"})`, an application can create one or more recovery tags that consist of answers that only you would know (or the concatenation of several answers). The recovery tags are stored in the cloud and are generally not used. But if you attempt to use your individual tag on a device that is not a member of that individual tag, the system will ask the application to ask you your security question(s). The answers will unlock your individual tag only if the answers match what was previously encrypted, allowing you to add new devices and remove the old ones.
 
 ## Application Use
 
@@ -179,10 +181,12 @@ The secruity module must be initialized as follows:
 
 ```
 Security.Storage = aCloudStorageImplmentationThatImplementsStoreAndRetrieve;
-Security.getUserDeviceSecret = aFunctionOf(tag); // See below
+Security.getUserDeviceSecret = aFunctionOf(tag, optionalPrompt); // See below
 await Security.ready; // Resolves to the module name and version when ready to use.
 ```
 The `getUserDeviceSecret` is used as an additional layer of defense in case an attacker is able to gain access to the device vault storage (perhaps through an [application or browser bug](docs/risk.md)). The string returned by this function is used as a secret to encrypt device keys with the vault. At minumum, it must return the same string when given the same tag, for the same user on the same device. It is best if the string that is always returned is different for different devices, and different for different users on the same device (e.g., if  the same device is used by multiple human users). For example, it could be the hash of the concatenation of tag, username, and device tracking cookie if the cookie is reliable enough. `getUserDeviceSecret' can be gated on any facial recognition, MFA, or the Web Credential Management API to make use of hardware keys, authenticators, etc.
+
+When the user creates a recovery tag, the application's `getUserDeviceSecret` is called with the prompt identifier given to `create({prompt})`. The prompt is stored (unencrypted) with the resulting (encrypted) keys in the cloud. If user later tries to (recursively) access the resulting recovery tag, the application's `getuserDeviceSecret(tag, prompt)` is called again, and result must be identical to what was returned when the recovery key was created.
 
 `getUserDeviceSecret` can be used as a mechanism for additional distinctions. For example, suppose a group of cooperating applications want to be able to encrypt and verify a common set of tags among all uses of a shared module URL. (See [Library](#library), above.) But suppose further that, for whatever reason, they wanted each application to create a different application-specific device tag, such that no application could ask the user to sign or decrypt ultimately based solely on a different application's member device tag. In this case, an application could request an application-specific (and possibly user-specific) api-key from its own application-server, and use that api-key within the secret returned by `getUserDeviceSecret`. This would keep device keys from being used by other applications that shared the same vault. (However, it would not by itself prevent a user that has access to _both_ application's device keys from making a single "individual" key that has both application-specific keys as members. Preventing that would require additional mechanisms within the Storage API.)
 

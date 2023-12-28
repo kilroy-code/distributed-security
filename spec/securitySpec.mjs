@@ -169,7 +169,7 @@ describe('Distributed Security', function () {
 
 	let encrypted = await Security.encrypt(t, message);
 	expect(await Security.decrypt(t, encrypted)).toBe(message);
-	// Remove the first deep emember
+	// Remove the first deep member
 	await Security.changeMembership(u, {remove: [d1]});
 	expect(await Security.decrypt(t, encrypted)).toBe(message);
 	// Put it back.
@@ -177,6 +177,7 @@ describe('Distributed Security', function () {
 	expect(await Security.decrypt(t, encrypted)).toBe(message);
 	// Make the other unavailable
 	await Security.destroy(d2);
+	
 	expect(await Security.decrypt(t, encrypted)).toBe(message);
 	// Destroy it all the way down.
 	await Security.destroy(t, {recursiveMembers: true});
@@ -192,6 +193,9 @@ describe('Distributed Security', function () {
 	let team = await Security.create(tags.device); // There was a bug once: awaiting a function that did return its promise.
 	expect(await Security.sign(team, "anything")).toBeTruthy();
 	await Security.destroy(team);
+      });
+      it('rejects recovery prompts that contain ~.', async function () {
+	expect(await Security.create({prompt: "foo~bar"}).catch(_ => 'failed')).toBe('failed');
       });
     });
   });

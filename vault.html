@@ -59,8 +59,8 @@ const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
 	  }
 	  return postClient('retrieve', resourceTag, ownerTag);
 	},
-	getUserDeviceSecret() {
-	  return postClient('getUserDeviceSecret');
+	getUserDeviceSecret(...args) {
+	  return postClient('getUserDeviceSecret', ...args);
 	}
       },
       worker = new Worker(new URL('./lib/worker.mjs', import.meta.url), {type: 'module'}),

@@ -1,8 +1,8 @@
 import dispatch from "../../jsonrpc/index.mjs";
 import Storage from "../lib/storage.mjs";
 
-import Security from "../index.mjs";
-//import Security from "https://kilroy-code.github.io/distributed-security/index.mjs";
+//import Security from "../index.mjs";
+import Security from "https://kilroy-code.github.io/distributed-security/index.mjs";
 
 import Krypto from "../lib/krypto.mjs";
 import MultiKrypto from "../lib/multiKrypto.mjs";

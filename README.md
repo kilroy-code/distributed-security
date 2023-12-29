@@ -66,7 +66,7 @@ verify(tag, someText, signature) -> true if signature was from someText precisel
 
 All distributed security operations are asynchronous - the call immediately returns a Javascript [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises) that resolves to the specified value.
 
-That's it. The only other operations are for creating and destroying tags.
+That's it. The only other operations are for creating, changing, and destroying tags.
 
 ## Devices, Individuals and Teams, and Recovery
 
@@ -74,7 +74,7 @@ To create a new set of keypairs, an application calls `create() -> tag`.  An app
 
 Tags are public, and can be safely shared anywhere. Text can be *encrypted* and *verified* by anyone who has the tag. It can only be *decrypted* or *signed* on the device on which this tag was created.
 
-An individual user is simply a "team" of devices. A new team can be created with one or more constitutent tags: `create(tag1, tag2, ...) -> tag`.  The resulting tag is unique to the individual -- i.e., not the same as any of the device tags. However, the application can decrypt and sign with that tag on any of that individual's devices. Applications can add or remove a device with 
+An individual user is simply a "team" of devices. A new team can be created with one or more constitutent tags: `create(tag1, tag2, ...) -> tag`.  The resulting tag is unique to the individual -- i.e., not the same as any of the device tags. However, the application can decrypt and sign with that tag on any of that individual's devices. Applications can add or remove a device tag with 
 
 ```
 changeMembership(teamTag, {
@@ -100,13 +100,13 @@ npm install @kilroy-code/distributed-security
 
 For development and local experiments, this module can be imported directly into application Javascript code served at an `https` or `locahost` domain. However, for production use, distributed security prevents keys from being copied or exported by keeping them in a "software vault" that prevents access from [phishing or XSS attacks](docs/risks.md). 
 
-To do this, it is necessary to host the module via `https` in a different domain than the rest of the application. For example, an application could be at `store.example.com`, and the distributed-security code could be hosted at `vault.example.com`:
+To do this, it is necessary to host the module via `https` in a different domain than the rest of the application. (This creates a distinct ["browsing context"](https://developer.mozilla.org/en-US/docs/Glossary/Browsing_context) that isolates the code and data.) For example, an application could be at `store.example.com`, and the distributed-security code could be hosted at `vault.example.com`:
 
 ```
 import Security from "https://vault.example.com/distributed-security/index.mjs";
 ```
 
-One can have a set of cooperating applications that all share the same tags, even if the applications themselves are in different domains. For example, different sites named land.metaverse.org, nfts-R-us.com, and store.com, could all use the same tags by cooperating on a joint source named ntf-keys.org that hosts the distributed-security module for each to share. 
+One can have a set of cooperating applications that all share the same tags, even if the applications themselves are in different domains. For example, different sites named land.metaverse.org, NFTs-R-us.com, and store.com, could all use the same tags by cooperating on a joint source named NFT-keys.org that hosts the distributed-security module for each to share. 
 
 Even when several applications opt-in to use the same URL of the distributed-system module, no such application can copy or export keys, nor can they do any operations on a key that the user is not recursively a member of. However, any application can *use* a key (e.g., have the user sign, decrypt, or change membership of a key) that was created by any of the other applications using the same module URL. Whether this is desirable depends on the application. If you want to prevent this, you can host the distributed system module yourself, _or_ make application-specific keys through `getUserDeviceSecret` (see [Initialization](#initialization), below).
 
@@ -124,33 +124,36 @@ store(collectionName, tag, text, textSignedByTag)
 
 **This is the "secret sauce" of distributed security:** Instead of expecting individuals to manage copies of keys or giving unencrypted keys to centralized or third-party "custodians", we arrange things so that:
 
-- Device keys are stored only on the device that created them, in a way that no one can read: not the application (nor by compromised application code), not the authors of distributed security, and not even by the by the users (who might be phished).
-- An individual's keys are stored in the cloud, but the vault encrypts it through a technique that only allows it to only be read by one of the member devices, not by the authors of distributed security, and not by the application (nor by compromised application code), not by the cloud.
+- Device keys are stored only on the device that created them, in a way that no one can read: not the application (nor by compromised application code), not the authors of distributed security, and not even by the by the users (who might otherwise get phished).
+- An individual's keys are stored in the cloud, but the vault encrypts it through a technique that allows it to be decrypted only by one of the member devices, not by the authors of distributed security, not by the application (nor by compromised application code), and not by the cloud.
 - Team keys are encrypted to be read only by their members, etc.
 
-There are no custodial copies of device keys, and none are needed. If a device is lost, an individual can still access his individual key in the cloud using his other devices, or by a virtual device made up of security-question "members".
+There are no custodial copies of device keys, and none are needed. If a device is lost, an individual can still access his individual key in the cloud using his other devices, or by a virtual device made up of security-question answers.
 
 Applications must supply their own implementation of this storage API, meeting their own application-specific needs. For example, the application could limit storage to paying users. For security purposes, the only requirements are:
 
-1. The strings `'Team'` and `'EncryptionKey'` must be allowed as the `collectionName` parameters. These are the only cloud storage collectionNames used by distributed security. (The cloud storage may recognize other collection names, but this is not required for distributed security to work.)
+1. The strings `'Team'` `'KeyRecovery'` and `'EncryptionKey'` must be allowed as the `collectionName` parameters. These are the only cloud storage collectionNames used by distributed security. (The cloud storage may recognize other collection names, but this is not required for distributed security to work.)
 2. The `tag` parameter must support arbitrary case-sensitive strings of at least 132 ASCII characters. The tag strings are base64-encoded, and are _not_ URL-safe.
 3. Arbitrarily long base64-encoded `text` payloads must be supported. Teams with N members are less than (N + 5) kbytes. (The cloud storage may support much longer payloads, and unicode text, but this this is not required for distributed security to work.
-4. `store(collectionName, tag, text, textSignedByTag)` should verify that `Security.verify(tag, signature, text)` resolves to true for the required `collectionName`s. (To allow for storage to be P2P within the application, the distributed security module is designed for such mutual co-dependency to not be an infinite loop.) Note that this is all that is needed to ensure that only the members of a key can store it or re-store it. **[FIXME/To-Be-Implemented: we also need to include the hash of the previous value in the signature, in order to prevent replay attacks from going back to an earlier version. Do we also want to supply a signature by the member tag (for auditing)?]** Note that there is no security need for additional checks, such as access-control-lists or API keys. However, an application is free to make additional checks. For example, using just the minimal requirements, any member could change the composition of their team, and an application might want to either create an audit trail of which member did so, or might want to restrict such changes to a designated "administrator" member. That's up to to the application.
+4. `store(collectionName, tag, text, textSignedByTag)` should verify that `Security.verify(tag, textSignedByTag, text)` resolves to true for the required `collectionName`s. (To allow for storage to be P2P within the application, the distributed security module is designed for such mutual co-dependency to not be an infinite loop.) Note that this is all that is needed to ensure that only the members of a key can store it or re-store it. There is no security need for additional checks, such as access-control-lists or API keys. However, an application is free to make additional checks. For example, using just the minimal requirements, any member could change the composition of their team, and an application might want to either create an audit trail of which member did so, or might want to restrict such changes to a designated "administrator" member. That's up to to the application. **[FIXME/To-Be-Implemented: we also need to include the hash of the previous value in the signature, in order to prevent replay attacks from going back to an earlier version. Do we also want to supply a signature by the member tag (for auditing)?]** 
 5. Because of the way that payload text is encrypted, there is no security requirement to restrict access for the `retrieve` operation. However, applications are free to impose additional restrictions.
 
 
 Here is how things play out for an application using the module to sign someText.  
 
-1. The application `sign` request goes to the vault.
+1. The application `sign` request goes to the vault. 
 2. The vault then calls the `retrieve` method of the cloud storage API. 
 3. The implementation of `retrive` was supplied by the application to retrieve the opaque key, typically from a cloud-based key-value store.
 4. The vault on the user's browser is the only place anywhere that has the device key D1. The vault uses this to decrypt the retrieved key I1. 
 5. The vault then uses the decrypted I1 keys to sign `someText` and return it to the application.
 
 ```
-     computing device D1 belonging to individual I1                                  cloud
+     computing device D1 belonging to individual I1                        cloud
 +----------------------------------------------------+             +-------------------------+
-|   vault                               app/page     |             |     key(I2, {D2, D3}    |
+|    vault                              app/page     |             |  server or p2p, as      |                      
+|  in browsing context              in application's |             |   defined by app        |      
+|  for Security module domain       browsing context |             |                         |
+|  e.g. vault.example.com        e.g., store.example.com           |   key(I2, {D2, D3}      |
 | +-----------+                       +------------+ |             |    is key(I2) encrypted |
 | | key(D1)   |                       |            | |             |    for only D2 or D3 to |
 | |           |                       |            | |             |    read                 |
@@ -184,9 +187,9 @@ Security.Storage = aCloudStorageImplmentationThatImplementsStoreAndRetrieve;
 Security.getUserDeviceSecret = aFunctionOf(tag, optionalPrompt); // See below
 await Security.ready; // Resolves to the module name and version when ready to use.
 ```
-The `getUserDeviceSecret` is used as an additional layer of defense in case an attacker is able to gain access to the device vault storage (perhaps through an [application or browser bug](docs/risk.md)). The string returned by this function is used as a secret to encrypt device keys with the vault. At minumum, it must return the same string when given the same tag, for the same user on the same device. It is best if the string that is always returned is different for different devices, and different for different users on the same device (e.g., if  the same device is used by multiple human users). For example, it could be the hash of the concatenation of tag, username, and device tracking cookie if the cookie is reliable enough. `getUserDeviceSecret' can be gated on any facial recognition, MFA, or the Web Credential Management API to make use of hardware keys, authenticators, etc.
+The `getUserDeviceSecret` is used as an additional layer of defense in case an attacker is able to gain access to the device vault storage (perhaps through an [application or browser bug](docs/risk.md)). The string returned by this function is used as a secret to encrypt device keys within the vault. At minumum, it must return the same string when given the same tag, for the same user on the same device. It is best if the string that is always returned is different for different devices, and different for different users on the same device (e.g., if  the same device is used by multiple human users). For example, it could be the hash of the concatenation of tag, username, and device tracking cookie if the cookie is reliable enough. `getUserDeviceSecret` can be gated on any facial recognition, MFA, or the Web Credential Management API to make use of hardware keys, authenticators, etc.
 
-When the user creates a recovery tag, the application's `getUserDeviceSecret` is called with the prompt identifier given to `create({prompt})`. The prompt is stored (unencrypted) with the resulting (encrypted) keys in the cloud. If user later tries to (recursively) access the resulting recovery tag, the application's `getuserDeviceSecret(tag, prompt)` is called again, and result must be identical to what was returned when the recovery key was created.
+When the user creates a recovery tag, the application's `getUserDeviceSecret` is called with the same prompt identifier that had earlier been given to `create({prompt})`. The prompt is stored (unencrypted) with the resulting (encrypted) keys in the cloud. If user later tries to (recursively) access the resulting recovery tag, the application's `getUserDeviceSecret(tag, prompt)` is called again, and result must be identical to what was returned when the recovery key was created.
 
 `getUserDeviceSecret` can be used as a mechanism for additional distinctions. For example, suppose a group of cooperating applications want to be able to encrypt and verify a common set of tags among all uses of a shared module URL. (See [Library](#library), above.) But suppose further that, for whatever reason, they wanted each application to create a different application-specific device tag, such that no application could ask the user to sign or decrypt ultimately based solely on a different application's member device tag. In this case, an application could request an application-specific (and possibly user-specific) api-key from its own application-server, and use that api-key within the secret returned by `getUserDeviceSecret`. This would keep device keys from being used by other applications that shared the same vault. (However, it would not by itself prevent a user that has access to _both_ application's device keys from making a single "individual" key that has both application-specific keys as members. Preventing that would require additional mechanisms within the Storage API.)
 
@@ -194,6 +197,8 @@ When the user creates a recovery tag, the application's `getUserDeviceSecret` is
 
 The above is everything one needs to know to use the distributed security operations. However, to understand the nature of what distributed security can do, it is also necessary to understand a bit about how it works. Fortunately, this is easily covered [here](docs/implementation.md), and there is no math.
 
-Also see [risks.md](docs/risks.md) and (for now) [todo.md](docs/todo.md), and the (source)[https://github.com/howard-stearns/personal/blob/master/experiments/distributed-security-demo.html] of the [demo](https://howard-stearns.github.io/personal/experiments/distributed-security-demo.html)
+Also see [risks.md](docs/risks.md), and the [source](https://github.com/howard-stearns/personal/blob/master/experiments/distributed-security-demo.html) of the [demo](https://howard-stearns.github.io/personal/experiments/distributed-security-demo.html)
+
+To get an idea of potential future directions, see the end of [todo.md](docs/todo.md).
 
 

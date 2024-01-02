@@ -1,8 +1,8 @@
 import dispatch from "../../jsonrpc/index.mjs";
 import Storage from "../lib/storage.mjs";
 
-//import Security from "../index.mjs";
-import Security from "https://kilroy-code.github.io/distributed-security/index.mjs";
+import Security from "../index.mjs";
+//import Security from "https://kilroy-code.github.io/distributed-security/index.mjs";
 
 import Krypto from "../lib/krypto.mjs";
 import MultiKrypto from "../lib/multiKrypto.mjs";
@@ -197,6 +197,12 @@ describe('Distributed Security', function () {
       it('rejects recovery prompts that contain ~.', async function () {
 	expect(await Security.create({prompt: "foo~bar"}).catch(_ => 'failed')).toBe('failed');
       });
+      /*
+	TODO:
+	- Show that a member cannot sign or decrypt for a team that they have been removed from.
+	- Show that multiple simultaneous apps can use the same tags if they use Security from the same origin and have compatible getUserDeviceSecret.
+	- Show that multiple simultaneous apps cannot use the same tags if they use Security from the same origin and have incompatible getUserDeviceSecret.
+       */
     });
   });
 });

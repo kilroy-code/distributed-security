@@ -1,12 +1,5 @@
 # Remaining Work for Distributed Security
 
-### critical core
-- [x] device key persistence
-- [x] split out distributed storage so that applications can use the module of their choice that implements the api
-- [x] changing the roster
-- [ ] decrypting old content after a membership change
-- [x] recovery vault, using PBKDF2 derived keys
-
 ### details
 - [x] device local storage leak in tests
 - [ ] _**No change needed?**_ worker should be a shared worker, with indexDB storage in the worker, so that multiple pages that use the same vault can share keys.

@@ -119,7 +119,7 @@ The application must supply a storage object with two methods:
 
 ```
 retrieve(collectionName, tag) -> text
-store(collectionName, tag, text, textSignedByTag)
+store(collectionName, tag, text, textSignedByTag)  (*)
 ```
 
 **This is the "secret sauce" of distributed security:** Instead of expecting individuals to manage copies of keys or giving unencrypted keys to centralized or third-party "custodians", we arrange things so that:
@@ -135,7 +135,7 @@ Applications must supply their own implementation of this storage API, meeting t
 1. The strings `'Team'` `'KeyRecovery'` and `'EncryptionKey'` must be allowed as the `collectionName` parameters. These are the only cloud storage collectionNames used by distributed security. (The cloud storage may recognize other collection names, but this is not required for distributed security to work.)
 2. The `tag` parameter must support arbitrary case-sensitive strings of at least 132 ASCII characters. The tag strings are base64-encoded, and are _not_ URL-safe.
 3. Arbitrarily long base64-encoded `text` payloads must be supported. Teams with N members are less than (N + 5) kbytes. (The cloud storage may support much longer payloads, and unicode text, but this this is not required for distributed security to work.
-4. `store(collectionName, tag, text, textSignedByTag)` should verify that `Security.verify(tag, textSignedByTag, text)` resolves to true for the required `collectionName`s. (To allow for storage to be P2P within the application, the distributed security module is designed for such mutual co-dependency to not be an infinite loop.) Note that this is all that is needed to ensure that only the members of a key can store it or re-store it. There is no security need for additional checks, such as access-control-lists or API keys. However, an application is free to make additional checks. For example, using just the minimal requirements, any member could change the composition of their team, and an application might want to either create an audit trail of which member did so, or might want to restrict such changes to a designated "administrator" member. That's up to to the application. **[FIXME/To-Be-Implemented: we also need to include the hash of the previous value in the signature, in order to prevent replay attacks from going back to an earlier version. Do we also want to supply a signature by the member tag (for auditing)?]** 
+4. `store(collectionName, tag, text, textSignedByTag)` should verify that `Security.verify(tag, textSignedByTag, text)` resolves to true for the required `collectionName`s. (To allow for storage to be P2P within the application, the distributed security module is designed for such mutual co-dependency to not be an infinite loop.) There is no security need for additional checks, such as access-control-lists or API keys. However, an application is free to make additional checks. For example, using just the minimal requirements, any member could change the composition of their team, and an application might want to either create an audit trail of which member did so, or might want to restrict such changes to a designated "administrator" member. That's up to to the application.(*)
 5. Because of the way that payload text is encrypted, there is no security requirement to restrict access for the `retrieve` operation. However, applications are free to impose additional restrictions.
 
 
@@ -177,6 +177,8 @@ Here is how things play out for an application using the module to sign someText
 | +-----------+                       +------------+ |             |                         |
 +----------------------------------------------------+             +-------------------------+
 ```
+
+> (*) - The storage API described is what is currently implemented in the demo and unit tests, and it has some easily removed weaknesses (involving replay attacks and mischief by former team members). However, the API will change slightly as we develop a more general practical storage API. Using browser-side encryption and signing, it now practical to make a secure distributed storage API that can be implented as P2P if desired, cached at browser, server, and edge, secure though end-to-end-encryption, and properly attributed for both distributed accounting and sourcing. To meet these needs, it will be desirable to have a standard format (such as JWS/JSE perhaps) in which parties can verify signatures and examine team membership. See [the storage repo](https://github.com/kilroy-code/storage/README.md).
 
 ### Initialization
 

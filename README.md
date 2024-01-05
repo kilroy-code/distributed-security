@@ -143,37 +143,35 @@ Here is how things play out for an application using the module to sign someText
 
 1. The application `sign` request goes to the vault. 
 2. The vault then calls the `retrieve` method of the cloud storage API. 
-3. The implementation of `retrive` was supplied by the application to retrieve the opaque key, typically from a cloud-based key-value store.
+3. The implementation of `retrieve` was supplied by the application to retrieve the opaque key, typically from a cloud-based key-value store.
 4. The vault on the user's browser is the only place anywhere that has the device key D1. The vault uses this to decrypt the retrieved key I1. 
 5. The vault then uses the decrypted I1 keys to sign `someText` and return it to the application.
 
 ```
      computing device D1 belonging to individual I1                        cloud
 +----------------------------------------------------+             +-------------------------+
-|    vault                              app/page     |             |  server or p2p, as      |                      
-|  in browsing context              in application's |             |   defined by app        |      
-|  for Security module domain       browsing context |             |                         |
-|  e.g. vault.example.com        e.g., store.example.com           |   key(I2, {D2, D3}      |
-| +-----------+                       +------------+ |             |    is key(I2) encrypted |
-| | key(D1)   |                       |            | |             |    for only D2 or D3 to |
+|    app/page                            vault       |             |                         |                      
+| store.example.com                vault.example.com |             |   key(I1, {D1, D7))     |
+| +-----------+                       +------------+ |             |    is key(I1) encrypted |
+| |           |                       | key(D1)    | |             |    for only D1 or D7 to |
 | |           |                       |            | |             |    read                 |
 | |           |   sign(I1, someText)  |            | |             |                         |
-| |           |<<---------------------| 1. START   | |             |   key(I3, {D4, D5, D6}) |
+| |   1.START |--------------------->>|            | |             |                         |
 | |           |                       |            | |             |                         |
-| |           |  retrieve('key', I1)  |            | retrieve('key', I1)                     |
-| |        2. |--------------------->>| > > > > >  |------------->>|                         |
-| |           |                       |            |               |     key(I1, {D1, D7)    |       
-| |           |     key(I1, {D1, D7}) |            | key(I1, {D1, D7})                       |
-| |           | <<--------------------| < < < < <  |<<-------------| 3.                      |
-| |           |                       |            | |             |       key(T1, {I1, I2}) |
-| | 4. use key(D1)                    |            | |             |                         |
-| | to decrypt|                       |            | |             |       key(T2, {I1, I3}) |
-| | key(I1, {D1, D7})                 |            | |             |                         |
-| |           |                       |            | |             |       key(T3, {T1, I3}) |
-| | 5. sign someText                  |            | |             |                         |
-| | w/ key(I1)                        |            | |             |                   etc.  |
-| |           | signature(I1, someText)            | |             |                         |
-| |           |---------------------->| END        | |             |                         |
+| |           |                       |          2.| retrieve('key', I1)                     |
+| |           |                       |            |------------->>|                         |
+| |           |                       |            |               |                         |       
+| |           |                       |            | key(I1, {D1, D7})  3.                   |
+| |           |                       |            |<<-------------|                         |
+| |           |                      4. use key(D1)| |             |                         |
+| |           |                       |  to decrypt| |             |                         |
+| |           |                     key(I1, {D1, D7})|             |   there are other keys  |
+| |           |                       |            | |             |  here in the cloud, too |
+| |           |                    5. sign someText| |             |                         |
+| |           |                       |  w/ key(I1)| |             |                         |
+| |           |                       |            | |             |                         |
+| |     END   |signature(I1, someText)|            | |             |                         |
+| |           |<<---------------------|            | |             |                         |
 | +-----------+                       +------------+ |             |                         |
 +----------------------------------------------------+             +-------------------------+
 ```

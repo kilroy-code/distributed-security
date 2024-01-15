@@ -2,7 +2,7 @@
 
 ### dependencies
 - [distributed storage](https://github.com/kilroy-code/storage) What is currently implemented and documented has some easily addressed vulnerabilities, but in addressing them I would like make sure that the needs of [Ki1r0y](https://github.com/kilroy-code/ki1r0y/) are met generally. 
-  - [ ] Consider alignment with JSON Web Signatures (JWS) or ROSTR protocol.
+  - [ ] Consider alignment with JSON Web Signatures (JWS and JWE). 
   - [ ] Align algorithms and parameters with any applicable external standards.
   - [ ] We currently use base64 for all serialization, including tags, which works with atob()/btoa(). But should we use url-safe base64 instead? ('+/=' => '._-') For tags only (so that they can appear in URLs), or for everything (for uniformity, including data: URLs)? 
   - [ ] unit tests, including check for replay attacks that would revert to earlier version

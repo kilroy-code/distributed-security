@@ -16,16 +16,16 @@ export default function testMultiKrypto(multiKrypto) {
 	encrypted = await multiKrypto.encrypt({a: symmetric, b: keypair.publicKey}, message);
       }, slowKeyCreation);
       it('works for symmetric members.', async function () {
-	let decrypted = await multiKrypto.decrypt({a: symmetric}, encrypted);
+	let decrypted = await multiKrypto.decrypt({a: symmetric.secret}, encrypted);
 	expect(decrypted).toBe(message);
       });
       it('works for keypair members.', async function () {
 	let decrypted = await multiKrypto.decrypt({b: keypair.privateKey}, encrypted);
 	expect(decrypted).toBe(message);
       });
-      it('produces undefined for bad/missing decryption keys.', async function () {
-	let anotherKey = await multiKrypto.generateSymmetricKey(),
-	    decrypted = await multiKrypto.decrypt({b: symmetric, c: anotherKey}, encrypted);
+      it('produces undefined for bad/missing or mislabled decryption keys.', async function () {
+	let anotherKey = await multiKrypto.generateEncryptingKey(),
+	    decrypted = await multiKrypto.decrypt({a: keypair.privateKey, c: anotherKey.privatecKey}, encrypted);
 	expect(decrypted).toBeUndefined();
       });
     });

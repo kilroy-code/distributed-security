@@ -6,7 +6,7 @@ export default function testKrypto (krypto, encryptableSize = 446) {
 	slowHybrid = bigEncryptable ? slowKeyCreation : 5e3; // Needed on Android
 
   describe('signing', function () {
-    it('can be verified at scale with a keypair using RSA-PSS.', async function () {
+    it('can be verified at scale with a keypair using ' + krypto.signingAlgorithm.name, async function () {
       let keypair = await krypto.generateSigningKey(),
 	  message = makeMessage(), // Public key encrypt will work up through 446 bytes, but the result will not decrypt.
 	  signature = await krypto.sign(keypair.privateKey, message);
@@ -72,23 +72,24 @@ export default function testKrypto (krypto, encryptableSize = 446) {
     });
 
     describe('of RSA-OEP', function () {
-      it('works  with the private decrypting key as a 3164-3168 byte serialization.', async function () {
+      it('works  with the private decrypting key as a serialization of not more that 3168 bytes.', async function () {
 	let keypair = await krypto.generateEncryptingKey(),
 	    serializedPrivateKey = await krypto.exportKey(keypair.privateKey),
 	    importedPrivateKey = await krypto.importKey(serializedPrivateKey, 'decrypt'),
 	    message = makeMessage(446),
 	    encrypted = await krypto.encrypt(keypair.publicKey, message);
-	if (signingAlgo) expect(serializedPrivateKey.length).toBeGreaterThanOrEqual(3164);	
+	// 3164-3168 if straight ECDSA, but we allow ourselves to use a hybrid (e.g., JOSE).
 	if (signingAlgo) expect(serializedPrivateKey.length).toBeLessThanOrEqual(3168);  
 	expect(await krypto.decrypt(importedPrivateKey, encrypted)).toBe(message)
       });
-      it('works with the public encrypting key as a 736 byte serialization.', async function () {
+      it('works with the public encrypting key as a serialization of no more than 736 bytes.', async function () {
 	let keypair = await krypto.generateEncryptingKey(),
 	    serializedPublicKey = await krypto.exportKey(keypair.publicKey),
 	    importedPublicKey = await krypto.importKey(serializedPublicKey, 'encrypt'),
 	    message = makeMessage(446),
 	    encrypted = await krypto.encrypt(importedPublicKey, message);
-	if (signingAlgo) expect(serializedPublicKey.length).toBe(736);  
+	// Exactly 736 if straight ECDSA, but we allow ourselves to use a hybrid (e.g., JOSE).
+	if (signingAlgo) expect(serializedPublicKey.length).toBeLessThanOrEqual(736);  
 	expect(await krypto.decrypt(keypair.privateKey, encrypted)).toBe(message)
       });
     });

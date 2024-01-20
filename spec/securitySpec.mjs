@@ -3,6 +3,8 @@ import Storage from "../lib/storage.mjs";
 
 import Security from "../index.mjs";
 //import Security from "https://kilroy-code.github.io/distributed-security/index.mjs";
+import * as JOSE from '../node_modules/jose/dist/browser/index.js';
+window.JOSE = JOSE;
 
 import Krypto from "../lib/krypto.mjs";
 import MultiKrypto from "../lib/multiKrypto.mjs";
@@ -76,8 +78,9 @@ describe('Distributed Security', function () {
 	    expect(exported).toBe(tag);
 
 	    let message = makeMessage(),
-		signature = await vault.sign(message);
-	    expect(await MultiKrypto.verify(verifyKey, signature, message)).toBeTruthy();
+		signature = await vault.sign(message),
+		verification = await MultiKrypto.verify(verifyKey, signature, message);
+	    expect(verification).toBeTruthy();
 	  });
 	  it('public encryption tag can be retrieved externally, and vault.decrypt() pairs with it.', async function () {
 	    let tag = vault.tag,

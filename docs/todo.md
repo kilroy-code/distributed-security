@@ -1,21 +1,13 @@
 # Remaining Work for Distributed Security
 
-### dependencies
-- [distributed storage](https://github.com/kilroy-code/storage) What is currently implemented and documented has some easily addressed vulnerabilities, but in addressing them I would like make sure that the needs of [Ki1r0y](https://github.com/kilroy-code/ki1r0y/) are met generally. 
-  - Consider alignment with JSON Web Signatures (JWS and JWE). 
-  		- [ ] verify resolves to payload or rejects, not boolean
-  - [ ] Align algorithms and parameters with any applicable external standards.
-  - [ ] We currently use base64 for all serialization, including tags, which works with atob()/btoa(). But should we use url-safe base64 instead? ('+/=' => '._-') For tags only (so that they can appear in URLs), or for everything (for uniformity, including data: URLs)? 
-  - [ ] unit tests, including check for replay attacks that would revert to earlier version
-  - [ ] distributed storage as proper package with readme
-- [jsonrpc](https://github.com/kilroy-code/jsonrpc)
-  - [ ] unit tests
-  - [ ] make sure logging is effective but secure in "tracing"
-  
 ### details
 - API:
-  - [ ] The order for the parameters to verify is different between the doc/demo and the code. Pick one.
+  - [ ] Implement caching argument to create and changeMembership.
+  - [ ] Decide on the arguments to verify. The order for the parameters to verify is currently different between the doc/demo and the code. Maybe the best thing is to use JWE style, where the signature includes the message and successful verify resolves to the message.
+  - [ ] Implement multi-key signatures. I think the most natural way to specify this is to reverse the order of arguments to the four basic operations, so that multiple keys can be specified by adding more arguments.
+  - [ ] Provide an option (default true?) for verify to check not only the cryptographic signature, but also the additional checks for a multi-key signature (as used by store()). This provides enforcement of membership change. Do we really need this AND a cache argument?
   - [ ] Browsers that support dynamic state paritioning will not be able to share device tags across applications from different domains, even when they share the same module domain. (They will still be able to share team tags.) Formalize this as a requirement in the doc, and store referrer with the device tag to effectively implement our own dynamic state partitioning.
+  - [ ] Should allow the app to get a nonce once during initialization, which it must pass during all calls? (A variation on the "hidden form field" defense against csrf.)
   - [ ] Good error messages for badly formatted tags, signature, encrypted. 
   - [ ] Error messages should state issue up front with shortened tag at end.
   - [ ] Display an ugly warning if vault is used from same origin as application.
@@ -30,12 +22,20 @@
   - [ ] Andreas' rule. (Every operation gets a one-sentence comment.)
   - [ ] Break source files into even smaller pieces, one concept each, and update implementation.md and unit tests to match
 - Add to unit tests:
-  - [ ] Show that multiple apps using the same vault can use the same tags.
-  - [ ] Show that such tags are not re-usable if getUserDeviceSecret gives different results in the two apps.
+  - [ ] Show how membership change is or is not caught depending on cache checkMembership options.
+  - [ ] Show that multiple apps using the same vault can use the same team & recovery tags. Show that this is not true for device tags.
+  - [ ] Show that cycles within recursive team membership is not a problem.
   - [ ] Deliberate failure cases: reset of storage/getUserDeviceSecret, changeMembership of a non-team, reuse of a symmetric key.
   - [ ] Tests for error messages.
 - [ ] Doc: the term of art for multi is "multiparty encryption". Are there places where I should use that term? Similarly for "content encryption key" (CEK) or "direct encryption".
 
+### dependencies
+- JOSE 
+  - [ ] Both JOSE and Distributed-Security use E6 modules. Work out how to make our references to JOSE load, with or without an importmap and with or without a build step.
+- [jsonrpc](https://github.com/kilroy-code/jsonrpc)
+  - [ ] unit tests
+  - [ ] make sure logging is effective but secure in "tracing"
+  
 ### internal infrastructure
 - [ ] GitHub Action to run test suite (using puppeteer?), like other parts of ki1r0y. Include a test to make sure that the demo stays working.
 - [ ] version 0.1 package release

@@ -7,10 +7,11 @@
 
     <h3>Vault</h3>
 
-    <script>
+    <script type="module">
       let hostOrigin = document.referrer ? new URL(document.referrer).origin : '*';
       self.onmessage = event => {
 	if (event.source !== parent || event.origin !== hostOrigin) return console.warn(`Bad source or origin ${event.origin} for message '${event.data}'`);
+	console.log(event.data);
 	if (event.data === 'delete secret') {
 	  localStorage.clear();
 	  return parent.postMessage('Deleted secret. Now refreshing the page should store again.', hostOrigin);

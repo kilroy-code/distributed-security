@@ -6,10 +6,13 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 	slowKeyCreation = 10e3,
 	slowHybrid = bigEncryptable ? slowKeyCreation : 5e3; // Needed on Android
 
-  function isBase64URL(string) {
+  const base64withDot = /^[A-Za-z0-9_\-\.]+$/;
+  const looseBase64 = /^[A-Za-z0-9_\-\.\~+\/=]+$/      
+  function isBase64URL(string, regex = looseBase64) {
  // const regex = /^[A-Za-z0-9+\/]+(=){0,2}$/ // FIXME: not URL-safe!
-    const regex = /^[A-Za-z0-9+\/~=]+$/; // FIXME: not URL-safe AND includes ~
-    //const regex = /^[A-Za-z0-9_\-]+$/
+ //   const regex = /^[A-Za-z0-9+\/~=]+$/; // FIXME: not URL-safe AND includes ~
+    //    const regex = /^[A-Za-z0-9_\-\.]+$/
+    //const regex = /^[A-Za-z0-9_\-\.\~+\/=]+$/
     if (!regex.test(string)) console.log(string);
     expect(regex.test(string)).toBeTruthy();
   }
@@ -18,7 +21,7 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
       let keypair = await krypto.generateSigningKey(),
 	  message = makeMessage(),
 	  signature = await krypto.sign(keypair.privateKey, message);
-      isBase64URL(signature);
+      isBase64URL(signature, base64withDot);
       expect(await krypto.verify(keypair.publicKey, signature, message)).toBeTruthy();
     });
     it('returns falsy for verify with the wrong key.', async function () {
@@ -36,7 +39,7 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
       let keypair = await krypto.generateEncryptingKey(),
 	  message = makeMessage(encryptableSize),
 	  encrypted = await krypto.encrypt(keypair.publicKey, message);
-      isBase64URL(encrypted);
+      isBase64URL(encrypted, base64withDot);
       expect(await krypto.decrypt(keypair.privateKey, encrypted)).toBe(message)
     }, slowHybrid);
     function testSymmetric(label, promise, decryptPromise = promise) {
@@ -45,7 +48,7 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 	    decryptKey = await decryptPromise,
 	    message = makeMessage(),
 	    encrypted = await krypto.encrypt(key, message);
-	isBase64URL(encrypted);
+	isBase64URL(encrypted, base64withDot);
 	expect(await krypto.decrypt(decryptKey, encrypted)).toBe(message);
       });
     }
@@ -78,10 +81,11 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
       await krypto.generateSymmetricKey("secret", {salt: "xyzpdq", iv: "123456789012"}),
       await krypto.generateSymmetricKey("secret", {salt: "xyzpdqX", iv: "123456789012"})
     ]);
-    failsWithWrong('secret iv', async () => [
-      await krypto.generateSymmetricKey("secret", {salt: "xyzpdq", iv: "123456789012"}),
-      await krypto.generateSymmetricKey("secret", {salt: "xyzpdq", iv: "023456789012"})
-    ]);
+    // FIXME: jose manages its own iv, separate from ours.
+    // failsWithWrong('secret iv', async () => [
+    //   await krypto.generateSymmetricKey("secret", {salt: "xyzpdq", iv: "123456789012"}),
+    //   await krypto.generateSymmetricKey("secret", {salt: "xyzpdq", iv: "023456789012"})
+    // ]);
   });
 
   describe('base64 export/import', function () {
@@ -109,38 +113,40 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
     });
 
     describe('of encryption keys', function () {
-      it('works with the private key as a 3164-3168 byte serialization.', async function () {
+      const privateEncryptingKeySize = [3164, 3168]; // with a 4k modulusSize key
+      it(`works with the private key as a ${privateEncryptingKeySize[0]}-${privateEncryptingKeySize[1]} byte serialization.`, async function () {
 	let keypair = await krypto.generateEncryptingKey(),
 	    serializedPrivateKey = await krypto.exportKey(keypair.privateKey),
 	    importedPrivateKey = await krypto.importKey(serializedPrivateKey, 'decrypt'),
 	    message = makeMessage(446),
 	    encrypted = await krypto.encrypt(keypair.publicKey, message);
 	isBase64URL(serializedPrivateKey);	
-	expect(serializedPrivateKey.length).toBeGreaterThanOrEqual(3164);	
-	expect(serializedPrivateKey.length).toBeLessThanOrEqual(3168);
+	expect(serializedPrivateKey.length).toBeGreaterThanOrEqual(privateEncryptingKeySize[0]); 
+	expect(serializedPrivateKey.length).toBeLessThanOrEqual(privateEncryptingKeySize[1]);
 	expect(await krypto.decrypt(importedPrivateKey, encrypted)).toBe(message)
       });
-      it('works with the public encrypting key as a serialization of no more than 736 bytes.', async function () {
+      const publicEncryptingKeySize = 736; // with a 4k modulusSize key
+      it(`works with the public key as a ${publicEncryptingKeySize} byte serialization.`, async function () {
 	let keypair = await krypto.generateEncryptingKey(),
 	    serializedPublicKey = await krypto.exportKey(keypair.publicKey),
 	    importedPublicKey = await krypto.importKey(serializedPublicKey, 'encrypt'),
 	    message = makeMessage(446),
 	    encrypted = await krypto.encrypt(importedPublicKey, message);
 	isBase64URL(serializedPublicKey);	
-	expect(serializedPublicKey.length).toBe(736);
+	expect(serializedPublicKey.length).toBe(publicEncryptingKeySize);
 	expect(await krypto.decrypt(keypair.privateKey, encrypted)).toBe(message)
       });
     });
 
     describe('of symmetric key', function () {
-      it('works as a 60 byte serialization (including iv).', async function () {
+      it('works as a 44 byte serialization.', async function () {
 	let key = await await krypto.generateSymmetricKey(),
 	    serializedKey = await krypto.exportKey(key),
 	    importedKey = await krypto.importKey(serializedKey, 'symmetric'),
 	    message = makeMessage(),
 	    encrypted = await krypto.encrypt(key, message);
 	isBase64URL(serializedKey);
-	expect(serializedKey.length).toBe(60);	
+	expect(serializedKey.length).toBe(44);	
 	expect(await krypto.decrypt(importedKey, encrypted)).toBe(message);
       });
     });

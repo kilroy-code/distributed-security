@@ -16,7 +16,7 @@ export default function testMultiKrypto(multiKrypto) {
 	encrypted = await multiKrypto.encrypt({a: symmetric, b: keypair.publicKey}, message);
       }, slowKeyCreation);
       it('works for symmetric members.', async function () {
-	let decrypted = await multiKrypto.decrypt({a: symmetric.secret}, encrypted);
+	let decrypted = await multiKrypto.decrypt({a: symmetric/*.secret*/}, encrypted);
 	expect(decrypted).toBe(message);
       });
       it('works for keypair members.', async function () {

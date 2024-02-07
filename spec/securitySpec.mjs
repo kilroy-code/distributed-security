@@ -86,7 +86,7 @@ describe('Distributed Security', function () {
 	    let tag = vault.tag,
 		message = makeMessage(scale),
 		retrieved = await Storage.retrieve('EncryptionKey', tag),
-		imported = await MultiKrypto.importKey(retrieved, 'encrypt'),
+		imported = await MultiKrypto.importJWK(JSON.parse(retrieved), 'encrypt'),
 		encrypted = await MultiKrypto.encrypt(imported, message),
 		decrypted = await vault.decrypt(encrypted);
 	    expect(decrypted).toBe(message);
@@ -168,7 +168,6 @@ describe('Distributed Security', function () {
 	    u = await Security.create(d1, d2),
 	    t = await Security.create(u),
 	    message = makeMessage();
-	// fixme: once we have recovery, we can test an existing team for which we have no active keys, yet recover it in order to destroy it.
 
 	let encrypted = await Security.encrypt(t, message);
 	expect(await Security.decrypt(t, encrypted)).toBe(message);

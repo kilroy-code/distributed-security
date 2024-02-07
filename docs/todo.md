@@ -5,7 +5,7 @@
    - [x] include kid in multikey encription result, because we need it for prompt.
    - [x] use jose multi-key encryption for device/recovery, with the kid as prompt.
    - [ ] enumerate kids of symmetric keys in secure header of multi-key encryption, so that we know which ones we can safely specify jose keyManagementAlgorithms when decrypting. Do so in encrypting only for those. unit test.
-   - [ ] use jose for secret-derived passwords (e.g., PBES2-HS512+A256KW) instead of using crypto.subtle directly.
+   - [x] use jose for secret-derived passwords (e.g., PBES2-HS512+A256KW) instead of using crypto.subtle directly.
    - [ ] encode cty in signature | ciphertext (optionally specified, with best-effort default) so that it we can accept things other than text and then decrypt/verify correctly. Use this to handle POJO and binary media payloads. Encrypted JWK must specify cty. Unit test! See also https://datatracker.ietf.org/doc/html/rfc7516#section-9
   - [ ] to import JWK, exporting as jwk must specify alg. Do we need to also specify use? Include unit tests for whatever we need. Unit test.
   - [ ] import jwk pojos. unit test.
@@ -41,6 +41,7 @@
 - API - other
   - [ ] To allow external applications to verify, include a jku in signatures, pointing to the unencrypted cloud-stored public verification key. unit test! That will require serving of the url with the correct mime type (application/jwk+json), which will require an additional mechanism in the cloud API for us to get the url and to allow the cloud implementation to ask us for the mime type. (Should the cloud-stored private key sets also be served with mime type application/jwk-set+json)? 
   - [ ] Browsers that support dynamic state paritioning will not be able to share device tags across applications from different domains, even when they share the same module domain. (They will still be able to share team tags.) Formalize this as a requirement in the doc, and store referrer with the device tag to effectively implement our own dynamic state partitioning. How do we unit-test this?
+  - [ ] Use symbols/getters/internals for internals
 
 - Code cleanup:
   - [ ] Change the vault.mjs and its contients to some other name, since we are using vault.html to mean the iframe isolation mechanism.
@@ -73,6 +74,7 @@
 - [ ] integrate into toplevel ki1r0y test suites
 
 ### release
+- https://en.wikipedia.org/wiki/Security.txt and the like
 - literature review:
   - [ ] https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity
   - [ ] https://web.dev/csp/

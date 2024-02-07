@@ -1,4 +1,4 @@
-import Security from "./security.mjs";
+import Security from "../../lib/security.mjs";
 const Storage = {
   async store(resourceTag, ownerTag, string, signature) {
     // Note: This trivial storage mechanism assumes one ownerTag per resourceTag, and the resourceTag is a global string. A real resourceTag is likely to be a path.

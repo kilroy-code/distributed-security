@@ -166,7 +166,7 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 
 	// Cycle it through wrap and unwrap.
 	wrapped = await krypto.wrapKey(encryptableKey, wrappingKey.publicKey),
-	unwrapped = await krypto.unwrapKey(wrapped, wrappingKey.privateKey/*, 'symmetric'*/),
+	unwrapped = await krypto.unwrapKey(wrapped, wrappingKey.privateKey),
 
 	// Use one to encrypt a message, and the other decrypt it.
 	message = "this is a message",

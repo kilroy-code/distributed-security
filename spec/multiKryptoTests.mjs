@@ -41,23 +41,27 @@ export default function testMultiKrypto(multiKrypto) {
 	message = makeMessage();
       }, slowKeyCreation);
       it('can be exported/imported with a single use for all members.', async function () {
-	let exported = await multiKrypto.exportKey(encryptingMultikey),
-	    imported = await multiKrypto.importKey(exported, 'encrypt'),
+	let exported = await multiKrypto.exportJWK(encryptingMultikey),
+	    imported = await multiKrypto.importJWK(exported, 'encrypt'),
 	    // Now prove that the imported multikey works.
 	    encrypted = await multiKrypto.encrypt(imported, message),
 	    decrypted = await multiKrypto.decrypt(decryptingMultikey, encrypted);
+	expect(exported.keys[0].kid).toBe('a');
+	expect(exported.keys[1].kid).toBe('b');
 	expect(decrypted).toBe(message);
       });
       it('can be exported/imported with a map of use.', async function () {
 	let encryptingKeypair = await multiKrypto.generateEncryptingKey(),
 	    signingKeypair = await multiKrypto.generateSigningKey(),
-	    exported = await multiKrypto.exportKey({myDecrypt: encryptingKeypair.privateKey, mySign: signingKeypair.privateKey}),
-	    imported = await multiKrypto.importKey(exported, {myDecrypt: 'decrypt', mySign: 'sign'}),
+	    exported = await multiKrypto.exportJWK({myDecrypt: encryptingKeypair.privateKey, mySign: signingKeypair.privateKey}),
+	    imported = await multiKrypto.importJWK(exported, {myDecrypt: 'decrypt', mySign: 'sign'}),
 	    // Now prove that the imported multikey works.
 	    message  = "a smaller message for asymmetric encryption",
 	    encrypted = await multiKrypto.encrypt(encryptingKeypair.publicKey, message),
 	    decrypted = await multiKrypto.decrypt(imported.myDecrypt, encrypted),
 	    signed = await multiKrypto.sign(imported.mySign, message);
+	expect(exported.keys[0].kid).toBe('myDecrypt');
+	expect(exported.keys[1].kid).toBe('mySign');
 	expect(decrypted).toBe(message);
 	expect(await multiKrypto.verify(signingKeypair.publicKey, signed, message)).toBeTruthy();
       });

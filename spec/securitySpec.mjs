@@ -72,8 +72,8 @@ describe('Distributed Security', function () {
 	  });
 	  it('tag is exported verify key, and vault.sign() pairs with it.', async function () {
 	    let tag = vault.tag,
-		verifyKey = await MultiKrypto.importKey(tag, 'verify'),
-		exported = await MultiKrypto.exportKey(verifyKey);
+		verifyKey = await MultiKrypto.importRaw(tag, 'verify'),
+		exported = await MultiKrypto.exportRaw(verifyKey);
 	    expect(typeof tag).toBe('string');
 	    expect(exported).toBe(tag);
 
@@ -196,8 +196,16 @@ describe('Distributed Security', function () {
 	expect(await Security.sign(team, "anything")).toBeTruthy();
 	await Security.destroy(team);
       });
-      it('rejects recovery prompts that contain ~.', async function () {
-	expect(await Security.create({prompt: "foo~bar"}).catch(_ => 'failed')).toBe('failed');
+      it('allows recovery prompts that contain dot.', async function () {
+	let tag = await Security.create({prompt: "foo.bar"}),
+	    user = await Security.create(tag),
+	    message = "red.white",
+	    encrypted = await Security.encrypt(user, message),
+	    signed = await Security.sign(user, message);
+	expect(await Security.decrypt(user, encrypted)).toBe(message);
+	expect(await Security.verify(user, signed, message)).toBeTruthy();
+	Security.destroy(user);
+	Security.destroy(tag);
       });
       /*
 	TODO:

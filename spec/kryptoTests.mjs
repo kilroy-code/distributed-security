@@ -8,7 +8,7 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 
   const base64withDot = /^[A-Za-z0-9_\-\.]+$/;
   const looseBase64 = /.*/; // /^[A-Za-z0-9_\-\.\~+\/=]+$/      
-  function isBase64URL(string, regex = looseBase64) {
+  function isBase64URL(string, regex = base64withDot) {
  // const regex = /^[A-Za-z0-9+\/]+(=){0,2}$/ // FIXME: not URL-safe!
  //   const regex = /^[A-Za-z0-9+\/~=]+$/; // FIXME: not URL-safe AND includes ~
     //    const regex = /^[A-Za-z0-9_\-\.]+$/
@@ -55,8 +55,8 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
     testSymmetric('fixed symmetric key',
 		  krypto.generateSymmetricKey());
     testSymmetric('reproducible secret',
-		  krypto.generateSymmetricKey("secret", {salt: "xyzpdq", iv: "123456789012"}),
-		  krypto.generateSymmetricKey("secret", {salt: "xyzpdq", iv: "123456789012"}));
+		  krypto.generateSymmetricKey("secret"),
+		  krypto.generateSymmetricKey("secret"));
     function failsWithWrong(label, keysThunk) {
       it(`rejects wrong ${label}.`, async function() {
 	let [encryptKey, decryptKey] = await keysThunk(),
@@ -74,82 +74,80 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
       await krypto.generateSymmetricKey()
     ]);
     failsWithWrong('secret', async () => [
-      await krypto.generateSymmetricKey("secret", {salt: "xyzpdq", iv: "123456789012"}),
-      await krypto.generateSymmetricKey("secretX", {salt: "xyzpdq", iv: "123456789012"})
+      await krypto.generateSymmetricKey("secret"),
+      await krypto.generateSymmetricKey("secretX")
     ]);
-    failsWithWrong('secret salt', async () => [
-      await krypto.generateSymmetricKey("secret", {salt: "xyzpdq", iv: "123456789012"}),
-      await krypto.generateSymmetricKey("secret", {salt: "xyzpdqX", iv: "123456789012"})
-    ]);
-    // FIXME: jose manages its own iv, separate from ours.
-    // failsWithWrong('secret iv', async () => [
-    //   await krypto.generateSymmetricKey("secret", {salt: "xyzpdq", iv: "123456789012"}),
-    //   await krypto.generateSymmetricKey("secret", {salt: "xyzpdq", iv: "023456789012"})
-    // ]);
   });
 
-  describe('base64 export/import', function () {
+  describe('export/import', function () {
     describe(`of signing keys`, function () {
-      const privateSigningSize = 248; //253; // 248 raw
+      const privateSigningSize = 253; // 248 raw
       it(`works with the private signing key as a ${privateSigningSize} byte serialization.`, async function () {
 	let keypair = await krypto.generateSigningKey(),
-	    serializedPrivateKey = await krypto.exportKey(keypair.privateKey), 
-	    importedPrivateKey = await krypto.importKey(serializedPrivateKey, 'sign'), 
+	    serializedPrivateKey = await krypto.exportKey(keypair.privateKey),
+	    importedPrivateKey = await krypto.importKey(serializedPrivateKey),
 	    message = makeMessage(),
 	    signature = await krypto.sign(importedPrivateKey, message);
-	isBase64URL(serializedPrivateKey);
 	expect(serializedPrivateKey.length).toBe(privateSigningSize);
 	expect(await krypto.verify(keypair.publicKey, signature, message)).toBeTruthy();
       });
-      const publicSigningSize = 132; //182; // 132 raw
+      const publicSigningSize = 182; // 132 raw
       it(`works with the public verifying key as a ${publicSigningSize} byte serialization.`, async function () {
 	let keypair = await krypto.generateSigningKey(),
-	    serializedPublicKey = await krypto.exportKey(keypair.publicKey), 
-	    importedPublicKey = await krypto.importKey(serializedPublicKey, 'verify'), 
+	    serializedPublicKey = await krypto.exportKey(keypair.publicKey),
+	    importedPublicKey = await krypto.importKey(serializedPublicKey),
 	    message = makeMessage(),
 	    signature = await krypto.sign(keypair.privateKey, message);
-	isBase64URL(serializedPublicKey);	
 	expect(serializedPublicKey.length).toBe(publicSigningSize);
+	expect(await krypto.verify(importedPublicKey, signature, message)).toBeTruthy();
+      });
+
+      const publicSigningRawSize = 132;
+      it(`works with public key as a raw verifying key as a base64URL serialization of no more that ${publicSigningRawSize} bytes`, async function () {
+	let keypair = await krypto.generateSigningKey(),
+	    serializedPublicKey = await krypto.exportRaw(keypair.publicKey),
+	    importedPublicKey = await krypto.importRaw(serializedPublicKey, 'verify'),
+	    message = makeMessage(),
+	    signature = await krypto.sign(keypair.privateKey, message);
+	isBase64URL(serializedPublicKey);
+	expect(serializedPublicKey.length).toBeLessThanOrEqual(publicSigningRawSize);
 	expect(await krypto.verify(importedPublicKey, signature, message)).toBeTruthy();
       });
     });
 
     describe('of encryption keys', function () {
-      const privateEncryptingKeySize = [3164, 3168]; //[3169, 3173] // raw [3164, 3168]; // with a 4k modulusSize key
+      const privateEncryptingKeySize = [3169, 3173] // raw [3164, 3168]; // with a 4k modulusSize key
       it(`works with the private key as a ${privateEncryptingKeySize[0]}-${privateEncryptingKeySize[1]} byte serialization.`, async function () {
 	let keypair = await krypto.generateEncryptingKey(),
 	    serializedPrivateKey = await krypto.exportKey(keypair.privateKey),
-	    importedPrivateKey = await krypto.importKey(serializedPrivateKey, 'decrypt'),
+	    importedPrivateKey = await krypto.importKey(serializedPrivateKey),
 	    message = makeMessage(446),
 	    encrypted = await krypto.encrypt(keypair.publicKey, message);
-	isBase64URL(serializedPrivateKey);	
-	expect(serializedPrivateKey.length).toBeGreaterThanOrEqual(privateEncryptingKeySize[0]); 
+	expect(serializedPrivateKey.length).toBeGreaterThanOrEqual(privateEncryptingKeySize[0]);
 	expect(serializedPrivateKey.length).toBeLessThanOrEqual(privateEncryptingKeySize[1]);
 	expect(await krypto.decrypt(importedPrivateKey, encrypted)).toBe(message)
       });
-      const publicEncryptingKeySize = 736; //735; // raw 736; // with a 4k modulusSize key
+      const publicEncryptingKeySize = 735; // raw 736; // with a 4k modulusSize key
       it(`works with the public key as a ${publicEncryptingKeySize} byte serialization.`, async function () {
 	let keypair = await krypto.generateEncryptingKey(),
 	    serializedPublicKey = await krypto.exportKey(keypair.publicKey),
-	    importedPublicKey = await krypto.importKey(serializedPublicKey, 'encrypt'),
+	    importedPublicKey = await krypto.importKey(serializedPublicKey),
 	    message = makeMessage(446),
 	    encrypted = await krypto.encrypt(importedPublicKey, message);
-	isBase64URL(serializedPublicKey);	
 	expect(serializedPublicKey.length).toBe(publicEncryptingKeySize);
 	expect(await krypto.decrypt(keypair.privateKey, encrypted)).toBe(message)
       });
     });
 
     describe('of symmetric key', function () {
-      const symmetricKeySize = 44; //79; // raw 44
+      const symmetricKeySize = 79; // raw 44
       it(`works as a ${symmetricKeySize} byte serialization.`, async function () {
 	let key = await await krypto.generateSymmetricKey(),
 	    serializedKey = await krypto.exportKey(key),
-	    importedKey = await krypto.importKey(serializedKey, 'symmetric'),
+	    importedKey = await krypto.importKey(serializedKey),
 	    message = makeMessage(),
 	    encrypted = await krypto.encrypt(key, message);
-	isBase64URL(serializedKey);
-	expect(serializedKey.length).toBe(symmetricKeySize);	
+	 expect(serializedKey.length).toBe(symmetricKeySize);
 	expect(await krypto.decrypt(importedKey, encrypted)).toBe(message);
       });
     });
@@ -161,7 +159,7 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 	wrappingKey = await krypto.generateEncryptingKey(),
 
 	// Cycle it through export,encrypt to encrypted key, and decrypt,import to imported key.
-	exported = await krypto.exportJWK(encryptableKey), 
+	exported = await krypto.exportJWK(encryptableKey),
 	encrypted = await krypto.encrypt(wrappingKey.publicKey, JSON.stringify(exported)),
 	decrypted = await krypto.decrypt(wrappingKey.privateKey, encrypted),
 	imported = await krypto.importJWK(JSON.parse(decrypted)/*, 'symmetric'*/),

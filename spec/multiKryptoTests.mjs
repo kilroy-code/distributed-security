@@ -42,7 +42,7 @@ export default function testMultiKrypto(multiKrypto) {
       }, slowKeyCreation);
       it('can be exported/imported with a single use for all members.', async function () {
 	let exported = await multiKrypto.exportJWK(encryptingMultikey),
-	    imported = await multiKrypto.importJWK(exported, 'encrypt'),
+	    imported = await multiKrypto.importJWK(exported),
 	    // Now prove that the imported multikey works.
 	    encrypted = await multiKrypto.encrypt(imported, message),
 	    decrypted = await multiKrypto.decrypt(decryptingMultikey, encrypted);
@@ -68,7 +68,7 @@ export default function testMultiKrypto(multiKrypto) {
       it('can wrap/unwrap a simple key.', async function () {
 	let key = await multiKrypto.generateSymmetricKey(),
 	    wrapped = await multiKrypto.wrapKey(key, encryptingMultikey),
-	    unwrapped = await multiKrypto.unwrapKey(wrapped, decryptingMultikey, 'symmetric'),
+	    unwrapped = await multiKrypto.unwrapKey(wrapped, decryptingMultikey),
 	    // Cool, now prove that worked.
 	    message = makeMessage(),
 	    encrypted = await multiKrypto.encrypt(unwrapped, message),
@@ -78,7 +78,7 @@ export default function testMultiKrypto(multiKrypto) {
       it('can be wrapped/unwrapped by a symmetric key with a single use for all members.', async function () {
 	let wrappingKey = await multiKrypto.generateSymmetricKey(),
 	    wrapped = await multiKrypto.wrapKey(encryptingMultikey, wrappingKey),
-	    unwrapped = await multiKrypto.unwrapKey(wrapped, wrappingKey, 'encrypt'),
+	    unwrapped = await multiKrypto.unwrapKey(wrapped, wrappingKey),
 	    // Cool, now prove that worked.
 	    encrypted = await multiKrypto.encrypt(unwrapped, message),
 	    decrypted = await multiKrypto.decrypt(decryptingMultikey, encrypted);
@@ -87,7 +87,7 @@ export default function testMultiKrypto(multiKrypto) {
       it('can wrap/unwrap a symmetric multikey with a single use for all members.', async function () {
 	let key = {x: await multiKrypto.generateSymmetricKey(), y: await multiKrypto.generateSymmetricKey()},
 	    wrapped = await multiKrypto.wrapKey(key, encryptingMultikey),
-	    unwrapped = await multiKrypto.unwrapKey(wrapped, decryptingMultikey, 'symmetric'),
+	    unwrapped = await multiKrypto.unwrapKey(wrapped, decryptingMultikey),
 	    // Cool, now prove that worked.
 	    message = makeMessage(),
 	    encrypted = await multiKrypto.encrypt(unwrapped, message),
@@ -98,7 +98,7 @@ export default function testMultiKrypto(multiKrypto) {
 	let encryptingKeypair = await multiKrypto.generateEncryptingKey(),
 	    signingKeypair = await multiKrypto.generateSigningKey(),
 	    wrapped = await multiKrypto.wrapKey({myDecrypt: encryptingKeypair.privateKey, mySign: signingKeypair.privateKey}, encryptingMultikey),
-	    unwrapped = await multiKrypto.unwrapKey(wrapped, decryptingMultikey, {myDecrypt: 'decrypt', mySign: 'sign'}),
+	    unwrapped = await multiKrypto.unwrapKey(wrapped, decryptingMultikey),
 	    // Cool, now prove that worked.
 	    message = "a shorter message",
 	    encrypted = await multiKrypto.encrypt(encryptingKeypair.publicKey, message),

@@ -42,6 +42,7 @@
   - [ ] To allow external applications to verify, include a jku in signatures, pointing to the unencrypted cloud-stored public verification key. unit test! That will require serving of the url with the correct mime type (application/jwk+json), which will require an additional mechanism in the cloud API for us to get the url and to allow the cloud implementation to ask us for the mime type. (Should the cloud-stored private key sets also be served with mime type application/jwk-set+json)? 
   - [ ] Browsers that support dynamic state paritioning will not be able to share device tags across applications from different domains, even when they share the same module domain. (They will still be able to share team tags.) Formalize this as a requirement in the doc, and store referrer with the device tag to effectively implement our own dynamic state partitioning. How do we unit-test this?
   - [ ] Use symbols/getters/internals for internals
+  - [ ] Consider utility accessors for compact forms that mimick general json forms
 
 - Code cleanup:
   - [ ] Change the vault.mjs and its contients to some other name, since we are using vault.html to mean the iframe isolation mechanism.
@@ -52,6 +53,7 @@
   - [ ] Break source files into even smaller pieces, one concept each, and update implementation.md and unit tests to match
 
 - Add to unit tests:
+  - [ ] speed tests
   - [ ] Show how membership change is or is not caught depending on cache checkMembership options.
   - [ ] Show that multiple apps using the same vault can use the same team & recovery tags. Show that this is not true for device tags.
   - [ ] Show that cycles within recursive team membership is not a problem.

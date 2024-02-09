@@ -72,7 +72,7 @@ describe('Distributed Security', function () {
 	  });
 	  it('tag is exported verify key, and vault.sign() pairs with it.', async function () {
 	    let tag = vault.tag,
-		verifyKey = await MultiKrypto.importRaw(tag, 'verify'),
+		verifyKey = await MultiKrypto.importRaw(tag),
 		exported = await MultiKrypto.exportRaw(verifyKey);
 	    expect(typeof tag).toBe('string');
 	    expect(exported).toBe(tag);
@@ -86,7 +86,7 @@ describe('Distributed Security', function () {
 	    let tag = vault.tag,
 		message = makeMessage(scale),
 		retrieved = await Storage.retrieve('EncryptionKey', tag),
-		imported = await MultiKrypto.importJWK(JSON.parse(retrieved), 'encrypt'),
+		imported = await MultiKrypto.importJWK(JSON.parse(retrieved)),
 		encrypted = await MultiKrypto.encrypt(imported, message),
 		decrypted = await vault.decrypt(encrypted);
 	    expect(decrypted).toBe(message);

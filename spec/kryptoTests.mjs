@@ -106,7 +106,7 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
       it(`works with public key as a raw verifying key as a base64URL serialization of no more that ${publicSigningRawSize} bytes`, async function () {
 	let keypair = await krypto.generateSigningKey(),
 	    serializedPublicKey = await krypto.exportRaw(keypair.publicKey),
-	    importedPublicKey = await krypto.importRaw(serializedPublicKey, 'verify'),
+	    importedPublicKey = await krypto.importRaw(serializedPublicKey),
 	    message = makeMessage(),
 	    signature = await krypto.sign(keypair.privateKey, message);
 	isBase64URL(serializedPublicKey);
@@ -162,7 +162,7 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 	exported = await krypto.exportJWK(encryptableKey),
 	encrypted = await krypto.encrypt(wrappingKey.publicKey, JSON.stringify(exported)),
 	decrypted = await krypto.decrypt(wrappingKey.privateKey, encrypted),
-	imported = await krypto.importJWK(JSON.parse(decrypted)/*, 'symmetric'*/),
+	imported = await krypto.importJWK(JSON.parse(decrypted)),
 
 	// Cycle it through wrap and unwrap.
 	wrapped = await krypto.wrapKey(encryptableKey, wrappingKey.publicKey),

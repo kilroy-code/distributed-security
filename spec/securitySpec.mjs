@@ -15,9 +15,9 @@ Object.assign(window, {Krypto, MultiKrypto, Security, Storage}); // export to br
 import testKrypto from "./kryptoTests.mjs";
 import testMultiKrypto from "./multiKryptoTests.mjs";
 import testModule from "./support/testModuleWithFoo.mjs";
-import {scale, makeMessage} from "./support/messageText.mjs";
+import {scale, makeMessage, isBase64URL} from "./support/messageText.mjs";
 
-jasmine.getEnv().configure({random: false});
+//jasmine.getEnv().configure({random: false});
 
 InternalSecurity.Storage = Security.Storage = Storage;
 InternalSecurity.getUserDeviceSecret = (tag, recoveryPrompt) => recoveryPrompt ? recoveryPrompt + " is true" : "test secret";
@@ -79,7 +79,8 @@ describe('Distributed Security', function () {
 
 	    let message = makeMessage(),
 		signature = await vault.sign(message),
-		verification = await MultiKrypto.verify(verifyKey, signature, message);
+		verification = await MultiKrypto.verify(verifyKey, signature);
+	    isBase64URL(signature);
 	    expect(verification).toBeTruthy();
 	  });
 	  it('public encryption tag can be retrieved externally, and vault.decrypt() pairs with it.', async function () {
@@ -135,17 +136,19 @@ describe('Distributed Security', function () {
 	  it('can sign and be verified.', async function () {
 	    let message = makeMessage(),
 		signature = await Security.sign(tag, message);
-	    expect(await Security.verify(tag, signature, message)).toBeTruthy();
+	    isBase64URL(signature);
+	    expect(await Security.verify(tag, signature)).toBeTruthy();
 	  });
 	  it('cannot sign for a different key.', async function () {
 	    let message = makeMessage(),
 		signature = await Security.sign(otherTag, message);
-	    expect(await Security.verify(tag, signature, message)).toBeFalsy();
+	    expect(await Security.verify(tag, signature)).toBeFalsy();
 	  });
 	  it('can decrypt what is encrypted for it.', async function () {
 	    let message = makeMessage(scale),
 		encrypted = await Security.encrypt(tag, message),
 		decrypted = await Security.decrypt(tag, encrypted);
+	    isBase64URL(encrypted)
 	    expect(decrypted).toBe(message);
 	  });
 	  it('cannot decrypt what is encrypted for a different key.', async function () {
@@ -203,7 +206,7 @@ describe('Distributed Security', function () {
 	    encrypted = await Security.encrypt(user, message),
 	    signed = await Security.sign(user, message);
 	expect(await Security.decrypt(user, encrypted)).toBe(message);
-	expect(await Security.verify(user, signed, message)).toBeTruthy();
+	expect(await Security.verify(user, signed)).toBeTruthy();
 	Security.destroy(user);
 	Security.destroy(tag);
       });

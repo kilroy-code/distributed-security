@@ -1,4 +1,4 @@
-import {makeMessage} from "./support/messageText.mjs";
+import {makeMessage, isBase64URL} from "./support/messageText.mjs";
 
 export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 				    encryptableSize = 446) {
@@ -6,30 +6,20 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 	slowKeyCreation = 10e3,
 	slowHybrid = bigEncryptable ? slowKeyCreation : 5e3; // Needed on Android
 
-  const base64withDot = /^[A-Za-z0-9_\-\.]+$/;
-  const looseBase64 = /.*/; // /^[A-Za-z0-9_\-\.\~+\/=]+$/      
-  function isBase64URL(string, regex = base64withDot) {
- // const regex = /^[A-Za-z0-9+\/]+(=){0,2}$/ // FIXME: not URL-safe!
- //   const regex = /^[A-Za-z0-9+\/~=]+$/; // FIXME: not URL-safe AND includes ~
-    //    const regex = /^[A-Za-z0-9_\-\.]+$/
-    //const regex = /^[A-Za-z0-9_\-\.\~+\/=]+$/
-    if (!regex.test(string)) console.log(string);
-    expect(regex.test(string)).toBeTruthy();
-  }
   describe('signing', function () {
     it('returns truthy for verified at scale with an asymmetric keypair.', async function () {
       let keypair = await krypto.generateSigningKey(),
 	  message = makeMessage(),
 	  signature = await krypto.sign(keypair.privateKey, message);
-      isBase64URL(signature, base64withDot);
-      expect(await krypto.verify(keypair.publicKey, signature, message)).toBeTruthy();
+      isBase64URL(signature);
+      expect(await krypto.verify(keypair.publicKey, signature)).toBeTruthy();
     });
     it('returns falsy for verify with the wrong key.', async function () {
       let keypair = await krypto.generateSigningKey(),
 	  message = makeMessage(),
 	  signature = await krypto.sign(keypair.privateKey, message),
 	  wrongKeypair = await krypto.generateSigningKey();
-      expect(await krypto.verify(wrongKeypair.publicKey, signature, message)).toBeFalsy();
+      expect(await krypto.verify(wrongKeypair.publicKey, signature)).toBeFalsy();
     });
   });
 
@@ -39,7 +29,7 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
       let keypair = await krypto.generateEncryptingKey(),
 	  message = makeMessage(encryptableSize),
 	  encrypted = await krypto.encrypt(keypair.publicKey, message);
-      isBase64URL(encrypted, base64withDot);
+      isBase64URL(encrypted);
       expect(await krypto.decrypt(keypair.privateKey, encrypted)).toBe(message)
     }, slowHybrid);
     function testSymmetric(label, promise, decryptPromise = promise) {
@@ -48,7 +38,7 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 	    decryptKey = await decryptPromise,
 	    message = makeMessage(),
 	    encrypted = await krypto.encrypt(key, message);
-	isBase64URL(encrypted, base64withDot);
+	isBase64URL(encrypted);
 	expect(await krypto.decrypt(decryptKey, encrypted)).toBe(message);
       });
     }
@@ -89,7 +79,7 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 	    message = makeMessage(),
 	    signature = await krypto.sign(importedPrivateKey, message);
 	expect(serializedPrivateKey.length).toBe(privateSigningSize);
-	expect(await krypto.verify(keypair.publicKey, signature, message)).toBeTruthy();
+	expect(await krypto.verify(keypair.publicKey, signature)).toBeTruthy();
       });
       const publicSigningSize = 182; // 132 raw
       it(`works with the public verifying key as a ${publicSigningSize} byte serialization.`, async function () {
@@ -99,7 +89,7 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 	    message = makeMessage(),
 	    signature = await krypto.sign(keypair.privateKey, message);
 	expect(serializedPublicKey.length).toBe(publicSigningSize);
-	expect(await krypto.verify(importedPublicKey, signature, message)).toBeTruthy();
+	expect(await krypto.verify(importedPublicKey, signature)).toBeTruthy();
       });
 
       const publicSigningRawSize = 132;
@@ -111,7 +101,7 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 	    signature = await krypto.sign(keypair.privateKey, message);
 	isBase64URL(serializedPublicKey);
 	expect(serializedPublicKey.length).toBeLessThanOrEqual(publicSigningRawSize);
-	expect(await krypto.verify(importedPublicKey, signature, message)).toBeTruthy();
+	expect(await krypto.verify(importedPublicKey, signature)).toBeTruthy();
       });
     });
 

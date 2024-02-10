@@ -50,11 +50,11 @@ export default function testMultiKrypto(multiKrypto) {
 	expect(exported.keys[1].kid).toBe('b');
 	expect(decrypted).toBe(message);
       });
-      it('can be exported/imported with a map of use.', async function () {
+      it('can be exported/imported of a heterogenous set of keys.', async function () {
 	let encryptingKeypair = await multiKrypto.generateEncryptingKey(),
 	    signingKeypair = await multiKrypto.generateSigningKey(),
 	    exported = await multiKrypto.exportJWK({myDecrypt: encryptingKeypair.privateKey, mySign: signingKeypair.privateKey}),
-	    imported = await multiKrypto.importJWK(exported, {myDecrypt: 'decrypt', mySign: 'sign'}),
+	    imported = await multiKrypto.importJWK(exported),
 	    // Now prove that the imported multikey works.
 	    message  = "a smaller message for asymmetric encryption",
 	    encrypted = await multiKrypto.encrypt(encryptingKeypair.publicKey, message),
@@ -63,7 +63,7 @@ export default function testMultiKrypto(multiKrypto) {
 	expect(exported.keys[0].kid).toBe('myDecrypt');
 	expect(exported.keys[1].kid).toBe('mySign');
 	expect(decrypted).toBe(message);
-	expect(await multiKrypto.verify(signingKeypair.publicKey, signed, message)).toBeTruthy();
+	expect(await multiKrypto.verify(signingKeypair.publicKey, signed)).toBeTruthy();
       });
       it('can wrap/unwrap a simple key.', async function () {
 	let key = await multiKrypto.generateSymmetricKey(),
@@ -94,7 +94,7 @@ export default function testMultiKrypto(multiKrypto) {
 	    decrypted = await multiKrypto.decrypt(key, encrypted);
 	expect(decrypted).toBe(message);
       });
-      it('can wrap/unwrap a diversified multikey with a map of use.', async function () {
+      it('can wrap/unwrap a diversified multikey.', async function () {
 	let encryptingKeypair = await multiKrypto.generateEncryptingKey(),
 	    signingKeypair = await multiKrypto.generateSigningKey(),
 	    wrapped = await multiKrypto.wrapKey({myDecrypt: encryptingKeypair.privateKey, mySign: signingKeypair.privateKey}, encryptingMultikey),
@@ -105,7 +105,7 @@ export default function testMultiKrypto(multiKrypto) {
 	    decrypted = await multiKrypto.decrypt(unwrapped.myDecrypt, encrypted),
 	    signature = await multiKrypto.sign(unwrapped.mySign, message);
 	expect(decrypted).toBe(message),
-	expect(await multiKrypto.verify(signingKeypair.publicKey, signature, message)).toBeTruthy();
+	expect(await multiKrypto.verify(signingKeypair.publicKey, signature)).toBeTruthy();
       }, slowKeyCreation);
     });
   });

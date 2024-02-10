@@ -40,6 +40,25 @@ export default function testMultiKrypto(multiKrypto) {
 	decryptingMultikey = {c: keypair3.privateKey, b: keypair2.privateKey};
 	message = makeMessage();
       }, slowKeyCreation);
+      it('can sign to produce a multi-signature.', async function () {
+	let a = await multiKrypto.generateSigningKey(),
+	    b = await multiKrypto.generateSigningKey(),
+	    multiSign = {a: a.privateKey, b: b.privateKey},
+	    multiVerify = {a: a.publicKey, b: b.publicKey},
+	    signature = await multiKrypto.sign(multiSign, message),
+	    verified = await multiKrypto.verify(multiVerify, signature);
+	expect(verified).toBeTruthy();
+      });
+      it('fails a multi-signature when not presented with the right keys.',
+	 async function () {
+	let a = await multiKrypto.generateSigningKey(),
+	    b = await multiKrypto.generateSigningKey(),
+	    multiSign = {a: a.privateKey, b: b.privateKey},
+	    multiVerify = {a: a.publicKey, b: a.publicKey},
+	    signature = await multiKrypto.sign(multiSign, message),
+	    verified = await multiKrypto.verify(multiVerify, signature);
+	expect(verified).toBeFalsy();
+      });
       it('can be exported/imported with a single use for all members.', async function () {
 	let exported = await multiKrypto.exportJWK(encryptingMultikey),
 	    imported = await multiKrypto.importJWK(exported),

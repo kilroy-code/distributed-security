@@ -34,7 +34,7 @@ const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
 	encrypt(message, tag) { return postWorker('encrypt', message, tag); },
 	decrypt(encrypted, tag) { return postWorker('decrypt', encrypted, tag); },
 	sign(message, tag) { return postWorker('sign', message, tag); },
-	changeMembership(tag, options) { return postWorker('changeMembership', tag, options); },
+	changeMembership(options) { return postWorker('changeMembership', options); },
 	clear(tag) { return postWorker('clear', tag); },
 	destroy(tagOrOptions) { return postWorker('destroy', tagOrOptions); }
       },

@@ -63,6 +63,7 @@
   - [ ] storage/getUserDeviceSecret cannot be reset once set.
   - [ ] storage/getUserDeviceSecret on a direct import of security.mjs does not effect that used by a properly origined index.mjs.
   - [ ] changeMembership of a device or recovery will fail
+  - [ ] changeMembers will fail if not a member
   - [ ] device and recovery jws use a different iv each time they are encrypted
   - [ ] cycles within recursive team membership is not a problem.
   - [ ] Tests for error messages.

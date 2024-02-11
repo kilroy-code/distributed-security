@@ -11,7 +11,7 @@ const vaultUrl = new URL('vault.html', import.meta.url),
 	decrypt(encrypted, tag) { return postIframe('decrypt', encrypted, tag); },
 	sign(message, tag) { return postIframe('sign', message, tag); },
 	verify(signature, tag) { return postIframe('verify', signature, tag); },
-	changeMembership(tag, {add, remove} = {}) { return postIframe('changeMembership', tag, {add, remove}); },
+	changeMembership({tag, add, remove} = {}) { return postIframe('changeMembership', {tag, add, remove}); },
 	clear(tag = null) { return postIframe('clear', tag); },
 	destroy(tagOrOptions) { return postIframe('destroy', tagOrOptions); },
 

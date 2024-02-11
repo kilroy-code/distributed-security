@@ -175,10 +175,10 @@ describe('Distributed Security', function () {
 	let encrypted = await Security.encrypt(message, t);
 	expect(await Security.decrypt(encrypted, t)).toBe(message);
 	// Remove the first deep member
-	await Security.changeMembership(u, {remove: [d1]});
+	await Security.changeMembership({tag: u, remove: [d1]});
 	expect(await Security.decrypt(encrypted, t)).toBe(message);
 	// Put it back.
-	await Security.changeMembership(u, {add: [d1]});
+	await Security.changeMembership({tag: u, add: [d1]});
 	expect(await Security.decrypt(encrypted, t)).toBe(message);
 	// Make the other unavailable
 	await Security.destroy(d2);

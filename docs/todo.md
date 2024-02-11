@@ -28,8 +28,7 @@
 - API - key operations:
    - [ ] Implement caching argument to create and changeMembership - unless made unnecessary by previous.
   - [ ] Decide on the arguments to verify. The order for the parameters to verify is currently different between the doc/demo and the code. Maybe the best thing is to use JWE style, where the signature includes the message and successful verify resolves to the message. Where options are used, is it best to include the tags as a key in options or still listed after?
-  - [ ] Track symmetric key cycles live and through export so that they're not reused. Does JOSE already do that, or is it guaranteed by construction?
-  - [ ] Should allow the app to get a nonce once during initialization, which it must pass during all calls? (A variation on the "hidden form field" defense against csrf.)
+  - [ ] Should we allow the app to get a nonce once during initialization, which it must pass during all calls? (A variation on the "hidden form field" defense against csrf.)
  
 - API - error handling
   - [ ] Good error messages for badly formatted tags, signature, encrypted. 
@@ -55,9 +54,12 @@
 - Add to unit tests:
   - [ ] speed tests
   - [ ] Show how membership change is or is not caught depending on cache checkMembership options.
-  - [ ] Show that multiple apps using the same vault can use the same team & recovery tags. Show that this is not true for device tags.
-  - [ ] Show that cycles within recursive team membership is not a problem.
-  - [ ] Deliberate failure cases: reset of storage/getUserDeviceSecret, changeMembership of a non-team, reuse of a symmetric key.
+  - [ ] Multiple apps using the same vault can use the same team tags. But this is not true for device and recovery tags.
+  - [ ] storage/getUserDeviceSecret cannot be reset once set.
+  - [ ] storage/getUserDeviceSecret on a direct import of security.mjs does not effect that used by a properly origined index.mjs.
+  - [ ] changeMembership of a device or recovery will fail
+  - [ ] device and recovery jws use a different iv each time they are encrypted
+  - [ ] cycles within recursive team membership is not a problem.
   - [ ] Tests for error messages.
 
 - [ ] Doc: the term of art for multi is "multiparty encryption". Are there places where I should use that term? Similarly for "content encryption key" (CEK) or "direct encryption".

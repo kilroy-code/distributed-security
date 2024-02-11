@@ -146,15 +146,15 @@ describe('Distributed Security', function () {
 	  });
 	  it('can decrypt what is encrypted for it.', async function () {
 	    let message = makeMessage(scale),
-		encrypted = await Security.encrypt(tag, message),
-		decrypted = await Security.decrypt(tag, encrypted);
+		encrypted = await Security.encrypt(message, tag),
+		decrypted = await Security.decrypt(encrypted, tag);
 	    isBase64URL(encrypted)
 	    expect(decrypted).toBe(message);
 	  });
 	  it('cannot decrypt what is encrypted for a different key.', async function () {
 	    let message = makeMessage(446),
-		encrypted = await Security.encrypt(otherTag, message),
-		errorMessage = await Security.decrypt(tag, encrypted).catch(e => e.message);
+		encrypted = await Security.encrypt(message, otherTag),
+		errorMessage = await Security.decrypt(encrypted, tag).catch(e => e.message);
 	    expect(errorMessage.toLowerCase()).toContain('operation');
 	    // Some browsers supply a generic message, such as 'The operation failed for an operation-specific reason'
 	    // IF there's no message at all, our jsonrpc supplies one with the jsonrpc 'method' name.
@@ -172,21 +172,21 @@ describe('Distributed Security', function () {
 	    t = await Security.create(u),
 	    message = makeMessage();
 
-	let encrypted = await Security.encrypt(t, message);
-	expect(await Security.decrypt(t, encrypted)).toBe(message);
+	let encrypted = await Security.encrypt(message, t);
+	expect(await Security.decrypt(encrypted, t)).toBe(message);
 	// Remove the first deep member
 	await Security.changeMembership(u, {remove: [d1]});
-	expect(await Security.decrypt(t, encrypted)).toBe(message);
+	expect(await Security.decrypt(encrypted, t)).toBe(message);
 	// Put it back.
 	await Security.changeMembership(u, {add: [d1]});
-	expect(await Security.decrypt(t, encrypted)).toBe(message);
+	expect(await Security.decrypt(encrypted, t)).toBe(message);
 	// Make the other unavailable
 	await Security.destroy(d2);
 	
-	expect(await Security.decrypt(t, encrypted)).toBe(message);
+	expect(await Security.decrypt(encrypted, t)).toBe(message);
 	// Destroy it all the way down.
 	await Security.destroy(t, {recursiveMembers: true});
-	let errorMessage = await Security.decrypt(t, encrypted).then(_ => null, e => e.message);
+	let errorMessage = await Security.decrypt(encrypted, t).then(_ => null, e => e.message);
 	expect(errorMessage).toBeTruthy();
       }, slowKeyCreation);
       it('device is useable as soon as it resolves.', async function () {
@@ -203,9 +203,9 @@ describe('Distributed Security', function () {
 	let tag = await Security.create({prompt: "foo.bar"}),
 	    user = await Security.create(tag),
 	    message = "red.white",
-	    encrypted = await Security.encrypt(user, message),
+	    encrypted = await Security.encrypt(message, user),
 	    signed = await Security.sign(message, user);
-	expect(await Security.decrypt(user, encrypted)).toBe(message);
+	expect(await Security.decrypt(encrypted, user)).toBe(message);
 	expect(await Security.verify(signed, user)).toBeTruthy();
 	Security.destroy(user);
 	Security.destroy(tag);

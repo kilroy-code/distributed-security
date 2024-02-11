@@ -7,8 +7,8 @@ const vaultUrl = new URL('vault.html', import.meta.url),
       }, // Will get handlers for messages from the iframe.
       api = {
 	create(...optionalMembers) { return postIframe('create', ...optionalMembers); },
-	encrypt(tag, message) { return postIframe('encrypt', tag, message); },
-	decrypt(tag, encrypted) { return postIframe('decrypt', tag, encrypted); },
+	encrypt(message, tag) { return postIframe('encrypt', message, tag); },
+	decrypt(encrypted, tag) { return postIframe('decrypt', encrypted, tag); },
 	sign(message, tag) { return postIframe('sign', message, tag); },
 	verify(signature, tag) { return postIframe('verify', signature, tag); },
 	changeMembership(tag, {add, remove} = {}) { return postIframe('changeMembership', tag, {add, remove}); },

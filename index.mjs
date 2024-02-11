@@ -13,7 +13,7 @@ const vaultUrl = new URL('vault.html', import.meta.url),
 	verify(signature, tag) { return postIframe('verify', signature, tag); },
 	changeMembership(tag, {add, remove} = {}) { return postIframe('changeMembership', tag, {add, remove}); },
 	clear(tag = null) { return postIframe('clear', tag); },
-	destroy(tag, {recursiveMembers} = {}) { return postIframe('destroy', tag, {recursiveMembers}); },
+	destroy(tagOrOptions) { return postIframe('destroy', tagOrOptions); },
 
 	set Storage(storage) { Object.assign(resourcesForIframe, storage); },
 	set getUserDeviceSecret(thunk) { resourcesForIframe.getUserDeviceSecret = thunk; },

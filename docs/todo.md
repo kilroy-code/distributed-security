@@ -8,6 +8,11 @@
    - [x] use jose for secret-derived passwords (e.g., PBES2-HS512+A256KW) instead of using crypto.subtle directly.
    - [ ] encode cty in signature | ciphertext (optionally specified, with best-effort default) so that it we can accept things other than text and then decrypt/verify correctly. Use this to handle POJO and binary media payloads. Encrypted JWK must specify cty. Unit test! See also https://datatracker.ietf.org/doc/html/rfc7516#section-9
   - [ ] to import JWK, exporting as jwk must specify alg. Do we need to also specify use? Include unit tests for whatever we need. Unit test.
+  - [ ] generate multikey signatures and verify them. unit test.
+  - [ ] generate auditable multikey signatures and verify them. unit test.
+  - [ ] use auditable multikey signatures when storing. unit test.
+  - [ ] use approppriate cty when storing keys
+  - [ ] store jws, not mesage, so that clients can re-verify it
   - [ ] import jwk pojos. unit test.
   - [ ] export simple keys as jwk pojos (not as json strings).
   - [ ] to store private multi-keys as a jwk, it will have to be a key set. That will require recursively exporting the sub keys as jwk pojos (not json strings) and adding the kid labels to each. unit test.

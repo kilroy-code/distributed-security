@@ -185,7 +185,7 @@ describe('Distributed Security', function () {
 	
 	expect(await Security.decrypt(encrypted, t)).toBe(message);
 	// Destroy it all the way down.
-	await Security.destroy(t, {recursiveMembers: true});
+	await Security.destroy({tag: t, recursiveMembers: true});
 	let errorMessage = await Security.decrypt(encrypted, t).then(_ => null, e => e.message);
 	expect(errorMessage).toBeTruthy();
       }, slowKeyCreation);

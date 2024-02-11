@@ -135,14 +135,14 @@ describe('Distributed Security', function () {
 	  });
 	  it('can sign and be verified.', async function () {
 	    let message = makeMessage(),
-		signature = await Security.sign(tag, message);
+		signature = await Security.sign(message, tag);
 	    isBase64URL(signature);
-	    expect(await Security.verify(tag, signature)).toBeTruthy();
+	    expect(await Security.verify(signature, tag)).toBeTruthy();
 	  });
 	  it('cannot sign for a different key.', async function () {
 	    let message = makeMessage(),
-		signature = await Security.sign(otherTag, message);
-	    expect(await Security.verify(tag, signature)).toBeFalsy();
+		signature = await Security.sign(message, otherTag);
+	    expect(await Security.verify(signature, tag)).toBeFalsy();
 	  });
 	  it('can decrypt what is encrypted for it.', async function () {
 	    let message = makeMessage(scale),
@@ -191,12 +191,12 @@ describe('Distributed Security', function () {
       }, slowKeyCreation);
       it('device is useable as soon as it resolves.', async function () {
 	let device= await Security.create();
-	expect(await Security.sign(device, "anything")).toBeTruthy();
+	expect(await Security.sign("anything", device)).toBeTruthy();
 	await Security.destroy(device);
       });
       it('team is useable as soon as it resolves.', async function () {
 	let team = await Security.create(tags.device); // There was a bug once: awaiting a function that did return its promise.
-	expect(await Security.sign(team, "anything")).toBeTruthy();
+	expect(await Security.sign("anything", team)).toBeTruthy();
 	await Security.destroy(team);
       });
       it('allows recovery prompts that contain dot.', async function () {
@@ -204,9 +204,9 @@ describe('Distributed Security', function () {
 	    user = await Security.create(tag),
 	    message = "red.white",
 	    encrypted = await Security.encrypt(user, message),
-	    signed = await Security.sign(user, message);
+	    signed = await Security.sign(message, user);
 	expect(await Security.decrypt(user, encrypted)).toBe(message);
-	expect(await Security.verify(user, signed)).toBeTruthy();
+	expect(await Security.verify(signed, user)).toBeTruthy();
 	Security.destroy(user);
 	Security.destroy(tag);
       });

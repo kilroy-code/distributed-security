@@ -30,10 +30,10 @@ function log(...args) { // Log message to element named "log".
 const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
       api = {
 	create(...optionalMembers) { return postWorker('create', ...optionalMembers); },
-	verify(tag, signature) { return postWorker('verify', tag, signature); },
+	verify(signature, tag) { return postWorker('verify', signature, tag); },
 	encrypt(tag, message) { return postWorker('encrypt', tag, message); },
 	decrypt(tag, encrypted) { return postWorker('decrypt', tag, encrypted); },
-	sign(tag, message) { return postWorker('sign', tag, message); },
+	sign(message, tag) { return postWorker('sign', message, tag); },
 	changeMembership(tag, options) { return postWorker('changeMembership', tag, options); },
 	clear(tag) { return postWorker('clear', tag); },
 	destroy(tag, options) { return postWorker('destroy', tag, options); }

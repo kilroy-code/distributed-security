@@ -7,19 +7,41 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 	slowHybrid = bigEncryptable ? slowKeyCreation : 5e3; // Needed on Android
 
   describe('signing', function () {
+    let message = makeMessage();
     it('returns truthy for verified at scale with an asymmetric keypair.', async function () {
       let keypair = await krypto.generateSigningKey(),
-	  message = makeMessage(),
 	  signature = await krypto.sign(keypair.privateKey, message);
       isBase64URL(signature);
       expect(await krypto.verify(keypair.publicKey, signature)).toBeTruthy();
     });
-    it('returns falsy for verify with the wrong key.', async function () {
+    it('returns undefined for verify with the wrong key.', async function () {
       let keypair = await krypto.generateSigningKey(),
-	  message = makeMessage(),
 	  signature = await krypto.sign(keypair.privateKey, message),
 	  wrongKeypair = await krypto.generateSigningKey();
-      expect(await krypto.verify(wrongKeypair.publicKey, signature)).toBeFalsy();
+      expect(await krypto.verify(wrongKeypair.publicKey, signature)).toBeUndefined();
+    });
+    it('handles text, and verifies with that as text property.', async function () {
+      let keypair = await krypto.generateSigningKey(),
+	  signature = await krypto.sign(keypair.privateKey, message),
+	  verified = await krypto.verify(keypair.publicKey, signature);
+      expect(verified.protectedHeader.cty.startsWith('text')).toBeTruthy();
+      expect(verified.text).toBe(message);
+    });
+    it('handles json, and verifies with that as json property.', async function () {
+      let keypair = await krypto.generateSigningKey(),
+	  message = {foo: 'bar'},
+	  signature = await krypto.sign(keypair.privateKey, message),
+	  verified = await krypto.verify(keypair.publicKey, signature);
+      expect(verified.protectedHeader.cty.includes('json')).toBeTruthy();
+      expect(verified.json).toEqual(message);
+    });
+    it('handles binary, and verifies with that as payload property.', async function () {
+      let keypair = await krypto.generateSigningKey(),
+	  message = new Uint8Array([21, 31]),
+	  signature = await krypto.sign(keypair.privateKey, message),
+	  verified = await krypto.verify(keypair.publicKey, signature);
+      expect(verified.cty).toBeUndefined();
+      expect(verified.payload).toEqual(message);
     });
   });
 

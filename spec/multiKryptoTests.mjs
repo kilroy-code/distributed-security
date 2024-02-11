@@ -19,7 +19,8 @@ export default function testMultiKrypto(multiKrypto) {
 
       it('is a multi-signature.', async function () {
 	let multiSign = {a: signingA.privateKey, b: signingB.privateKey},
-	    multiVerify = {a: signingA.publicKey, b: signingB.publicKey},
+	    // Order doesn't matter. just that they correspond as a set.
+	    multiVerify = {b: signingB.publicKey, a: signingA.publicKey},
 	    signature = await multiKrypto.sign(multiSign, message),
 	    verified = await multiKrypto.verify(multiVerify, signature);
 	expect(verified).toBeTruthy();
@@ -55,6 +56,35 @@ export default function testMultiKrypto(multiKrypto) {
 	  expect(header.iat).toBe(iat);
 	});
       });
+      it('can sign binary and it is recovery as binary from payload property of verfication.', async function () {
+	let message = new Uint8Array([1], [2], [3]),
+	    signature = await multiKrypto.sign({a: signingA.privateKey, b: signingB.privateKey}, message),
+	    verified = await multiKrypto.verify({a: signingA.publicKey, b: signingB.publicKey}, signature);
+	expect(verified.payload).toEqual(message);
+      });
+      it('can sign string type and it is recovery as string from text property of verification.', async function () {
+	let message = "a string",
+	    signature = await multiKrypto.sign({a: signingA.privateKey, b: signingB.privateKey}, message),
+	    verified = await multiKrypto.verify({a: signingA.publicKey, b: signingB.publicKey}, signature);
+	expect(verified.text).toEqual(message);
+	expect(verified.payload).toEqual(new TextEncoder().encode(message));
+      });
+      it('can sign a jsonable object and it is recovery as same from json property of result.', async function () {
+	let message = {foo: "a string", bar: false, baz: ['a', 2, null]},
+	    signature = await multiKrypto.sign({a: signingA.privateKey, b: signingB.privateKey}, message),
+	    verified = await multiKrypto.verify({a: signingA.publicKey, b: signingB.publicKey}, signature);
+	expect(verified.json).toEqual(message);
+	expect(verified.payload).toEqual(new TextEncoder().encode(JSON.stringify(message)));
+      });
+      it('can specify a specific cty that will pass through to verify.', async function () {
+	let message = {foo: "a string", bar: false, baz: ['a', 2, null]},
+	    cty = 'appliction/foo+json',
+	    signature = await multiKrypto.sign({a: signingA.privateKey, b: signingB.privateKey, cty}, message),
+	    verified = await multiKrypto.verify({a: signingA.publicKey, b: signingB.publicKey}, signature);
+	expect(verified.json).toEqual(message);
+	expect(verified.protectedHeader.cty).toBe(cty);
+	expect(verified.payload).toEqual(new TextEncoder().encode(JSON.stringify(message)));
+      });
 
       it('fails fails verification if there is a mismatch between key labeling.',
 	 async function () {
@@ -62,7 +92,7 @@ export default function testMultiKrypto(multiKrypto) {
 	       multiVerify = {a: signingA.publicKey, b: signingB.publicKey},
 	       signature = await multiKrypto.sign(multiSign, message),
 	       verified = await multiKrypto.verify(multiVerify, signature);
-	   expect(verified).toBeFalsy();
+	   expect(verified).toBeUndefined();
 	 });
       it('fails fails verification if the verification sub key is missing.',
 	 async function () {
@@ -70,7 +100,7 @@ export default function testMultiKrypto(multiKrypto) {
 	       multiVerify = {a: signingA.publicKey}, // Missing b.
 	       signature = await multiKrypto.sign(multiSign, message),
 	       verified = await multiKrypto.verify(multiVerify, signature);
-	   expect(verified).toBeFalsy();
+	   expect(verified).toBeUndefined();
 	 });
       it('fails fails verification if a signature sub key is missing.',
 	 async function () {
@@ -78,7 +108,7 @@ export default function testMultiKrypto(multiKrypto) {
 	       multiVerify = {a: signingA.publicKey, b: signingB.publicKey},
 	       signature = await multiKrypto.sign(multiSign, message),
 	       verified = await multiKrypto.verify(multiVerify, signature);
-	   expect(verified).toBeFalsy();
+	   expect(verified).toBeUndefined();
 	 });
     });
 

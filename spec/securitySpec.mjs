@@ -174,9 +174,30 @@ describe('Distributed Security', function () {
 		let signature = await Security.sign(message, tag, otherTag);
 		expect(await Security.verify(signature, otherTag, tag)).toBeTruthy(); // order does not matter
 	      });
-	      it('requires all keys to verify.', async function () {
-		let signature = await Security.sign(message, otherTag);
-		expect(await Security.verify(signature, tag)).toBeUndefined();
+	      describe('bad verification', function () {
+		let oneMore;
+		beforeAll(async function () { oneMore = await Security.create(); });
+		afterAll(async function () { await Security.destroy(oneMore); });
+		describe('when mixing single and multi-tags', function () {
+		  it('fails with extra signing tag.', async function () {
+		    let signature = await Security.sign(message, otherTag);
+		    expect(await Security.verify(signature, tag)).toBeUndefined();
+		  });
+		  it('fails with extra verifying.', async function () {
+		    let signature = await Security.sign(message, tag);
+		    expect(await Security.verify(signature, tag, otherTag)).toBeUndefined();
+		  });
+		});
+		describe('when mixing multi-tag lengths', function () {
+		  it('fails with extra signing tag.', async function () {
+		    let signature = await Security.sign(message, otherTag, oneMore);
+		    expect(await Security.verify(signature, tag, oneMore)).toBeUndefined();
+		  });
+		  it('fails with extra verifying tag.', async function () {
+		    let signature = await Security.sign(message, tag, oneMore);
+		    expect(await Security.verify(signature, tag, otherTag, oneMore)).toBeUndefined();
+		  });
+		});
 	      });
 	      it('distinguishes between correctly signing false and key failure.', async function () {
 		let signature = await Security.sign(false, tag, otherTag),

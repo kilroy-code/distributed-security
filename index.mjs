@@ -6,14 +6,14 @@ const vaultUrl = new URL('vault.html', import.meta.url),
 	log(...args) { console.log(...args); }
       }, // Will get handlers for messages from the iframe.
       api = {
-	create(...optionalMembers) { return postIframe('create', ...optionalMembers); },
+	sign(message, ...tags) { return postIframe('sign', message, ...tags); },
+	verify(signature, ...tags) { return postIframe('verify', signature, ...tags); },
 	encrypt(message, tag) { return postIframe('encrypt', message, tag); },
 	decrypt(encrypted, tag) { return postIframe('decrypt', encrypted, tag); },
-	sign(message, tag) { return postIframe('sign', message, tag); },
-	verify(signature, tag) { return postIframe('verify', signature, tag); },
+	create(...optionalMembers) { return postIframe('create', ...optionalMembers); },
 	changeMembership({tag, add, remove} = {}) { return postIframe('changeMembership', {tag, add, remove}); },
-	clear(tag = null) { return postIframe('clear', tag); },
 	destroy(tagOrOptions) { return postIframe('destroy', tagOrOptions); },
+	clear(tag = null) { return postIframe('clear', tag); },
 
 	set Storage(storage) { Object.assign(resourcesForIframe, storage); },
 	set getUserDeviceSecret(thunk) { resourcesForIframe.getUserDeviceSecret = thunk; },

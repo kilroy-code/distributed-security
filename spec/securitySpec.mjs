@@ -24,6 +24,7 @@ InternalSecurity.getUserDeviceSecret = (tag, recoveryPrompt) => recoveryPrompt ?
 Security.getUserDeviceSecret = (tag, recoveryPrompt) => "another secret";
 
 describe('Distributed Security', function () {
+  let message = makeMessage();
   describe('Krypto', function () {
     testKrypto(Krypto);
   });
@@ -77,15 +78,13 @@ describe('Distributed Security', function () {
 	    expect(typeof tag).toBe('string');
 	    expect(exported).toBe(tag);
 
-	    let message = makeMessage(),
-		signature = await vault.sign(message),
+	    let signature = await vault.sign(message),
 		verification = await MultiKrypto.verify(verifyKey, signature);
 	    isBase64URL(signature);
 	    expect(verification).toBeTruthy();
 	  });
 	  it('public encryption tag can be retrieved externally, and vault.decrypt() pairs with it.', async function () {
 	    let tag = vault.tag,
-		message = makeMessage(scale),
 		retrieved = await Storage.retrieve('EncryptionKey', tag),
 		imported = await MultiKrypto.importJWK(JSON.parse(retrieved)),
 		encrypted = await MultiKrypto.encrypt(imported, message),
@@ -133,32 +132,92 @@ describe('Distributed Security', function () {
 	    tag = tags[tagsKey];
 	    otherTag = tags[otherTagsKey];
 	  });
-	  it('can sign and be verified.', async function () {
-	    let message = makeMessage(),
-		signature = await Security.sign(message, tag);
-	    isBase64URL(signature);
-	    expect(await Security.verify(signature, tag)).toBeTruthy();
+	  describe('signature', function () {
+	    describe('of one tag', function () {
+	      it('can sign and be verified.', async function () {
+		let signature = await Security.sign(message, tag);
+		isBase64URL(signature);
+		expect(await Security.verify(signature, tag)).toBeTruthy();
+	      });
+	      it('cannot sign for a different key.', async function () {
+		let signature = await Security.sign(message, otherTag);
+		expect(await Security.verify(signature, tag)).toBeUndefined();
+	      });
+	      it('distinguishes between correctly signing false and key failure.', async function () {
+		let signature = await Security.sign(false, tag),
+		    verified = await Security.verify(signature, tag);
+		expect(verified.json).toBe(false);
+	      });
+	      it('can sign text and produce verified result with text property.', async function () {
+		let signature = await Security.sign(message, tag),
+		    verified = await Security.verify(signature, tag);
+		isBase64URL(signature);
+		expect(verified.text).toBe(message);
+	      });
+	      it('can sign json and produce verified result with json property.', async function () {
+		let message = {x: 1, y: ["abc", null, false]},
+		    signature = await Security.sign(message, tag),
+		    verified = await Security.verify(signature, tag);
+		isBase64URL(signature);
+		expect(verified.json).toEqual(message);
+	      });
+	      it('can sign binary and produce verified result with payload property.', async function () {
+		let message = new Uint8Array([1, 2, 3]),
+		    signature = await Security.sign(message, tag),
+		    verified = await Security.verify(signature, tag);
+		isBase64URL(signature);
+		expect(verified.payload).toEqual(message);
+	      });
+	    });
+	    describe('of multiple tags', function () {
+	      it('can sign and be verified.', async function () {
+		let signature = await Security.sign(message, tag, otherTag);
+		expect(await Security.verify(signature, otherTag, tag)).toBeTruthy(); // order does not matter
+	      });
+	      it('requires all keys to verify.', async function () {
+		let signature = await Security.sign(message, otherTag);
+		expect(await Security.verify(signature, tag)).toBeUndefined();
+	      });
+	      it('distinguishes between correctly signing false and key failure.', async function () {
+		let signature = await Security.sign(false, tag, otherTag),
+		    verified = await Security.verify(signature, tag, otherTag);
+		expect(verified.json).toBe(false);
+	      });
+	      it('can sign text and produce verified result with text property.', async function () {
+		let signature = await Security.sign(message, tag, otherTag),
+		    verified = await Security.verify(signature, tag, otherTag);
+		expect(verified.text).toBe(message);
+	      });
+	      it('can sign json and produce verified result with json property.', async function () {
+		let message = {x: 1, y: ["abc", null, false]},
+		    signature = await Security.sign(message, tag, otherTag),
+		    verified = await Security.verify(signature, tag, otherTag);
+		expect(verified.json).toEqual(message);
+	      });
+	      it('can sign binary and produce verified result with payload property.', async function () {
+		let message = new Uint8Array([1, 2, 3]),
+		    signature = await Security.sign(message, tag, otherTag),
+		    verified = await Security.verify(signature, tag, otherTag);
+		expect(verified.payload).toEqual(message);
+	      });
+	    });
 	  });
-	  it('cannot sign for a different key.', async function () {
-	    let message = makeMessage(),
-		signature = await Security.sign(message, otherTag);
-	    expect(await Security.verify(signature, tag)).toBeFalsy();
-	  });
-	  it('can decrypt what is encrypted for it.', async function () {
-	    let message = makeMessage(scale),
-		encrypted = await Security.encrypt(message, tag),
-		decrypted = await Security.decrypt(encrypted, tag);
-	    isBase64URL(encrypted)
-	    expect(decrypted).toBe(message);
-	  });
-	  it('cannot decrypt what is encrypted for a different key.', async function () {
-	    let message = makeMessage(446),
-		encrypted = await Security.encrypt(message, otherTag),
-		errorMessage = await Security.decrypt(encrypted, tag).catch(e => e.message);
-	    expect(errorMessage.toLowerCase()).toContain('operation');
-	    // Some browsers supply a generic message, such as 'The operation failed for an operation-specific reason'
-	    // IF there's no message at all, our jsonrpc supplies one with the jsonrpc 'method' name.
-	    //expect(errorMessage).toContain('decrypt');
+	  describe('encryption', function () {
+	    it('can decrypt what is encrypted for it.', async function () {
+	      let encrypted = await Security.encrypt(message, tag),
+		  decrypted = await Security.decrypt(encrypted, tag);
+	      isBase64URL(encrypted)
+	      expect(decrypted).toBe(message);
+	    });
+	    it('cannot decrypt what is encrypted for a different key.', async function () {
+	      let message = makeMessage(446),
+		  encrypted = await Security.encrypt(message, otherTag),
+		  errorMessage = await Security.decrypt(encrypted, tag).catch(e => e.message);
+	      expect(errorMessage.toLowerCase()).toContain('operation');
+	      // Some browsers supply a generic message, such as 'The operation failed for an operation-specific reason'
+	      // IF there's no message at all, our jsonrpc supplies one with the jsonrpc 'method' name.
+	      //expect(errorMessage).toContain('decrypt');
+	    });
 	  });
 	});
       }
@@ -169,8 +228,7 @@ describe('Distributed Security', function () {
       it('can safely be used when a device is removed, but not after being entirely destroyed.', async function () {
 	let [d1, d2] = await Promise.all([Security.create(), Security.create()]),
 	    u = await Security.create(d1, d2),
-	    t = await Security.create(u),
-	    message = makeMessage();
+	    t = await Security.create(u);
 
 	let encrypted = await Security.encrypt(message, t);
 	expect(await Security.decrypt(encrypted, t)).toBe(message);

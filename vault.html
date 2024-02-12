@@ -29,14 +29,14 @@ function log(...args) { // Log message to element named "log".
 //log(`vault location: ${location.href}, referrer: ${document.referrer}`);
 const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
       api = {
-	create(...optionalMembers) { return postWorker('create', ...optionalMembers); },
-	verify(signature, tag) { return postWorker('verify', signature, tag); },
+	sign(message, ...tags) { return postWorker('sign', message, ...tags); },
+	verify(signature, ...tags) { return postWorker('verify', signature, ...tags); },
 	encrypt(message, tag) { return postWorker('encrypt', message, tag); },
 	decrypt(encrypted, tag) { return postWorker('decrypt', encrypted, tag); },
-	sign(message, tag) { return postWorker('sign', message, tag); },
+	create(...optionalMembers) { return postWorker('create', ...optionalMembers); },
 	changeMembership(options) { return postWorker('changeMembership', options); },
-	clear(tag) { return postWorker('clear', tag); },
-	destroy(tagOrOptions) { return postWorker('destroy', tagOrOptions); }
+	destroy(tagOrOptions) { return postWorker('destroy', tagOrOptions); },
+	clear(tag) { return postWorker('clear', tag); }
       },
       postClient = dispatch({target:parent, receiver:self, namespace:api, origin:hostOrigin/*, log: (...args) => log('vault postClient', ...args)*/}),
       localKey = (resourceTag, ownerTag) => { return (resourceTag === 'Device') && `${resourceTag}/${ownerTag}`; },

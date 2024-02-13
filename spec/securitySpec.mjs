@@ -246,6 +246,33 @@ describe('Distributed Security', function () {
       test('RecoveryVault', 'recovery', 'otherRecovery');
       test('User TeamVault', 'user', 'otherUser');
       test('Team TeamVault', 'team', 'otherTeam');
+      describe('auditable signatures', function () {
+	it('recognizes a team with a member.', async function () {
+	  let signature = await Security.sign(message, {team: tags.team, member: tags.user}),
+	      verification = await Security.verify(signature, tags.team, tags.user);
+	  expect(verification).toBeTruthy();
+	  expect(verification.protectedHeader.iss).toBe(tags.team);
+	  expect(verification.protectedHeader.act).toBe(tags.user);
+	});
+	describe('with a user who is not a member', function () {
+	  let nonMember;
+	  beforeAll(async function () { nonMember = await Security.create(tags.device); });
+	  afterAll(async function () { await Security.destroy(nonMember); });
+	  it('verifies as an ordinary dual signature.', async function () {
+	    let signature = await Security.sign(message, tags.team, nonMember),
+		verification = await Security.verify(signature, tags.team, nonMember);
+	    expect(verification.text).toBe(message);
+	    expect(verification.protectedHeader.iss).toBeUndefined();
+	    expect(verification.protectedHeader.act).toBeUndefined();
+	  });
+	  it('does not verify as an dual signature specifying team and member.', async function () {
+	    let signature = await Security.sign(message, {team: tags.team, member: nonMember}),
+		verification = await Security.verify(signature, tags.team, nonMember);
+	    expect(verification).toBeUndefined();
+	  });
+	});
+	// FIXME: show iat usage and failure
+      });
       it('can safely be used when a device is removed, but not after being entirely destroyed.', async function () {
 	let [d1, d2] = await Promise.all([Security.create(), Security.create()]),
 	    u = await Security.create(d1, d2),

@@ -39,24 +39,11 @@ const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
 	clear(tag) { return postWorker('clear', tag); }
       },
       postClient = dispatch({target:parent, receiver:self, namespace:api, origin:hostOrigin/*, log: (...args) => log('vault postClient', ...args)*/}),
-      localKey = (resourceTag, ownerTag) => { return (resourceTag === 'Device') && `${resourceTag}/${ownerTag}`; },
       hostAPI = {
 	store(resourceTag, ownerTag, string, signature) {
-	  let local = localKey(resourceTag, ownerTag);
-	  if (local) {
-	    // TODO: check signature
-	    //log(string ? 'storing' : 'deleting', 'device', ownerTag);
-	    if (string) localStorage.setItem(local, string);
-	    else localStorage.removeItem(local);
-	    return;
-	  }
 	  return postClient('store', resourceTag, ownerTag, string, signature);
 	},
 	retrieve(resourceTag, ownerTag) {
-	  let local = localKey(resourceTag, ownerTag);
-	  if (local) {
-	    return localStorage.getItem(local);
-	  }
 	  return postClient('retrieve', resourceTag, ownerTag);
 	},
 	getUserDeviceSecret(...args) {

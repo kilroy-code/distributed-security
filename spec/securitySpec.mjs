@@ -86,7 +86,8 @@ describe('Distributed Security', function () {
 	  it('public encryption tag can be retrieved externally, and vault.decrypt() pairs with it.', async function () {
 	    let tag = vault.tag,
 		retrieved = await Storage.retrieve('EncryptionKey', tag),
-		imported = await MultiKrypto.importJWK(JSON.parse(retrieved)),
+		verified = await Security.verify(retrieved, tag),
+		imported = await MultiKrypto.importJWK(JSON.parse(verified.text)),
 		encrypted = await MultiKrypto.encrypt(imported, message),
 		decrypted = await vault.decrypt(encrypted);
 	    expect(decrypted).toBe(message);

@@ -62,7 +62,7 @@ export default function testMultiKrypto(multiKrypto) {
 	    verified = await multiKrypto.verify({a: signingA.publicKey, b: signingB.publicKey}, signature);
 	expect(verified.payload).toEqual(message);
       });
-      it('can sign string type and it is recovery as string from text property of verification.', async function () {
+      it('can sign string type and it is recoverable as string from text property of verification.', async function () {
 	let message = "a string",
 	    signature = await multiKrypto.sign({a: signingA.privateKey, b: signingB.privateKey}, message),
 	    verified = await multiKrypto.verify({a: signingA.publicKey, b: signingB.publicKey}, signature);
@@ -86,29 +86,29 @@ export default function testMultiKrypto(multiKrypto) {
 	expect(verified.payload).toEqual(new TextEncoder().encode(JSON.stringify(message)));
       });
 
-      it('fails fails verification if there is a mismatch between key labeling.',
+      it('fails verification if the signature is mislabeled.',
 	 async function () {
-	   let multiSign = {a: signingA.privateKey, b: signingA.privateKey}, // Note that the value for b is not what is claimed.
+	   let multiSign = {a: signingB.privateKey, b: signingA.privateKey}, // Note that the values are not what is claimed.
 	       multiVerify = {a: signingA.publicKey, b: signingB.publicKey},
 	       signature = await multiKrypto.sign(multiSign, message),
 	       verified = await multiKrypto.verify(multiVerify, signature);
 	   expect(verified).toBeUndefined();
 	 });
-      it('fails fails verification if the verification sub key is missing.',
+      it('gives enough information that we can tell if a verifying sub key is missing.',
 	 async function () {
 	   let multiSign = {a: signingA.privateKey, b: signingB.privateKey},
 	       multiVerify = {a: signingA.publicKey}, // Missing b.
 	       signature = await multiKrypto.sign(multiSign, message),
 	       verified = await multiKrypto.verify(multiVerify, signature);
-	   expect(verified).toBeUndefined();
+	   expect(verified.signers.some(signer => !signer.payload)).toBeTruthy();
 	 });
-      it('fails fails verification if a signature sub key is missing.',
+      it('gives enough information that we can tell if a signature sub key is missing.',
 	 async function () {
 	   let multiSign = {a: signingA.privateKey}, // Missing b.
 	       multiVerify = {a: signingA.publicKey, b: signingB.publicKey},
 	       signature = await multiKrypto.sign(multiSign, message),
 	       verified = await multiKrypto.verify(multiVerify, signature);
-	   expect(verified).toBeUndefined();
+	   expect(verified.signers.every(signer => 'b' !== signer.kid)).toBeTruthy();
 	 });
     });
 

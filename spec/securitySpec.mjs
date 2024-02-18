@@ -17,11 +17,20 @@ import testMultiKrypto from "./multiKryptoTests.mjs";
 import testModule from "./support/testModuleWithFoo.mjs";
 import {scale, makeMessage, isBase64URL} from "./support/messageText.mjs";
 
-//jasmine.getEnv().configure({random: false});
+jasmine.getEnv().configure({random: false});
 
 InternalSecurity.Storage = Security.Storage = Storage;
-InternalSecurity.getUserDeviceSecret = (tag, recoveryPrompt) => recoveryPrompt ? recoveryPrompt + " is true" : "test secret";
-Security.getUserDeviceSecret = (tag, recoveryPrompt) => "another secret";
+let thisDeviceSecret = "secret",
+    secret = thisDeviceSecret;
+async function withSecret(thunk) {
+  secret = "other";
+  await thunk();
+  secret = thisDeviceSecret;
+}
+function getSecret(tag, recoveryPrompt = '') {
+  return recoveryPrompt + secret;;
+}
+InternalSecurity.getUserDeviceSecret = Security.getUserDeviceSecret = getSecret;
 
 describe('Distributed Security', function () {
   let message = makeMessage();
@@ -35,26 +44,32 @@ describe('Distributed Security', function () {
     const slowKeyCreation = 25e3; // e.g., Safari needs about 15 seconds. Android needs more
     async function makeVaults(scope) { // Create a standard set of test vaults through context.
       let tags = {};
-      await Promise.all([
-	tags.device = await scope.create(),
-	tags.otherDevice = await scope.create()
+      let [device, recovery, otherRecovery] = await Promise.all([
+	scope.create(),
+	scope.create({prompt: "what?"}), scope.create({prompt: "nope!"})
       ]);
-      await Promise.all([
-	tags.recovery = await scope.create({prompt: "what?"}),
-	tags.otherRecovery = await scope.create({prompt: "nope!"})
-      ]);
-      await Promise.all([
-	tags.user = await scope.create(tags.device),
-	tags.otherUser = await scope.create(tags.otherDevice)
-      ]);
-      await Promise.all([
-	tags.team = await scope.create(tags.otherUser, tags.user),
-	tags.otherTeam = await scope.create(tags.otherUser, tags.user)   // Note: same members, but a different identity.
-      ]);
+      let otherDevice;
+      await withSecret(async function () {
+	otherDevice = await scope.create();
+      });
+      let [user, otherUser] = await Promise.all([scope.create(device), scope.create(otherDevice)]);
+      // Note: same members, but a different identity.
+      let [team, otherTeam] = await Promise.all([scope.create(user, otherUser), scope.create(otherUser, user)]);
+      tags.device = device; tags.otherDevice = otherDevice;
+      tags.recovery = recovery; tags.otherRecovery = otherRecovery;
+      tags.user = user; tags.otherUser = otherUser;
+      tags.team = team; tags.otherTeam = otherTeam;
       return tags;
     }
     async function destroyVaults(scope, tags) {
-      await Promise.all(Object.values(tags).map(tag => scope.destroy(tag)));
+      let otherDevice = tags.otherDevice,
+	  otherUser = tags.otherUser,
+	  allOtherTags = Object.values(tags).filter(tag => ![otherDevice, otherUser].includes(tag));
+      await Promise.all(allOtherTags.map(tag => scope.destroy(tag)));
+      await withSecret(async function () {
+	await scope.destroy(otherUser);
+	await scope.destroy(otherDevice);
+      });
     }
     describe('internal machinery', function () {
       let tags;
@@ -117,7 +132,7 @@ describe('Distributed Security', function () {
 	});
       });
     });
-    describe("Usage", function () {
+    describe("API", function () {
       let tags;
       beforeAll(async function () {
 	console.log(await Security.ready);
@@ -126,12 +141,12 @@ describe('Distributed Security', function () {
       afterAll(async function () {
 	await destroyVaults(Security, tags);
       }, slowKeyCreation);
-      function test(label, tagsKey, otherTagsKey) {
+      function test(label, tagsName, otherOwnedTagsName) {
 	describe(label, function () {
-	  let tag, otherTag;
+	  let tag, otherOwnedTag;
 	  beforeAll(function () {
-	    tag = tags[tagsKey];
-	    otherTag = tags[otherTagsKey];
+	    tag = tags[tagsName];
+	    otherOwnedTag = tags[otherOwnedTagsName];
 	  });
 	  describe('signature', function () {
 	    describe('of one tag', function () {
@@ -141,7 +156,7 @@ describe('Distributed Security', function () {
 		expect(await Security.verify(signature, tag)).toBeTruthy();
 	      });
 	      it('cannot sign for a different key.', async function () {
-		let signature = await Security.sign(message, otherTag);
+		let signature = await Security.sign(message, otherOwnedTag);
 		expect(await Security.verify(signature, tag)).toBeUndefined();
 	      });
 	      it('distinguishes between correctly signing false and key failure.', async function () {
@@ -172,8 +187,8 @@ describe('Distributed Security', function () {
 	    });
 	    describe('of multiple tags', function () {
 	      it('can sign and be verified.', async function () {
-		let signature = await Security.sign(message, tag, otherTag);
-		expect(await Security.verify(signature, otherTag, tag)).toBeTruthy(); // order does not matter
+		let signature = await Security.sign(message, tag, otherOwnedTag);
+		expect(await Security.verify(signature, otherOwnedTag, tag)).toBeTruthy(); // order does not matter
 	      });
 	      describe('bad verification', function () {
 		let oneMore;
@@ -181,45 +196,45 @@ describe('Distributed Security', function () {
 		afterAll(async function () { await Security.destroy(oneMore); });
 		describe('when mixing single and multi-tags', function () {
 		  it('fails with extra signing tag.', async function () {
-		    let signature = await Security.sign(message, otherTag);
+		    let signature = await Security.sign(message, otherOwnedTag);
 		    expect(await Security.verify(signature, tag)).toBeUndefined();
 		  });
 		  it('fails with extra verifying.', async function () {
 		    let signature = await Security.sign(message, tag);
-		    expect(await Security.verify(signature, tag, otherTag)).toBeUndefined();
+		    expect(await Security.verify(signature, tag, otherOwnedTag)).toBeUndefined();
 		  });
 		});
 		describe('when mixing multi-tag lengths', function () {
 		  it('fails with extra signing tag.', async function () {
-		    let signature = await Security.sign(message, otherTag, oneMore);
+		    let signature = await Security.sign(message, otherOwnedTag, oneMore);
 		    expect(await Security.verify(signature, tag, oneMore)).toBeUndefined();
 		  });
 		  it('fails with extra verifying tag.', async function () {
 		    let signature = await Security.sign(message, tag, oneMore);
-		    expect(await Security.verify(signature, tag, otherTag, oneMore)).toBeUndefined();
+		    expect(await Security.verify(signature, tag, otherOwnedTag, oneMore)).toBeUndefined();
 		  });
 		});
 	      });
 	      it('distinguishes between correctly signing false and key failure.', async function () {
-		let signature = await Security.sign(false, tag, otherTag),
-		    verified = await Security.verify(signature, tag, otherTag);
+		let signature = await Security.sign(false, tag, otherOwnedTag),
+		    verified = await Security.verify(signature, tag, otherOwnedTag);
 		expect(verified.json).toBe(false);
 	      });
 	      it('can sign text and produce verified result with text property.', async function () {
-		let signature = await Security.sign(message, tag, otherTag),
-		    verified = await Security.verify(signature, tag, otherTag);
+		let signature = await Security.sign(message, tag, otherOwnedTag),
+		    verified = await Security.verify(signature, tag, otherOwnedTag);
 		expect(verified.text).toBe(message);
 	      });
 	      it('can sign json and produce verified result with json property.', async function () {
 		let message = {x: 1, y: ["abc", null, false]},
-		    signature = await Security.sign(message, tag, otherTag),
-		    verified = await Security.verify(signature, tag, otherTag);
+		    signature = await Security.sign(message, tag, otherOwnedTag),
+		    verified = await Security.verify(signature, tag, otherOwnedTag);
 		expect(verified.json).toEqual(message);
 	      });
 	      it('can sign binary and produce verified result with payload property.', async function () {
 		let message = new Uint8Array([1, 2, 3]),
-		    signature = await Security.sign(message, tag, otherTag),
-		    verified = await Security.verify(signature, tag, otherTag);
+		    signature = await Security.sign(message, tag, otherOwnedTag),
+		    verified = await Security.verify(signature, tag, otherOwnedTag);
 		expect(verified.payload).toEqual(message);
 	      });
 	    });
@@ -233,7 +248,7 @@ describe('Distributed Security', function () {
 	    });
 	    it('cannot decrypt what is encrypted for a different key.', async function () {
 	      let message = makeMessage(446),
-		  encrypted = await Security.encrypt(message, otherTag),
+		  encrypted = await Security.encrypt(message, otherOwnedTag),
 		  errorMessage = await Security.decrypt(encrypted, tag).catch(e => e.message);
 	      expect(errorMessage.toLowerCase()).toContain('operation');
 	      // Some browsers supply a generic message, such as 'The operation failed for an operation-specific reason'
@@ -243,19 +258,38 @@ describe('Distributed Security', function () {
 	  });
 	});
       }
-      test('DeviceVault', 'device', 'otherDevice');
+      test('DeviceVault', 'device', 'user'); // We own user, but it isn't the same as device.
       test('RecoveryVault', 'recovery', 'otherRecovery');
-      test('User TeamVault', 'user', 'otherUser');
+      test('User TeamVault', 'user', 'device'); // We ownd device, but it isn't the same as user.
       test('Team TeamVault', 'team', 'otherTeam');
       describe('auditable signatures', function () {
-	it('recognizes a team with a member.', async function () {
-	  let signature = await Security.sign(message, {team: tags.team, member: tags.user}),
-	      verification = await Security.verify(signature, tags.team, tags.user);
-	  expect(verification).toBeTruthy();
-	  expect(verification.protectedHeader.iss).toBe(tags.team);
-	  expect(verification.protectedHeader.act).toBe(tags.user);
+	describe('by an explicit member', function () {
+	  let signature, verification;
+	  beforeAll(async function () {
+	    signature = await Security.sign(message, {team: tags.team, member: tags.user});
+	    verification = await Security.verify(signature, tags.team, tags.user);
+	  });
+	  it('recognizes a team with a member.', async function () {
+	    expect(verification).toBeTruthy();
+	    expect(verification.text).toBe(message);
+	  });
+	  it('defines iss.', function () {
+	    expect(verification.protectedHeader.iss).toBe(tags.team);
+	  });
+	  it('defines act.', function () {
+	    expect(verification.protectedHeader.act).toBe(tags.user);
+	  });
 	});
-	describe('with a user who is not a member', function () {
+	describe('automatically supplies a valid member', function () {
+	  it('if you have access', async function () {
+	    let signature = await Security.sign(message, {team: tags.team}),
+		member = JOSE.decodeProtectedHeader(JSON.parse(signature).signatures[0]).act,
+		verification = await Security.verify(signature, tags.team, member);
+	    expect(verification).toBeTruthy();
+	    expect(verification.protectedHeader.act).toBe(member);
+	  });
+	});
+	describe('with a valid user who is not a member', function () {
 	  let nonMember;
 	  beforeAll(async function () { nonMember = await Security.create(tags.device); });
 	  afterAll(async function () { await Security.destroy(nonMember); });

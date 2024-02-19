@@ -62,13 +62,15 @@ describe('Distributed Security', function () {
       return tags;
     }
     async function destroyVaults(scope, tags) {
-      let otherDevice = tags.otherDevice,
-	  otherUser = tags.otherUser,
-	  allOtherTags = Object.values(tags).filter(tag => ![otherDevice, otherUser].includes(tag));
-      await Promise.all(allOtherTags.map(tag => scope.destroy(tag)));
+      await scope.destroy(tags.otherTeam);
+      await scope.destroy(tags.team);
+      await scope.destroy(tags.user);
+      await scope.destroy(tags.device);
+      await scope.destroy(tags.recovery);
+      await scope.destroy(tags.otherRecovery);
       await withSecret(async function () {
-	await scope.destroy(otherUser);
-	await scope.destroy(otherDevice);
+	await scope.destroy(tags.otherUser);
+	await scope.destroy(tags.otherDevice);
       });
     }
     describe('internal machinery', function () {
@@ -331,7 +333,7 @@ describe('Distributed Security', function () {
 	expect(errorMessage).toBeTruthy();
       }, slowKeyCreation);
       it('device is useable as soon as it resolves.', async function () {
-	let device= await Security.create();
+	let device = await Security.create();
 	expect(await Security.sign("anything", device)).toBeTruthy();
 	await Security.destroy(device);
       });
@@ -341,15 +343,14 @@ describe('Distributed Security', function () {
 	await Security.destroy(team);
       });
       it('allows recovery prompts that contain dot.', async function () {
-	let tag = await Security.create({prompt: "foo.bar"}),
-	    user = await Security.create(tag),
+	let recovery = await Security.create({prompt: "foo.bar"}),
+	    user = await Security.create(recovery),
 	    message = "red.white",
 	    encrypted = await Security.encrypt(message, user),
 	    signed = await Security.sign(message, user);
 	expect(await Security.decrypt(encrypted, user)).toBe(message);
 	expect(await Security.verify(signed, user)).toBeTruthy();
-	Security.destroy(user);
-	Security.destroy(tag);
+	await Security.destroy({tag: user, recursiveMembers: true});
       });
       /*
 	TODO:

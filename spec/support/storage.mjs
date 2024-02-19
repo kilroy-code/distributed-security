@@ -13,6 +13,7 @@ const Storage = {
     // the app does not necessarily control -- has examined the signature in some way.
     // Note that json will be define if and only if the signature cty specifies json,
     // and otherwise text will be defined if cty specifies text.
+    // Distributed-Storage does not depend on this returned value, but it is nice practice.
     return verified.json ?? verified.text ?? verfied.payload;
   },
   async retrieve(resourceTag, ownerTag) {

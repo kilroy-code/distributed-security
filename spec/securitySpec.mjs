@@ -46,13 +46,15 @@ describe('Distributed Security', function () {
       let tags = {};
       let [device, recovery, otherRecovery] = await Promise.all([
 	scope.create(),
-	scope.create({prompt: "what?"}), scope.create({prompt: "nope!"})
+	scope.create({prompt: "what?"}),
+	scope.create({prompt: "nope!"})
       ]);
-      let otherDevice;
+      let otherDevice, otherUser;
       await withSecret(async function () {
 	otherDevice = await scope.create();
+	otherUser = await scope.create(otherDevice);
       });
-      let [user, otherUser] = await Promise.all([scope.create(device), scope.create(otherDevice)]);
+      let user = await scope.create(device);
       // Note: same members, but a different identity.
       let [team, otherTeam] = await Promise.all([scope.create(user, otherUser), scope.create(otherUser, user)]);
       tags.device = device; tags.otherDevice = otherDevice;

@@ -22,7 +22,6 @@ const Storage = {
     return this[resourceTag][ownerTag];
   },
   Team: {},
-  Device: {},
   KeyRecovery: {},
   EncryptionKey: {}
 };

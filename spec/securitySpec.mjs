@@ -4,13 +4,12 @@ import Storage from "./support/storage.mjs";
 import Security from "../index.mjs";
 //import Security from "https://kilroy-code.github.io/distributed-security/index.mjs";
 import * as JOSE from '../node_modules/jose/dist/browser/index.js';
-window.JOSE = JOSE;
 
 import Krypto from "../lib/krypto.mjs";
 import MultiKrypto from "../lib/multiKrypto.mjs";
 import {Vault, DeviceVault, TeamVault} from "../lib/vault.mjs";
 import InternalSecurity from "../lib/security.mjs";
-Object.assign(window, {Krypto, MultiKrypto, Security, Storage}); // export to browser console for development/debugging experiments.
+Object.assign(window, {Krypto, MultiKrypto, Security, Storage, InternalSecurity, JOSE}); // export to browser console for development/debugging experiments.
 
 import testKrypto from "./kryptoTests.mjs";
 import testMultiKrypto from "./multiKryptoTests.mjs";

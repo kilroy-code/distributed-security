@@ -89,14 +89,14 @@ describe('Distributed Security', function () {
 	    tag = tags[tagsKey];
 	    vault = await Vault.ensure(tag);
 	  });
-	  it('tag is exported verify key, and vault.sign() pairs with it.', async function () {
+	  it('tag is exported verify key, and sign() pairs with it.', async function () {
 	    let tag = vault.tag,
 		verifyKey = await MultiKrypto.importRaw(tag),
 		exported = await MultiKrypto.exportRaw(verifyKey);
 	    expect(typeof tag).toBe('string');
 	    expect(exported).toBe(tag);
 
-	    let signature = await vault.sign(message),
+	    let signature = await Vault.sign(message, {tags: [tag], signingKey: vault.signingKey}),
 		verification = await MultiKrypto.verify(verifyKey, signature);
 	    isBase64URL(signature);
 	    expect(verification).toBeTruthy();

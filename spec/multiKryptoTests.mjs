@@ -43,10 +43,9 @@ export default function testMultiKrypto(multiKrypto) {
 	let iat = Date.now(),
 	    iss = 'a',
 	    act = 'b',
-	    multiSign = {a: signingA.privateKey, b: signingB.privateKey,
-			 iss, act, iat}, // Will appear in signature
+	    multiSign = {a: signingA.privateKey, b: signingB.privateKey},
 	    multiVerify = {a: signingA.publicKey, b: signingB.publicKey},
-	    signature = await multiKrypto.sign(multiSign, message),
+	    signature = await multiKrypto.sign(multiSign, message, {iss, act, iat}),
 	    verified = await multiKrypto.verify(multiVerify, signature);
 	expect(verified).toBeTruthy();
 	JSON.parse(signature).signatures.forEach(subSignature => {
@@ -78,8 +77,8 @@ export default function testMultiKrypto(multiKrypto) {
       });
       it('can specify a specific cty that will pass through to verify.', async function () {
 	let message = {foo: "a string", bar: false, baz: ['a', 2, null]},
-	    cty = 'appliction/foo+json',
-	    signature = await multiKrypto.sign({a: signingA.privateKey, b: signingB.privateKey, cty}, message),
+	    cty = 'application/foo+json',
+	    signature = await multiKrypto.sign({a: signingA.privateKey, b: signingB.privateKey}, message, {cty}),
 	    verified = await multiKrypto.verify({a: signingA.publicKey, b: signingB.publicKey}, signature);
 	expect(verified.json).toEqual(message);
 	expect(verified.protectedHeader.cty).toBe(cty);
@@ -113,12 +112,15 @@ export default function testMultiKrypto(multiKrypto) {
     });
 
     describe('multi-way encryption', function () {
-      let encrypted, keypair, symmetric, secretText = "shh!", recipients;
+      let encrypted, keypair, symmetric, secretText = "shh!", recipients, encryptingMulti, decryptingMulti;
       beforeAll(async function () {
 	symmetric = await multiKrypto.generateSymmetricKey();
 	keypair = await multiKrypto.generateEncryptingKey();
 	encrypted = await multiKrypto.encrypt({a: symmetric, b: keypair.publicKey, c: secretText}, message);
 	recipients = JSON.parse(encrypted).recipients;
+	let otherKeypair = await multiKrypto.generateEncryptingKey();
+	encryptingMulti = {a: keypair.publicKey, b: otherKeypair.publicKey};
+	decryptingMulti = {a: keypair.privateKey, b: otherKeypair.privateKey};
       }, slowKeyCreation);
       it('works with symmetric members.', async function () {
 	let decrypted = await multiKrypto.decrypt({a: symmetric}, encrypted);
@@ -137,6 +139,43 @@ export default function testMultiKrypto(multiKrypto) {
 	expect(decrypted).toBe(message);
 	expect(recipients[2].header.kid).toBe('c');
 	expect(recipients[2].header.alg).toBe('PBES2-HS512+A256KW');
+      });
+
+      it('handles binary, and decrypts as same.', async function () {
+	let message = new Uint8Array([21, 31]),
+	    encrypted = await multiKrypto.encrypt(encryptingMulti, message),
+	    decrypted = await multiKrypto.decrypt(decryptingMulti, encrypted),
+	    header = JOSE.decodeProtectedHeader(JSON.parse(encrypted));
+	expect(header.cty).toBeUndefined();
+	expect(decrypted).toEqual(message);
+      });
+      it('handles text, and decrypts as same.', async function () {
+	let encrypted = await multiKrypto.encrypt(encryptingMulti, message),
+	    decrypted = await multiKrypto.decrypt(decryptingMulti, encrypted),
+	    header = JOSE.decodeProtectedHeader(JSON.parse(encrypted));
+	expect(header.cty).toBe('text/plain');
+	expect(decrypted).toBe(message);
+      });
+      it('handles json, and decrypts as same.', async function () {
+	let message = {foo: 'bar'},
+	    encrypted = await multiKrypto.encrypt(encryptingMulti, message);
+	let header = JOSE.decodeProtectedHeader(JSON.parse(encrypted)),
+	    decrypted = await multiKrypto.decrypt(decryptingMulti, encrypted);
+	expect(header.cty).toBe('json');
+	expect(decrypted).toEqual(message);
+      });
+      it('Uses specified headers if supplied, including cty.', async function () {
+	let cty = 'text/html',
+	    iat = Date.now(),
+	    foo = 17,
+	    message = "<something else>",
+	    encrypted = await multiKrypto.encrypt(encryptingMulti, message, {cty, iat, foo}),
+	    decrypted = await multiKrypto.decrypt(decryptingMulti, encrypted),
+	    header = JOSE.decodeProtectedHeader(JSON.parse(encrypted))
+	expect(header.cty).toBe(cty);
+	expect(header.iat).toBe(iat);
+	expect(header.foo).toBe(foo);
+	expect(decrypted).toBe(message);
       });
 
       it('produces undefined for wrong symmetric key.', async function () {

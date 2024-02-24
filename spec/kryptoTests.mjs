@@ -4,52 +4,69 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 				    encryptableSize = 446) {
   const bigEncryptable = encryptableSize > 1000,
 	slowKeyCreation = 10e3,
-	slowHybrid = bigEncryptable ? slowKeyCreation : 5e3; // Needed on Android
+	slowHybrid = bigEncryptable ? slowKeyCreation : 5e3, // Needed on Android
+	message = makeMessage();
 
   describe('signing', function () {
-    let message = makeMessage();
-    it('returns truthy for verified at scale with an asymmetric keypair.', async function () {
-      let keypair = await krypto.generateSigningKey(),
-	  signature = await krypto.sign(keypair.privateKey, message);
+    let keypair;
+    beforeAll(async function () {
+      keypair = await krypto.generateSigningKey();
+    });
+    it('with a private key produces a base64URL signature that verifies with the public key.', async function () {
+      let signature = await krypto.sign(keypair.privateKey, message);
       isBase64URL(signature);
       expect(await krypto.verify(keypair.publicKey, signature)).toBeTruthy();
     });
     it('returns undefined for verify with the wrong key.', async function () {
-      let keypair = await krypto.generateSigningKey(),
-	  signature = await krypto.sign(keypair.privateKey, message),
+      let signature = await krypto.sign(keypair.privateKey, message),
 	  wrongKeypair = await krypto.generateSigningKey();
       expect(await krypto.verify(wrongKeypair.publicKey, signature)).toBeUndefined();
     });
-    it('handles text, and verifies with that as text property.', async function () {
-      let keypair = await krypto.generateSigningKey(),
-	  signature = await krypto.sign(keypair.privateKey, message),
-	  verified = await krypto.verify(keypair.publicKey, signature);
-      expect(verified.protectedHeader.cty.startsWith('text')).toBeTruthy();
-      expect(verified.text).toBe(message);
-    });
-    it('handles json, and verifies with that as json property.', async function () {
-      let keypair = await krypto.generateSigningKey(),
-	  message = {foo: 'bar'},
-	  signature = await krypto.sign(keypair.privateKey, message),
-	  verified = await krypto.verify(keypair.publicKey, signature);
-      expect(verified.protectedHeader.cty.includes('json')).toBeTruthy();
-      expect(verified.json).toEqual(message);
-    });
     it('handles binary, and verifies with that as payload property.', async function () {
-      let keypair = await krypto.generateSigningKey(),
-	  message = new Uint8Array([21, 31]),
+      let message = new Uint8Array([21, 31]),
 	  signature = await krypto.sign(keypair.privateKey, message),
 	  verified = await krypto.verify(keypair.publicKey, signature);
       expect(verified.cty).toBeUndefined();
       expect(verified.payload).toEqual(message);
     });
+    it('handles text, setting cty as "text/plain", and verifies with that as the text property and an encoding of that for payload.', async function () {
+      let signature = await krypto.sign(keypair.privateKey, message),
+	  verified = await krypto.verify(keypair.publicKey, signature);
+      expect(verified.protectedHeader.cty).toBe('text/plain');
+      expect(verified.text).toBe(message);
+      expect(verified.payload).toEqual(new TextEncoder().encode(message));
+    });
+    it('handles json, setting cty as "json", and verifies with that as json property, the string of that as the text property, and the encoding of that string for payload.', async function () {
+      let message = {foo: 'bar'},
+	  signature = await krypto.sign(keypair.privateKey, message),
+	  verified = await krypto.verify(keypair.publicKey, signature);
+      expect(verified.protectedHeader.cty).toBe('json');
+      expect(verified.json).toEqual(message);
+      expect(verified.text).toBe(JSON.stringify(message));
+      expect(verified.payload).toEqual(new TextEncoder().encode(JSON.stringify(message)));
+    });
+    it('Uses specified headers if supplied, including cty.', async function () {
+      let cty = 'text/html',
+	  iat = Date.now(),
+	  foo = 17,
+	  message = "<something else>",
+	  signature = await krypto.sign(keypair.privateKey, message, {cty, iat, foo}),
+	  verified = await krypto.verify(keypair.publicKey, signature);
+      expect(verified.protectedHeader.cty).toBe(cty);
+      expect(verified.protectedHeader.iat).toBe(iat);
+      expect(verified.protectedHeader.foo).toBe(foo);
+      expect(verified.text).toEqual(message);
+    });
   });
 
   describe('encryption', function () {
+    let keypair;
+    beforeAll(async function () {
+      keypair = await krypto.generateEncryptingKey();
+    });
     it(`can work up through at least ${encryptableSize} bytes with an asymmetric keypair.`, async function () {
       // Public key encrypt will work up through 446 bytes, but the result will not decrypt.
-      let keypair = await krypto.generateEncryptingKey(),
-	  message = makeMessage(encryptableSize),
+      let message = makeMessage(encryptableSize),
 	  encrypted = await krypto.encrypt(keypair.publicKey, message);
       isBase64URL(encrypted);
       expect(await krypto.decrypt(keypair.privateKey, encrypted)).toBe(message)
@@ -58,7 +75,6 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
       it(`can work on much larger data with a ${label}.`, async function () {
 	let key = await promise,
 	    decryptKey = await decryptPromise,
-	    message = makeMessage(),
 	    encrypted = await krypto.encrypt(key, message);
 	isBase64URL(encrypted);
 	expect(await krypto.decrypt(decryptKey, encrypted)).toBe(message);
@@ -69,6 +85,44 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
     testSymmetric('reproducible secret',
 		  krypto.generateSymmetricKey("secret"),
 		  krypto.generateSymmetricKey("secret"));
+
+    it('handles binary, and decrypts as same.', async function () {
+      let message = new Uint8Array([21, 31]),
+	  encrypted = await krypto.encrypt(keypair.publicKey, message),
+	  decrypted = await krypto.decrypt(keypair.privateKey, encrypted),
+	  header = JOSE.decodeProtectedHeader(encrypted);
+      expect(header.cty).toBeUndefined();
+      expect(decrypted).toEqual(message);
+    });
+    it('handles text, and decrypts as same.', async function () {
+      let encrypted = await krypto.encrypt(keypair.publicKey, message),
+	  decrypted = await krypto.decrypt(keypair.privateKey, encrypted),
+	  header = JOSE.decodeProtectedHeader(encrypted);
+      expect(header.cty).toBe('text/plain');
+      expect(decrypted).toBe(message);
+    });
+    it('handles json, and decrypts as same.', async function () {
+      let message = {foo: 'bar'},
+	  encrypted = await krypto.encrypt(keypair.publicKey, message);
+      let header = JOSE.decodeProtectedHeader(encrypted),
+	  decrypted = await krypto.decrypt(keypair.privateKey, encrypted);
+      expect(header.cty).toBe('json');
+      expect(decrypted).toEqual(message);
+    });
+    it('Uses specified headers if supplied, including cty.', async function () {
+      let cty = 'text/html',
+	  iat = Date.now(),
+	  foo = 17,
+	  message = "<something else>",
+	  encrypted = await krypto.encrypt(keypair.publicKey, message, {cty, iat, foo}),
+	  decrypted = await krypto.decrypt(keypair.privateKey, encrypted),
+	  header = JOSE.decodeProtectedHeader(encrypted)
+      expect(header.cty).toBe(cty);
+      expect(header.iat).toBe(iat);
+      expect(header.foo).toBe(foo);
+      expect(decrypted).toBe(message);
+    });
+    
     function failsWithWrong(label, keysThunk) {
       it(`rejects wrong ${label}.`, async function() {
 	let [encryptKey, decryptKey] = await keysThunk(),
@@ -98,7 +152,6 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 	let keypair = await krypto.generateSigningKey(),
 	    serializedPrivateKey = await krypto.exportKey(keypair.privateKey),
 	    importedPrivateKey = await krypto.importKey(serializedPrivateKey),
-	    message = makeMessage(),
 	    signature = await krypto.sign(importedPrivateKey, message);
 	expect(serializedPrivateKey.length).toBe(privateSigningSize);
 	expect(await krypto.verify(keypair.publicKey, signature)).toBeTruthy();
@@ -108,7 +161,6 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 	let keypair = await krypto.generateSigningKey(),
 	    serializedPublicKey = await krypto.exportKey(keypair.publicKey),
 	    importedPublicKey = await krypto.importKey(serializedPublicKey),
-	    message = makeMessage(),
 	    signature = await krypto.sign(keypair.privateKey, message);
 	expect(serializedPublicKey.length).toBe(publicSigningSize);
 	expect(await krypto.verify(importedPublicKey, signature)).toBeTruthy();
@@ -119,7 +171,6 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 	let keypair = await krypto.generateSigningKey(),
 	    serializedPublicKey = await krypto.exportRaw(keypair.publicKey),
 	    importedPublicKey = await krypto.importRaw(serializedPublicKey),
-	    message = makeMessage(),
 	    signature = await krypto.sign(keypair.privateKey, message);
 	isBase64URL(serializedPublicKey);
 	expect(serializedPublicKey.length).toBeLessThanOrEqual(publicSigningRawSize);
@@ -157,7 +208,6 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 	let key = await await krypto.generateSymmetricKey(),
 	    serializedKey = await krypto.exportKey(key),
 	    importedKey = await krypto.importKey(serializedKey),
-	    message = makeMessage(),
 	    encrypted = await krypto.encrypt(key, message);
 	 expect(serializedKey.length).toBe(symmetricKeySize);
 	expect(await krypto.decrypt(importedKey, encrypted)).toBe(message);

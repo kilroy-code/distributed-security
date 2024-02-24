@@ -21,8 +21,12 @@
   - [ ] use jose multi-key encryption for wrap/unwrap of TeamVault (rather than our own format)
   - [ ] should we be specifying alg (and enc) and kid in encrypt header output?
   - [ ] remove concatBase64/splitBase64
+  - [ ] multikrypto and krypto to both use same mechanism for passing headers
+  - [ ] use cty internally
+  - [ ] return whole result in krypto/multi, and grab json in vault. Update tests.
   - [ ] make sure (unit test) that internal operations can recognize various key/signature/ciphertext formats and apply the correct reading. 
   - [ ] enumerate recovery keys in secure header of multi-key encryption, so that we can safely exlucde them from first round of vault expansion. do so. unit test.
+  - [ ] After we have some timing specs in the unit tests, try out some larger algorithms.
 
 - API - signature verification:
   - [ ] what should verify return when truthy? {payload, ...} (with cty in there somewhere) or just payload. Unit test
@@ -45,14 +49,15 @@
 - API - other
   - [ ] To allow external applications to verify, include a jku in signatures, pointing to the unencrypted cloud-stored public verification key. unit test! That will require serving of the url with the correct mime type (application/jwk+json), which will require an additional mechanism in the cloud API for us to get the url and to allow the cloud implementation to ask us for the mime type. (Should the cloud-stored private key sets also be served with mime type application/jwk-set+json)? 
   - [ ] Browsers that support dynamic state paritioning will not be able to share device tags across applications from different domains, even when they share the same module domain. (They will still be able to share team tags.) Formalize this as a requirement in the doc, and store referrer with the device tag to effectively implement our own dynamic state partitioning. How do we unit-test this?
-  - [ ] Use symbols/getters/internals for internals
-  - [ ] Consider utility accessors for compact forms that mimick general json forms
+  - [ ] DWIM content type for encrypt (as we already do with cty for sign). Use that within our JWS/JWE rather than explicitly JSON.stringify/.parse.
 
 - Code cleanup:
   - [ ] Change the vault.mjs and its contients to some other name, since we are using vault.html to mean the iframe isolation mechanism.
-  - [ ] Remove iframeTrampoline.html and lib/storage distractions
-  - [ ] rename lib/security.mjs -> lib/core.mjs, and unify request() to something more explicit as to target, such as requestClient()/requestWorker().
-  - [ ] Demo source-code cleanup.
+  - [ ] Remove iframeTrampoline.html and any similar distractions
+  - [ ] rename lib/security.mjs -> lib/core.mjs, and unify request() to something       
+  - [ ] Use symbols/getters/internals for internals
+  - [ ] Consider utility accessors for compact forms that mimick general json forms
+more explicit as to target, such as requestClient()/requestWorker().
   - [ ] Andreas' rule. (Every operation gets a one-sentence comment.)
   - [ ] Break source files into even smaller pieces, one concept each, and update implementation.md and unit tests to match
 
@@ -78,7 +83,8 @@
   - [ ] make sure logging is effective but secure in "tracing"
   
 ### internal infrastructure
-- [ ] GitHub Action to run test suite (using puppeteer?), like other parts of ki1r0y. Include a test to make sure that the demo stays working.
+- [ ] NodeJS implementation, for use on servers and for running unit tests. (e.g., 1. When loading index.mjs outside the browser, load security.mjs directly instead of through vault. 2. lib/store and spec/support/storage to use something else under node.)
+- [ ] GitHub Action to run test suite, like other parts of ki1r0y. 
 - [ ] version 0.1 package release
 - [ ] replace older ki1r0y storage scaffolding
 - [ ] integrate into toplevel ki1r0y test suites
@@ -101,9 +107,6 @@
 - [ ] version 1.0 release
 
 ### future
-- Use Web credentials for secret, particularly public-key. (This can be done by the app now, but it would be nice to ship with "batteries included".)
-- Maybe provide an option in changeMembership to produce a new encryption key so that former members cannot read new documents. The option might take a list of resources to be re-encrypted with the new key.
-- Hidden rosters - can we make it so each tag key in the roster dictionary can only be read by the members? But what about storage system checking that the submitter is a member of the team?
-- Different signing algorithm or parameters so as to have shorter tags?
+- Use Web credentials for secret, particularly public-key. (This can be done by an app now, but it would be nice to ship with "batteries included".)
+- Hidden rosters - can we make it so each tag key in the roster dictionary can only be read by the members? But what about storage system checking that the submitter is a member of the team? (Maybe instead of kid, label each member by hash(tag + iat)?)
 - Is there a way to derive a public encryption key from a public verification key (i.e., from a tag), so that we don't need to store public encryption keys in the cloud? This would allow device keys to self-contained on the device, without leavin any garbage in the cloud when the device is abandoned.
-- Media - Currently, an app must convert media to a string, and then internally Distributed Security converts it back to binary for signing or encrypting. It would be nice to just hand it binary media directly. (However, the intention within Distributed Storage is to sign metadata about media, rather than the media itself, so this IWBNI detail is for uses other than ours.)

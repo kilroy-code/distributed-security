@@ -96,10 +96,16 @@ export default function testMultiKrypto(multiKrypto) {
       it('gives enough information that we can tell if a verifying sub key is missing.',
 	 async function () {
 	   let multiSign = {a: signingA.privateKey, b: signingB.privateKey},
-	       multiVerify = {a: signingA.publicKey}, // Missing b.
+	       multiVerify = {b: signingB.publicKey}, // Missing a.
 	       signature = await multiKrypto.sign(multiSign, message),
 	       verified = await multiKrypto.verify(multiVerify, signature);
-	   expect(verified.signers.some(signer => !signer.payload)).toBeTruthy();
+	   // Overall, something we asked for did verify.
+	   expect(verified.payload).toBeTruthy();
+	   expect(verified.text).toBe(message);
+	   // b is second signer in signature
+	   expect(verified.signers[1].payload).toBeTruthy();
+	   // but the first signer was not verified
+	   expect(verified.signers[0].payload).toBeUndefined();
 	 });
       it('gives enough information that we can tell if a signature sub key is missing.',
 	 async function () {
@@ -107,7 +113,13 @@ export default function testMultiKrypto(multiKrypto) {
 	       multiVerify = {a: signingA.publicKey, b: signingB.publicKey},
 	       signature = await multiKrypto.sign(multiSign, message),
 	       verified = await multiKrypto.verify(multiVerify, signature);
-	   expect(verified.signers.every(signer => 'b' !== signer.kid)).toBeTruthy();
+	   // Overall, something we asked for did verify.
+	   expect(verified.payload).toBeTruthy();
+	   expect(verified.text).toBe(message);
+	   // But only one signer
+	   expect(verified.signers.length).toBe(1);
+	   expect(verified.signers[0].protectedHeader.kid).toBe('a');
+	   expect(verified.signers[0].payload).toBeTruthy();
 	 });
     });
 

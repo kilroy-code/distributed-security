@@ -117,7 +117,7 @@ When something is encrypted with `encrypt(message, tag)`, the only thing that wi
 
 We can also encrypt a message with multiple tags, so that any *one* of the listed tags can decrypt it. The result is in a standard format called "JOSE [JWE general serialization](https://datatracker.ietf.org/doc/html/rfc7516#section-7.2.1)": `encrypt(message, tag1, tag2, tag3)` can be decrypted with just `decrypt(JWE, tag2)` (or tag1, or tag3). 
 
-Distributed-Security uses this itself: the way that your tag's keys are available on all your devices is that Distributed-Security encrypts your keys for each member browser that you work on, and stores the encrypted keys in the cloud. Any of your browsers can then decrypt the keys, but no one else can. When a Web page that uses Distributed-Security tries to decrypt for your team tag, it pulls your encrypted keys' JWE, and decrypts the keys with the member key that you happen to already have in that browser (and only in that browser). The same happens recursively for more complex teams that you are a member of. 
+Distributed-Security uses this itself: the way that your tag's keys are available on all your devices is that Distributed-Security encrypts your keys for each member browser that you work on, and stores the encrypted keys in the cloud. Any of your browsers can then decrypt the keys, but no one else can. When a Web page that uses Distributed-Security tries to sign or decrypt for your team tag, it pulls your encrypted keys' JWE, and decrypts the keys with the member key that you happen to already have in that browser (and only in that browser). The same happens recursively for more complex teams that you are a member of. 
 
 (There is a subtle difference between data encrypted by a team tag and a team tag's own private keys. Data encrypted by a team tag is encrypted only by the one or more tags that are explicitly given in the call to encrypt. It is NOT encrypted by the members of those tags. The team's own keys are not encrypted by the team tag -- that would be circular -- but are *instead* encrypted by the list of member tags.)
 
@@ -125,7 +125,7 @@ You can also specify options for the encryption: `encrypt(message, {tags, conten
 
 - A contentType that contains the substring 'text' will treat the message as a string during encryption, and will produce that same string during decryption.
 - A contentType that contains the substring 'json' will automatically call JSON.stringify(message) and treat that result as a string when encrypting, and call JSON.parse on that same string when decrypting.
-- The contentType defaults to 'text/plain' during encryption if message is of type string, and to 'application/json' if message of type object but not binary (an ArrayBuffer view). (We follow the JOSE standard of identifying 'application/json' as just 'json' in the cty header.) For decryption, the contentType defaults to whatever is specified in the JWE as the cty header.
+- The contentType defaults to 'text/plain' during encryption if message is of type 'string', and to 'application/json' if message is of type 'object' but not binary (an ArrayBuffer view). (We follow the JOSE standard of identifying 'application/json' as just 'json' in the cty header.) For decryption, the contentType defaults to whatever is specified in the JWE as the cty header.
 
 ## Signatures with Multiple Tags
 

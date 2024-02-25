@@ -144,7 +144,7 @@ describe('Distributed Security', function () {
       afterAll(async function () {
 	await destroyVaults(Security, tags);
       }, slowKeyCreation);
-      function test(label, tagsName, otherOwnedTagsName) {
+      function test(label, tagsName, otherOwnedTagsName, unownedTagName) {
 	describe(label, function () {
 	  let tag, otherOwnedTag;
 	  beforeAll(function () {
@@ -243,28 +243,134 @@ describe('Distributed Security', function () {
 	    });
 	  });
 	  describe('encryption', function () {
-	    it('can decrypt what is encrypted for it.', async function () {
-	      let encrypted = await Security.encrypt(message, tag),
-		  decrypted = await Security.decrypt(encrypted, tag);
-	      isBase64URL(encrypted)
-	      expect(decrypted).toBe(message);
+	    describe('with a single tag', function () {
+	      it('can decrypt what is encrypted for it.', async function () {
+		let encrypted = await Security.encrypt(message, tag),
+		    decrypted = await Security.decrypt(encrypted, tag);
+		isBase64URL(encrypted);
+		expect(decrypted).toBe(message);
+	      });
+	      it('is url-safe base64.', async function () {
+		isBase64URL(await Security.encrypt(message, tag));
+	      });
+	      it('specifies kid.', async function () {
+		let header = JOSE.decodeProtectedHeader(await Security.encrypt(message, tag));
+		expect(header.kid).toBe(tag);
+	      });
+	      it('cannot decrypt what is encrypted for a different key.', async function () {
+		let message = makeMessage(446),
+		    encrypted = await Security.encrypt(message, otherOwnedTag),
+		    errorMessage = await Security.decrypt(encrypted, tag).catch(e => e.message);
+		expect(errorMessage.toLowerCase()).toContain('operation');
+		// Some browsers supply a generic message, such as 'The operation failed for an operation-specific reason'
+		// IF there's no message at all, our jsonrpc supplies one with the jsonrpc 'method' name.
+		//expect(errorMessage).toContain('decrypt');
+	      });
+	      it('handles binary, and decrypts as same.', async function () {
+		let message = new Uint8Array([21, 31]),
+		    encrypted = await Security.encrypt(message, tag),
+		    decrypted = await Security.decrypt(encrypted, tag),
+		    header = JOSE.decodeProtectedHeader(encrypted);
+		expect(header.cty).toBeUndefined();
+		expect(decrypted).toEqual(message);
+	      });
+	      it('handles text, and decrypts as same.', async function () {
+		let encrypted = await Security.encrypt(message, tag),
+		    decrypted = await Security.decrypt(encrypted, tag),
+		    header = JOSE.decodeProtectedHeader(encrypted);
+		expect(header.cty).toBe('text/plain');
+		expect(decrypted).toBe(message);
+	      });
+	      it('handles json, and decrypts as same.', async function () {
+		let message = {foo: 'bar'},
+		    encrypted = await Security.encrypt(message, tag),
+		    decrypted = await Security.decrypt(encrypted, tag),
+		    header = JOSE.decodeProtectedHeader(encrypted);
+		expect(header.cty).toBe('json');
+		expect(decrypted).toEqual(message);
+	      });
+	      it('uses contentType and time if supplied.', async function () {
+		let contentType = 'text/html',
+		    time = Date.now(),
+		    message = "<something else>",
+		    encrypted = await Security.encrypt(message, {tags: [tag], contentType, time}),
+		    decrypted = await Security.decrypt(encrypted, tag),
+		    header = JOSE.decodeProtectedHeader(encrypted);
+		expect(header.cty).toBe(contentType);
+		expect(header.iat).toBe(time);
+		expect(decrypted).toBe(message);
+	      });
 	    });
-	    it('cannot decrypt what is encrypted for a different key.', async function () {
-	      let message = makeMessage(446),
-		  encrypted = await Security.encrypt(message, otherOwnedTag),
-		  errorMessage = await Security.decrypt(encrypted, tag).catch(e => e.message);
-	      expect(errorMessage.toLowerCase()).toContain('operation');
-	      // Some browsers supply a generic message, such as 'The operation failed for an operation-specific reason'
-	      // IF there's no message at all, our jsonrpc supplies one with the jsonrpc 'method' name.
-	      //expect(errorMessage).toContain('decrypt');
+	    describe('with multiple tags', function () {
+	      it('can be decrypted by any one of them.', async function () {
+		let encrypted = await Security.encrypt(message, tag, otherOwnedTag),
+		    decrypted1 = await Security.decrypt(encrypted, tag),
+		    decrypted2 = await Security.decrypt(encrypted, otherOwnedTag);
+		expect(decrypted1).toBe(message);
+		expect(decrypted2).toBe(message);	      
+	      });
+	      it('can be be made with tags you do not own.', async function () {
+		let encrypted = await Security.encrypt(message, tag, tags[unownedTagName], otherOwnedTag),
+		    decrypted1 = await Security.decrypt(encrypted, tag),
+		    decrypted2 = await Security.decrypt(encrypted, otherOwnedTag);
+		expect(decrypted1).toBe(message);
+		expect(decrypted2).toBe(message);	      
+	      });
+	      it('cannot be decrypted by a different tag.', async function () {
+		let encrypted = await Security.encrypt(message, tag, tags[unownedTagName]),
+		    decrypted = await Security.decrypt(encrypted, otherOwnedTag);
+		expect(decrypted).toBeUndefined();
+	      });
+	      it('specifies kid in each recipient.', async function () {
+		let encrypted = await Security.encrypt(message, tag, otherOwnedTag),
+		    recipients = JSON.parse(encrypted).recipients;
+		expect(recipients.length).toBe(2);
+		expect(recipients[0].header.kid).toBe(tag);
+		expect(recipients[1].header.kid).toBe(otherOwnedTag);
+	      });
+
+	      it('handles binary, and decrypts as same.', async function () {
+		let message = new Uint8Array([21, 31]),
+		    encrypted = await Security.encrypt(message, tag, otherOwnedTag),
+		    decrypted = await Security.decrypt(encrypted, tag),
+		    header = JOSE.decodeProtectedHeader(JSON.parse(encrypted));
+		expect(header.cty).toBeUndefined();
+		expect(decrypted).toEqual(message);
+	      });
+	      it('handles text, and decrypts as same.', async function () {
+		let encrypted = await Security.encrypt(message, tag, otherOwnedTag),
+		    decrypted = await Security.decrypt(encrypted, tag),
+		    header = JOSE.decodeProtectedHeader(JSON.parse(encrypted));
+		expect(header.cty).toBe('text/plain');
+		expect(decrypted).toBe(message);
+	      });
+	      it('handles json, and decrypts as same.', async function () {
+		let message = {foo: 'bar'},
+		    encrypted = await Security.encrypt(message, tag, otherOwnedTag),
+		    decrypted = await Security.decrypt(encrypted, tag),
+		    header = JOSE.decodeProtectedHeader(JSON.parse(encrypted));
+		expect(header.cty).toBe('json');
+		expect(decrypted).toEqual(message);
+	      });
+	      it('uses contentType and time if supplied.', async function () {
+		let contentType = 'text/html',
+		    time = Date.now(),
+		    message = "<something else>",
+		    encrypted = await Security.encrypt(message, {tags: [tag, otherOwnedTag], contentType, time}),
+		    decrypted = await Security.decrypt(encrypted, tag),
+		    header = JOSE.decodeProtectedHeader(JSON.parse(encrypted))
+		expect(header.cty).toBe(contentType);
+		expect(header.iat).toBe(time);
+		expect(decrypted).toBe(message);
+	      });
 	    });
 	  });
 	});
       }
-      test('DeviceVault', 'device', 'user'); // We own user, but it isn't the same as device.
-      test('RecoveryVault', 'recovery', 'otherRecovery');
-      test('User TeamVault', 'user', 'device'); // We ownd device, but it isn't the same as user.
-      test('Team TeamVault', 'team', 'otherTeam');
+      test('DeviceVault', 'device', 'user', 'otherDevice'); // We own user, but it isn't the same as device.
+      test('RecoveryVault', 'recovery', 'otherRecovery', 'otherDevice');
+      test('User TeamVault', 'user', 'device', 'otherUser'); // We ownd device, but it isn't the same as user.
+      test('Team TeamVault', 'team', 'otherTeam', 'otherUser');
       describe('auditable signatures', function () {
 	describe('by an explicit member', function () {
 	  let signature, verification;

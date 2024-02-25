@@ -146,12 +146,20 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
   });
 
   describe('export/import', function () {
+    // Handy for cycling in a size-checkable way.
+    async function exportKey(key) {
+      return JSON.stringify(await krypto.exportJWK(key));
+    }
+    function importKey(string, use) {
+      return krypto.importJWK(JSON.parse(string));
+    }
+
     describe(`of signing keys`, function () {
       const privateSigningSize = 253; // 248 raw
       it(`works with the private signing key as a ${privateSigningSize} byte serialization.`, async function () {
 	let keypair = await krypto.generateSigningKey(),
-	    serializedPrivateKey = await krypto.exportKey(keypair.privateKey),
-	    importedPrivateKey = await krypto.importKey(serializedPrivateKey),
+	    serializedPrivateKey = await exportKey(keypair.privateKey),
+	    importedPrivateKey = await importKey(serializedPrivateKey),
 	    signature = await krypto.sign(importedPrivateKey, message);
 	expect(serializedPrivateKey.length).toBe(privateSigningSize);
 	expect(await krypto.verify(keypair.publicKey, signature)).toBeTruthy();
@@ -159,8 +167,8 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
       const publicSigningSize = 182; // 132 raw
       it(`works with the public verifying key as a ${publicSigningSize} byte serialization.`, async function () {
 	let keypair = await krypto.generateSigningKey(),
-	    serializedPublicKey = await krypto.exportKey(keypair.publicKey),
-	    importedPublicKey = await krypto.importKey(serializedPublicKey),
+	    serializedPublicKey = await exportKey(keypair.publicKey),
+	    importedPublicKey = await importKey(serializedPublicKey),
 	    signature = await krypto.sign(keypair.privateKey, message);
 	expect(serializedPublicKey.length).toBe(publicSigningSize);
 	expect(await krypto.verify(importedPublicKey, signature)).toBeTruthy();
@@ -182,8 +190,8 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
       const privateEncryptingKeySize = [3169, 3173] // raw [3164, 3168]; // with a 4k modulusSize key
       it(`works with the private key as a ${privateEncryptingKeySize[0]}-${privateEncryptingKeySize[1]} byte serialization.`, async function () {
 	let keypair = await krypto.generateEncryptingKey(),
-	    serializedPrivateKey = await krypto.exportKey(keypair.privateKey),
-	    importedPrivateKey = await krypto.importKey(serializedPrivateKey),
+	    serializedPrivateKey = await exportKey(keypair.privateKey),
+	    importedPrivateKey = await importKey(serializedPrivateKey),
 	    message = makeMessage(446),
 	    encrypted = await krypto.encrypt(keypair.publicKey, message);
 	expect(serializedPrivateKey.length).toBeGreaterThanOrEqual(privateEncryptingKeySize[0]);
@@ -193,8 +201,8 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
       const publicEncryptingKeySize = 735; // raw 736; // with a 4k modulusSize key
       it(`works with the public key as a ${publicEncryptingKeySize} byte serialization.`, async function () {
 	let keypair = await krypto.generateEncryptingKey(),
-	    serializedPublicKey = await krypto.exportKey(keypair.publicKey),
-	    importedPublicKey = await krypto.importKey(serializedPublicKey),
+	    serializedPublicKey = await exportKey(keypair.publicKey),
+	    importedPublicKey = await importKey(serializedPublicKey),
 	    message = makeMessage(446),
 	    encrypted = await krypto.encrypt(importedPublicKey, message);
 	expect(serializedPublicKey.length).toBe(publicEncryptingKeySize);
@@ -206,8 +214,8 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
       const symmetricKeySize = 79; // raw 44
       it(`works as a ${symmetricKeySize} byte serialization.`, async function () {
 	let key = await await krypto.generateSymmetricKey(),
-	    serializedKey = await krypto.exportKey(key),
-	    importedKey = await krypto.importKey(serializedKey),
+	    serializedKey = await exportKey(key),
+	    importedKey = await importKey(serializedKey),
 	    encrypted = await krypto.encrypt(key, message);
 	 expect(serializedKey.length).toBe(symmetricKeySize);
 	expect(await krypto.decrypt(importedKey, encrypted)).toBe(message);

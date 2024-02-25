@@ -27,6 +27,7 @@
   - [ ] make sure (unit test) that internal operations can recognize various key/signature/ciphertext formats and apply the correct reading. 
   - [ ] enumerate recovery keys in secure header of multi-key encryption, so that we can safely exlucde them from first round of vault expansion. do so. unit test.
   - [ ] After we have some timing specs in the unit tests, try out some larger algorithms.
+  - [ ] Cache encrypting keys?
 
 - API - signature verification:
   - [ ] what should verify return when truthy? {payload, ...} (with cty in there somewhere) or just payload. Unit test

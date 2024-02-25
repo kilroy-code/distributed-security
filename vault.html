@@ -31,7 +31,7 @@ const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
       api = {
 	sign(message, ...tags) { return postWorker('sign', message, ...tags); },
 	verify(signature, ...tags) { return postWorker('verify', signature, ...tags); },
-	encrypt(message, tag) { return postWorker('encrypt', message, tag); },
+	encrypt(message, ...tags) { return postWorker('encrypt', message, ...tags); },
 	decrypt(encrypted, tag) { return postWorker('decrypt', encrypted, tag); },
 	create(...optionalMembers) { return postWorker('create', ...optionalMembers); },
 	changeMembership(options) { return postWorker('changeMembership', options); },

@@ -187,6 +187,17 @@ describe('Distributed Security', function () {
 		isBase64URL(signature);
 		expect(verified.payload).toEqual(message);
 	      });
+	      it('uses contentType and time if supplied.', async function () {
+		let contentType = 'text/html',
+		    time = Date.now(),
+		    message = "<something else>",
+		    signature = await Security.sign(message, {tags: [tag], contentType, time}),
+		    verified = await Security.verify(signature, tag);
+		isBase64URL(signature);
+		expect(verified.text).toEqual(message);
+		expect(verified.protectedHeader.cty).toBe(contentType);
+		expect(verified.protectedHeader.iat).toBe(time);
+	      });
 	    });
 	    describe('of multiple tags', function () {
 	      it('can sign and be verified.', async function () {
@@ -239,6 +250,16 @@ describe('Distributed Security', function () {
 		    signature = await Security.sign(message, tag, otherOwnedTag),
 		    verified = await Security.verify(signature, tag, otherOwnedTag);
 		expect(verified.payload).toEqual(message);
+	      });
+	      it('uses contentType and time if supplied.', async function () {
+		let contentType = 'text/html',
+		    time = Date.now(),
+		    message = "<something else>",
+		    signature = await Security.sign(message, {tags: [tag, otherOwnedTag], contentType, time}),
+		    verified = await Security.verify(signature, tag, otherOwnedTag);
+		expect(verified.text).toEqual(message);
+		expect(verified.protectedHeader.cty).toBe(contentType);
+		expect(verified.protectedHeader.iat).toBe(time);
 	      });
 	    });
 	  });

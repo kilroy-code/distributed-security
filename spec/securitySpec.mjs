@@ -219,9 +219,10 @@ describe('Distributed Security', function () {
 		  });
 		});
 		describe('when mixing multi-tag lengths', function () {
-		  it('fails with extra signing tag.', async function () {
-		    let signature = await Security.sign(message, otherOwnedTag, oneMore);
-		    expect(await Security.verify(signature, tag, oneMore)).toBeUndefined();
+		  it('fails with mismatched signing tag.', async function () {
+		    let signature = await Security.sign(message, otherOwnedTag, oneMore),
+			verified = await Security.verify(signature, tag, oneMore)
+		    expect(verified).toBeUndefined();
 		  });
 		  it('fails with extra verifying tag.', async function () {
 		    let signature = await Security.sign(message, tag, oneMore);
@@ -430,7 +431,7 @@ describe('Distributed Security', function () {
 	    expect(verification.protectedHeader.iss).toBeUndefined();
 	    expect(verification.protectedHeader.act).toBeUndefined();
 	  });
-	  it('does not verify as an dual signature specifying team and member.', async function () {
+	  it('does not verify as a dual signature specifying team and member.', async function () {
 	    let signature = await Security.sign(message, {team: tags.team, member: nonMember}),
 		verification = await Security.verify(signature, tags.team, nonMember);
 	    expect(verification).toBeUndefined();

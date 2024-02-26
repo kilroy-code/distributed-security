@@ -111,11 +111,11 @@ An application can create any number of tags. For example, it can create a new t
 
 What happens if you loose access to all your devices at once? No problem! One or more of the member tags of your individual tag can be a "recovery" tag, which is encrypted using the answer to one or more security questions. By calling `createTag({prompt: "some security question"})`, an application can create one or more recovery tags that consist of answers that only you would know (or the concatenation of several answers). The recovery tags are stored (encrypted) in the cloud and are generally not used. But if you attempt to use your individual tag on a device that is not a member of that individual tag, the system will ask the application to ask you your security question(s). The answers will unlock your individual tag only if the answers match what was previously encrypted, allowing you to add new devices and remove the old ones.
 
-## Encryption with Multiple Tags
+## Encryption with Multiple Tags and Other Encryption Options
 
-When something is encrypted with `encrypt(message, tag)`, the only thing that will decrypt it is the private key associated with `tag`. The encryption is made with the public part of a single keypair. The result of the encryption is a string in a standard format called "JOSE [JWE compact serialization](https://datatracker.ietf.org/doc/html/rfc7516#section-7.1)".
+When something is encrypted with `encrypt(message, tag)`, the only thing that will decrypt it is the private key associated with `tag`. The encryption is made with the public part of a single keypair. The encryption is a string in a standard format called "JOSE [JWE compact serialization](https://datatracker.ietf.org/doc/html/rfc7516#section-7.1)". The tag appears as the JWE *key identifier* ("kid") header.
 
-We can also encrypt a message with multiple tags, so that any *one* of the listed tags can decrypt it. The result is in a standard format called "JOSE [JWE general serialization](https://datatracker.ietf.org/doc/html/rfc7516#section-7.2.1)": `encrypt(message, tag1, tag2, tag3)` can be decrypted with just `decrypt(JWE, tag2)` (or tag1, or tag3). 
+We can also encrypt a message with multiple tags, so that any *one* of the listed tags can decrypt it. The encryption is in a standard format called "JOSE [JWE general serialization](https://datatracker.ietf.org/doc/html/rfc7516#section-7.2.1)" and includes encryptions made with each of the specified keypairs: `encrypt(message, tag1, tag2, tag3)` can be decrypted with just `decrypt(JWE, tag2)` (or tag1, or tag3). 
 
 Distributed-Security uses this itself: the way that your tag's keys are available on all your devices is that Distributed-Security encrypts your keys for each member browser that you work on, and stores the encrypted keys in the cloud. Any of your browsers can then decrypt the keys, but no one else can. When a Web page that uses Distributed-Security tries to sign or decrypt for your team tag, it pulls your encrypted keys' JWE, and decrypts the keys with the member key that you happen to already have in that browser (and only in that browser). The same happens recursively for more complex teams that you are a member of. 
 
@@ -123,15 +123,24 @@ Distributed-Security uses this itself: the way that your tag's keys are availabl
 
 You can also specify options for the encryption: `encrypt(message, {tags, contentType, time})`, and for decryption: `decrypt(ciphertext, {tag, contentType}`. The contentType and time appear as "headers" within the JWE (as "cty" and "iat", respectively), which may be useful when interacting with other JOSE systems.
 
-- A contentType that contains the substring 'text' will treat the message as a string during encryption, and will produce that same string during decryption.
-- A contentType that contains the substring 'json' will automatically call JSON.stringify(message) and treat that result as a string when encrypting, and call JSON.parse on that same string when decrypting.
-- The contentType defaults to 'text/plain' during encryption if message is of type 'string', and to 'application/json' if message is of type 'object' but not binary (an ArrayBuffer view). (We follow the JOSE standard of identifying 'application/json' as just 'json' in the cty header.) For decryption, the contentType defaults to whatever is specified in the JWE as the cty header.
+- A contentType that contains the substring "text" will treat the message as a string during encryption, and will produce that same string during decryption.
+- A contentType that contains the substring "json" will automatically call `JSON.stringify(message)` and treat that result as a string when encrypting, and call `JSON.parse` on that same string when decrypting.
+- The contentType defaults to "text/plain" during encryption if message is of type "string", and to "application/json" if message is of type "object" but not binary (an ArrayBuffer view). (We follow the JOSE standard of identifying "application/json" as just "json" in the "cty" header.) For decryption, the "contentType" defaults to whatever is specified in the JWE as the "cty" header.
 
-## Signatures with Multiple Tags
+## Signatures with Multiple Tags and Other Signature Options
 
-When something is signed with 'sign(message, tag)`, the result is in a standard format called "JOSE [JWS compact serialization](https://datatracker.ietf.org/doc/html/rfc7515#section-7.1)".
+When something is signed with `sign(message, tag)`, the only things that will verify it is the public key assocaited with `tag`. The signature is made with the private part of a single keypair. The signature is in a standard format called "JOSE [JWS compact serialization](https://datatracker.ietf.org/doc/html/rfc7515#section-7.1)". The tag appears as the JWE *key identifier* ("kid") header. The JWS may include "cty" and "iat" headers, as defined above for Other Encryption Options. The result of a succcessful `verify()` is an object that includes a "payload" property containing binary data. If text or json can be produced following the above rules, these are defined as additional properties. If the signature does not verify, the result is falsey (undefined). 
 
-We can also sign a message with multiple tags: `sign(message, tag1, tag2, tag3)`. The result is in a standard formated called "JOSE [JWS General serialization](https://datatracker.ietf.org/doc/html/rfc7515#section-7.2.1)" and contains a signature made by each tag. When this JWS is successfully verified, the result is an object with a 'payload' property (and perhaps 'text' and 'json' properties), and also a 'signers' property that has an element for each signature in the JWS.
+We can also sign a message with multiple tags, so that any *one* of the listed tags can verify it. The signature is in a standard formated called "JOSE [JWS General serialization](https://datatracker.ietf.org/doc/html/rfc7515#section-7.2.1)" and includes signatures made witch each of the specified keypairs: `sign(message, tag1, tag2, tag3)` can be verified with just `verify(JWS, tag2)` (or tag1, or tag3).  When this JWS is successfully verified, the result additionally contains a "signers" property that has an element for each signature in the JWS. Each signer element is an object that defines "payload" if and only if the corresponding original signature was verfied, and "protectedHeader" that contains the headers attested by the signer, including the individual "kid". 
+
+Additionally, verify can be called with multiple tags (e.g., `verify(JWS, tag1, tag2, tag3)`), and the result is falsey (undefined) if *any* of the specified tags do not appear correctly in the signature.
+
+You can also specify options: `sign(message, {tags, contentType, time, member})`, and `verify(ciphertext, {tag, contentType, notBefore, member})`. 
+
+- The contentType and time are as for Other Encryption Options, above. 
+- If a signature is made with a "member" option with a value of the string "team", the JWS contains "issuer" and "actor" headers ("iss" and "act"), where the issuer is the first of "tags", and the actor is a member of that team that belongs to the current user in the current browser. The member tag is added to "tags" if not already present.
+- If a verification is made with a "member" option with a value of the string "team", verification will fail if the JWS does not contain "iss" and "act" headers, and if there exists a current version of the issuing team in the cloud that does not list the specfied "act" as a member. (Verification passes if "iss" and "act" are specified, but the "iss" team does not yet exist.) "member" defaults to "team" if the JWS contains an "act" header.
+- If a verification is made with a truthy "notBefore", verification will fail if the JWS does not contain "iat", or if "iat" is earlier than the specfied "notBefore". If "notBefore" has the value "team", the "iat" cannot be earlier than the "iat" of the issuing team is used, if the team exists. "notBefore" defaults to "team" if the JWS contains an "iss" header.
 
 
 ## Application Use

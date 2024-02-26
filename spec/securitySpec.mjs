@@ -417,7 +417,9 @@ describe('Distributed Security', function () {
 		member = JOSE.decodeProtectedHeader(JSON.parse(signature).signatures[0]).act,
 		verification = await Security.verify(signature, tags.team, member);
 	    expect(verification).toBeTruthy();
+	    expect(member).toBeTruthy();
 	    expect(verification.protectedHeader.act).toBe(member);
+	    expect(verification.protectedHeader.iat).toBeTruthy();
 	  });
 	});
 	describe('with a valid user who is not a member', function () {
@@ -437,7 +439,34 @@ describe('Distributed Security', function () {
 	    expect(verification).toBeUndefined();
 	  });
 	});
-	// FIXME: show iat usage and failure
+	describe('with a past member', function () {
+	  let member, signature, time;
+	  beforeAll(async function () {
+	    time = Date.now() - 1;
+	    member = await Security.create();
+	    await Security.changeMembership({tag: tags.team, add: [member]});
+	    signature = await Security.sign("message", {team: tags.team, member, time}); // while member
+	    await Security.changeMembership({tag: tags.team, remove: [member]});
+	  });
+	  afterAll(async function () {
+	    await Security.destroy(member);
+	  });
+	  it('fails by default.', async function () {
+	    let verified = await Security.verify(signature, member);
+	    expect(verified).toBeUndefined();
+	  });
+	  it('contains act in signature but verifies if we tell it not to check membership.', async function () {
+	    let verified = await Security.verify(signature, {team: tags.team, member: false});
+	    expect(verified).toBeTruthy();
+	    expect(verified.text).toBe("message");
+	    expect(verified.protectedHeader.act).toBe(member);
+	    expect(verified.protectedHeader.iat).toBeTruthy();
+	  });
+	  it('fails if we tell it to check notBefore:"team", even if we tell it not to check membership.', async function () {
+	    let verified = await Security.verify(signature, {team: tags.team, member: false, notBefore:'team'});
+	    expect(verified).toBeUndefined();
+	  });
+	});
       });
       it('can safely be used when a device is removed, but not after being entirely destroyed.', async function () {
 	let [d1, d2] = await Promise.all([Security.create(), Security.create()]),

@@ -10,6 +10,7 @@ We take advantage of a number of separate APIs that **all modern browsers now su
 - No passwords.
 - No tracking by login or viewing of content, including private content.
 - A receipt for activity that proves who authorized the activity (by pseudonym), and when.
+- Secure attribution for, e.g., posts.
 - Faster cloud data access.
 - No theft of private content, nor risk to cloud providers that they will be forced to turn over content by threat of violence or legal action.
 - All without dependendence on any centralized authority.
@@ -19,9 +20,11 @@ While these benefits have been available in some installable apps, desktop brows
 This README covers:
 
 - [Operations and Tags](#operations-and-tags) 
-  - [Crypto Basics](#crypto-basics) - A quick review of the underlying tech, built into browsers and NodeJS
+  - [Crypto Basics](#crypto-basics) - A quick review of the underlying tech, built into browsers and NodeJS.
   - [Distributed-Security Basics](#distributed-security-basics) - The much simpler API for the four basic cryptography operations.
-- [Devices, Individuals and Teams, and Recovery](#devices-individuals-and-teams) - practical key management
+- [Creating Tags and Changing Membership](#creating-tags-and-changing-membership) - Practical key management.
+- [Encryption with Multiple Tags and Other Encryption Options](#encryption-with-multiple-tags-and-other-encryption-options)
+- [Signatures with Multiple Tags and Other Signature Options](#signatures-with-multiple-tags-and-other-signature-operations)
 - [Application Use](#application-use)
   - [Library Installation and Declaration](#library-installation-and-declaration)
   - [Storing Keys using the Cloud Storage API](#storing-keys-using-the-cloud-storage-api)
@@ -135,12 +138,13 @@ We can also sign a message with multiple tags, so that any *one* of the listed t
 
 Additionally, verify can be called with multiple tags (e.g., `verify(JWS, tag1, tag2, tag3)`), and the result is falsey (undefined) if *any* of the specified tags do not appear correctly in the signature.
 
-You can also specify options: `sign(message, {tags, contentType, time, member})`, and `verify(ciphertext, {tag, contentType, notBefore, member})`. 
+You can also specify options: `sign(message, {tags, contentType, time, team, member})`, and `verify(ciphertext, {tag, contentType, notBefore, member})`. 
 
 - The contentType and time are as for Other Encryption Options, above. 
-- If a signature is made with a "member" option with a value of the string "team", the JWS contains "issuer" and "actor" headers ("iss" and "act"), where the issuer is the first of "tags", and the actor is a member of that team that belongs to the current user in the current browser. The member tag is added to "tags" if not already present.
-- If a verification is made with a "member" option with a value of the string "team", verification will fail if the JWS does not contain "iss" and "act" headers, and if there exists a current version of the issuing team in the cloud that does not list the specfied "act" as a member. (Verification passes if "iss" and "act" are specified, but the "iss" team does not yet exist.) "member" defaults to "team" if the JWS contains an "act" header.
-- If a verification is made with a truthy "notBefore", verification will fail if the JWS does not contain "iat", or if "iat" is earlier than the specfied "notBefore". If "notBefore" has the value "team", the "iat" cannot be earlier than the "iat" of the issuing team is used, if the team exists. "notBefore" defaults to "team" if the JWS contains an "iss" header.
+- If a signature is made with a "team" option that has a tag as value, the JWS contains an issuer header ("iss"), and the specified tag will appear as the first of tags if not already among them. The "tags" option can be ommited.
+- If a signature is made with a "member" option that has a tag as value, the JWS contains an actor header ("act"), and the specified tag will be added to the tags if not already among them. The "tags" option can be ommited. If "team" is specified as an option, "member" defaults to a member of that team that belongs to the current user in the current browser.
+- If a verification is made with a "member" option that has a value of the string "team", verification will fail if the JWS does not contain "iss" and "act" headers, and if there exists a current version of the issuing team in the cloud that does not list the specfied "act" as a member. (Verification passes if "iss" and "act" are specified, but the "iss" team does not yet exist.) "member" defaults to "team" if the JWS contains an "act" header.
+- If a verification is made with a truthy "notBefore", verification will fail if the JWS does not contain "iat", or if "iat" is earlier than the specfied "notBefore". If "notBefore" has the value "team", the "iat" cannot be earlier than the "iat" of the issuing team is used, if the team exists.
 
 
 ## Application Use
@@ -182,16 +186,16 @@ There are no custodial copies of device keys, and none are needed. If a device i
 The application must supply a storage object with two methods: 
 
 ```
-retrieve(collectionName, tag) -> text
-store(collectionName, tag, text, textSignedByTag)  (*)
+retrieve(collectionName, tag) -> textSignedByTag
+store(collectionName, tag, textSignedByTag)
 ```
 
 Applications must supply their own implementation of this storage API, meeting their own application-specific needs. For example, the application could limit storage to paying users. For security purposes, the only requirements are:
 
 1. The strings `'Team'` `'KeyRecovery'` and `'EncryptionKey'` must be allowed as the `collectionName` parameters. These are the only cloud storage collectionNames used by distributed security. (The cloud storage may recognize other collection names, but this is not required for distributed security to work.)
-2. The `tag` parameter must support arbitrary case-sensitive strings of at least 132 ASCII characters. The tag strings are base64-encoded, and are _not_ URL-safe.(*)
+2. The `tag` parameter must support arbitrary case-sensitive strings of at least 132 ASCII characters. The tag strings are url-safe base64-encoded.
 3. Arbitrarily long base64-encoded `text` payloads must be supported. Teams with N members are less than (N + 5) kbytes. (The cloud storage may support much longer payloads, and unicode text, but this this is not required for distributed security to work.
-4. `store(collectionName, tag, text, textSignedByTag)` should verify that `Security.verify(tag, textSignedByTag, text)` resolves to true for the required `collectionName`s. (To allow for storage to be P2P within the application, the distributed security module is designed for such mutual co-dependency to not be an infinite loop.) There is no security need for additional checks, such as access-control-lists or API keys. However, an application is free to make additional checks. For example, using just the minimal requirements, any member could change the composition of their team, and an application might want to either create an audit trail of which member did so, or might want to restrict such changes to a designated "administrator" member. That's up to to the application.(*)
+4. `store(collectionName, tag, textSignedByTag)` should verify that `Security.verify(textSignedByTag, {team: tag, notBefore: "team"})` resolves to truthy. (To allow for storage to be P2P within the application, the distributed security module is designed for such mutual co-dependency to not be an infinite loop.) There is no security need for additional checks, such as access-control-lists or API keys. However, an application is free to make additional checks. For example, using just the minimal requirements, any member could change the composition of their team, and an application might want to either create an audit trail of which member did so, or might want to restrict such changes to a designated "administrator" member. That's up to to the application.(*)
 5. Because of the way that payload text is encrypted, there is no security requirement to restrict access for the `retrieve` operation. However, applications are free to impose additional restrictions.
 
 
@@ -232,7 +236,6 @@ Here is how things play out for an application using the module to sign someText
 +----------------------------------------------------+             +-------------------------+
 ```
 
-> (*) - The storage API described is what is currently implemented in the module, demo and unit tests, and it has some easily removed weaknesses (involving replay attacks and mischief by former team members). However, the API will change slightly as we develop a more general practical storage API. Using browser-side encryption and signing, it now practical to make a secure distributed storage API that can be implented as P2P if desired, cached at browser, server, and edge, secure though end-to-end-encryption, and properly attributed for both distributed accounting and sourcing. To meet these needs, it will be desirable to have a standard format (such as JWS/JSE perhaps) in which parties can verify signatures and examine team membership. See [the storage repo](https://github.com/kilroy-code/storage/blob/main/README.md).
 
 ### Initialization
 

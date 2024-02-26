@@ -1,7 +1,7 @@
 import Security from "../../index.mjs";
 const Storage = {
   async store(resourceTag, ownerTag, signature) {
-    let verified = await Security.verify(signature, ownerTag);
+    let verified = await Security.verify(signature, {team: ownerTag, notBefore: 'team'});
     if (!verified) throw new Error(`Signature ${signature} does not match owner of ${ownerTag}.`);
     if (!verified.payload.length) {
       delete this[resourceTag][ownerTag];

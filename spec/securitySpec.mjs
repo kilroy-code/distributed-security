@@ -1,14 +1,14 @@
 import dispatch from "../../jsonrpc/index.mjs";
 import Storage from "./support/storage.mjs";
+//import Security from "../index.mjs";
+import Security from "https://kilroy-code.github.io/distributed-security/index.mjs";
 
-import Security from "../index.mjs";
-//import Security from "https://kilroy-code.github.io/distributed-security/index.mjs";
+// For testing internals.
+import InternalSecurity from "../lib/api.mjs";
 import * as JOSE from '../node_modules/jose/dist/browser/index.js';
-
 import Krypto from "../lib/krypto.mjs";
 import MultiKrypto from "../lib/multiKrypto.mjs";
 import {Vault, DeviceVault, TeamVault} from "../lib/vault.mjs";
-import InternalSecurity from "../lib/security.mjs";
 Object.assign(window, {Krypto, MultiKrypto, Security, Storage, InternalSecurity, JOSE}); // export to browser console for development/debugging experiments.
 
 import testKrypto from "./kryptoTests.mjs";
@@ -16,6 +16,7 @@ import testMultiKrypto from "./multiKryptoTests.mjs";
 import testModule from "./support/testModuleWithFoo.mjs";
 import {scale, makeMessage, isBase64URL} from "./support/messageText.mjs";
 
+// Setup.
 jasmine.getEnv().configure({random: false});
 
 InternalSecurity.Storage = Security.Storage = Storage;

@@ -1,4 +1,5 @@
 import dispatch from '../jsonrpc/index.mjs';
+import {isEmptyJWS} from './lib/payload-utilities.mjs'; // FIXME: do clients need this? (We were using it before verifying storage.)
 
 const vaultUrl = new URL('vault.html', import.meta.url),
       iframe = document.createElement('iframe'),
@@ -6,14 +7,15 @@ const vaultUrl = new URL('vault.html', import.meta.url),
 	log(...args) { console.log(...args); }
       }, // Will get handlers for messages from the iframe.
       api = {
+	isEmptyJWS,
+	sign(message, ...tags) { return postIframe('sign', message, ...tags); },
+	verify(signature, ...tags) { return postIframe('verify', signature, ...tags); },
+	encrypt(message, ...tags) { return postIframe('encrypt', message, ...tags); },
+	decrypt(encrypted, tag) { return postIframe('decrypt', encrypted, tag); },
 	create(...optionalMembers) { return postIframe('create', ...optionalMembers); },
-	encrypt(tag, message) { return postIframe('encrypt', tag, message); },
-	decrypt(tag, encrypted) { return postIframe('decrypt', tag, encrypted); },
-	sign(tag, message) { return postIframe('sign', tag, message); },
-	verify(tag, signature, message) { return postIframe('verify', tag, signature, message); },
-	changeMembership(tag, {add, remove} = {}) { return postIframe('changeMembership', tag, {add, remove}); },
+	changeMembership({tag, add, remove} = {}) { return postIframe('changeMembership', {tag, add, remove}); },
+	destroy(tagOrOptions) { return postIframe('destroy', tagOrOptions); },
 	clear(tag = null) { return postIframe('clear', tag); },
-	destroy(tag, {recursiveMembers} = {}) { return postIframe('destroy', tag, {recursiveMembers}); },
 
 	set Storage(storage) { Object.assign(resourcesForIframe, storage); },
 	set getUserDeviceSecret(thunk) { resourcesForIframe.getUserDeviceSecret = thunk; },

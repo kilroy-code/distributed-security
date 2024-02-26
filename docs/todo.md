@@ -4,40 +4,41 @@
 - API - formats:
    - [x] include kid in multikey encription result, because we need it for prompt.
    - [x] use jose multi-key encryption for device/recovery, with the kid as prompt.
-   - [ ] enumerate kids of symmetric keys in secure header of multi-key encryption, so that we know which ones we can safely specify jose keyManagementAlgorithms when decrypting. Do so in encrypting only for those. unit test.
+   - [x] enumerate kids of symmetric keys in secure header of multi-key encryption, so that we know which ones we can safely specify jose keyManagementAlgorithms when decrypting. Do so in encrypting only for those. unit test.
    - [x] use jose for secret-derived passwords (e.g., PBES2-HS512+A256KW) instead of using crypto.subtle directly.
-   - [ ] encode cty in signature | ciphertext (optionally specified, with best-effort default) so that it we can accept things other than text and then decrypt/verify correctly. Use this to handle POJO and binary media payloads. Encrypted JWK must specify cty. Unit test! See also https://datatracker.ietf.org/doc/html/rfc7516#section-9
-  - [ ] to import JWK, exporting as jwk must specify alg. Do we need to also specify use? Include unit tests for whatever we need. Unit test.
-  - [ ] generate multikey signatures and verify them. unit test.
-  - [ ] generate auditable multikey signatures and verify them. unit test.
-  - [ ] use auditable multikey signatures when storing. unit test.
-  - [ ] use approppriate cty when storing keys
-  - [ ] store jws, not mesage, so that clients can re-verify it
+   - [x] encode cty in signature | ciphertext (optionally specified, with best-effort default) so that it we can accept things other than text and then decrypt/verify correctly. Use this to handle POJO and binary media payloads. Encrypted JWK must specify cty. Unit test! See also https://datatracker.ietf.org/doc/html/rfc7516#section-9
+  - [x] to import JWK, exporting as jwk must specify alg. Do we need to also specify use? Include unit tests for whatever we need. Unit test.
+  - [x] generate multikey signatures and verify them. unit test.
+  - [x] generate auditable multikey signatures and verify them. unit test.
+  - [x] use auditable multikey signatures when storing. unit test.
+  - [x] use approppriate cty when storing keys
+  - [x] store jws in cloud, not message, so that clients can re-verify it
   - [ ] import jwk pojos. unit test.
   - [ ] export simple keys as jwk pojos (not as json strings).
-  - [ ] to store private multi-keys as a jwk, it will have to be a key set. That will require recursively exporting the sub keys as jwk pojos (not json strings) and adding the kid labels to each. unit test.
-  - [ ] store keys as encrypted JWK. Unit test.
-  - [ ] use jose hybrid encryption for wrap/unwrap of SecretVault (rather than our own format)
+  - [x] to store private multi-keys as a jwk, it will have to be a key set. That will require recursively exporting the sub keys as jwk pojos (not json strings) and adding the kid labels to each. unit test.
+  - [x] store keys as encrypted JWK. Unit test.
+  - [x] use jose hybrid encryption for wrap/unwrap of SecretVault (rather than our own format)
   - [ ] use jose multi-key encryption for wrap/unwrap of TeamVault (rather than our own format)
-  - [ ] should we be specifying alg (and enc) and kid in encrypt header output?
-  - [ ] remove concatBase64/splitBase64
-  - [ ] multikrypto and krypto to both use same mechanism for passing headers
-  - [ ] use cty internally
-  - [ ] return whole result in krypto/multi, and grab json in vault. Update tests.
-  - [ ] make sure (unit test) that internal operations can recognize various key/signature/ciphertext formats and apply the correct reading. 
-  - [ ] enumerate recovery keys in secure header of multi-key encryption, so that we can safely exlucde them from first round of vault expansion. do so. unit test.
+  - [x] should we be specifying alg (and enc) and kid in encrypt header output?
+  - [x] remove concatBase64/splitBase64
+  - [x] multikrypto and krypto to both use same mechanism for passing headers
+  - [x] use cty internally
+  - [x] return whole result in krypto/multi verify, and grab json in vault. Update tests.
+  - [ l] return whole result krypto/multi decrypt. Update unit tests
+  - [x] make sure (unit test) that internal operations can recognize various key/signature/ciphertext formats and apply the correct reading. 
+  - [ ] enumerate recovery keys in secure header of multi-key encryption, so that we can safely exclude them from first round of vault expansion. do so. unit test.
   - [ ] After we have some timing specs in the unit tests, try out some larger algorithms.
   - [ ] Cache encrypting keys?
 
 - API - signature verification:
-  - [ ] what should verify return when truthy? {payload, ...} (with cty in there somewhere) or just payload. Unit test
-  - [ ] Implement multi-key signatures. I think the most natural way to specify this is to reverse the order of arguments to the four basic operations, so that multiple keys can be specified by adding more arguments.
-  - [ ] Provide an option (default true?) for verify to check not only the cryptographic signature, but also the additional checks for a multi-key signature (as used by store()). This provides enforcement of membership change. Do we really need this AND a cache argument?
-  - [ ] Pass the signature as to store, instead of text and signature. But maybe accept a mime type parameter to be used in retrieve?
+  - [x] what should verify return when truthy? {payload, ...} (with cty in there somewhere) or just payload. Unit test
+  - [x] Implement multi-key signatures. I think the most natural way to specify this is to reverse the order of arguments to the four basic operations, so that multiple keys can be specified by adding more arguments.
+  - [x] Provide an option (default true?) for verify to check not only the cryptographic signature, but also the additional checks for a multi-key signature (as used by store()). This provides enforcement of membership change. Do we really need this AND a cache argument?
+  - [x] Pass the signature to store, instead of text and signature. But maybe accept a mime type parameter to be used in retrieve?
  
 - API - key operations:
-   - [ ] Implement caching argument to create and changeMembership - unless made unnecessary by previous.
-  - [ ] Decide on the arguments to verify. The order for the parameters to verify is currently different between the doc/demo and the code. Maybe the best thing is to use JWE style, where the signature includes the message and successful verify resolves to the message. Where options are used, is it best to include the tags as a key in options or still listed after?
+   - [ ] ~Implement caching argument to create and changeMembership - unless made unnecessary by previous.~
+  - [x] Decide on the arguments to verify. The order for the parameters to verify is currently different between the doc/demo and the code. Maybe the best thing is to use JWE style, where the signature includes the message and successful verify resolves to the message. Where options are used, is it best to include the tags as a key in options or still listed after?
   - [ ] Should we allow the app to get a nonce once during initialization, which it must pass during all calls? (A variation on the "hidden form field" defense against csrf.)
  
 - API - error handling
@@ -64,7 +65,7 @@ more explicit as to target, such as requestClient()/requestWorker().
 
 - Add to unit tests:
   - [ ] speed tests
-  - [ ] Show how membership change is or is not caught depending on cache checkMembership options.
+  - [x] Show how membership change is or is not caught depending on cache checkMembership options.
   - [ ] Multiple apps using the same vault can use the same team tags. But this is not true for device and recovery tags.
   - [ ] storage/getUserDeviceSecret cannot be reset once set.
   - [ ] storage/getUserDeviceSecret on a direct import of security.mjs does not effect that used by a properly origined index.mjs.
@@ -110,4 +111,4 @@ more explicit as to target, such as requestClient()/requestWorker().
 ### future
 - Use Web credentials for secret, particularly public-key. (This can be done by an app now, but it would be nice to ship with "batteries included".)
 - Hidden rosters - can we make it so each tag key in the roster dictionary can only be read by the members? But what about storage system checking that the submitter is a member of the team? (Maybe instead of kid, label each member by hash(tag + iat)?)
-- Is there a way to derive a public encryption key from a public verification key (i.e., from a tag), so that we don't need to store public encryption keys in the cloud? This would allow device keys to self-contained on the device, without leavin any garbage in the cloud when the device is abandoned.
+- Is there a way to derive a public encryption key from a public verification key (i.e., from a tag), so that we don't need to store public encryption keys in the cloud? This would allow device keys to self-contained on the device, without leaving any garbage in the cloud when the device is abandoned.

@@ -4,47 +4,49 @@ The source code is made to express a set of stepwise concepts in short separate 
 
 ## Wrapping SubtleKrypto
 
-[krypto.mjs](../lib/krypto.mjs) is by far the longest, but it is mostly just a wrapper around SubtleCrypto:
+[krypto.mjs](../lib/krypto.mjs) is a wrapper around JOSE compact serializations, or effectively a wrapper around SubtleCrypto:
 
-1. SubtleCrypto provides functions for each of the four basic operations, plus [export](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/exportKey)/[import](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/importKey) and [wrap](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/wrapKey)/[unwrap](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/unwrapKey) of keys, all taking a key object, a binary buffer, and various parameters. The methods in our Krypto module also take a key as argument, but they work on strings rather than buffers, and the other parameters are hardcoded to use particular algorithms. (For sign/verify, it uses the same ECDSA algorithm and parameters as blockchains.)
-2. Not mentioned in the README.md, is that in addition to encrypt/decrypt using a public/private keypair, SubtleCrypto can use a particular type of single key called a symmetric key for both the encrypt and decrypt operations. This isn't terribly useful at the application level because both sides must have a copy of the same key, which isn't very safe. However, we do use it in a very specific way _internally_, as will be shown below. However, SubtleCrypto splits symmetric keys into two parts: a secret and buffer of random bits called an iv. Krypto combines both parts into a single key object.
+### Handling inputs
 
-The reason that SubtleCrypto separates the parts of a symmetric key is that the secret part can be used over an over again, while the iv can only safely be used for one encrypt/decrypt cycle. However, in Distributed Security, symmetric keys are only ever used for one encryption, and it is much easier to safely manage this when the secret and iv are packaged together. There is some extra code in krypto to ensure that a symmetric key is only ever used through one encrypt/decrypt cylce, even through export/import. 
+SubtleCrypto provides functions for each of the four basic operations, plus [export](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/exportKey)/[import](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/importKey) and [wrap](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/wrapKey)/[unwrap](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/unwrapKey) of keys, all taking a key object, a binary buffer, and various parameters. The methods in our Krypto module also take a key as argument, but they work on strings or objects rather than only binary buffers, and the other parameters are hardcoded to use particular algorithms.
 
+### Symmetric Keys
 
-## Combining Keys
+Not mentioned in the README.md, is that in addition to encrypt/decrypt using a public/private keypair, SubtleCrypto can use a particular type of single key called a symmetric key for both the encrypt and decrypt operations. This isn't terribly useful at the application level because both sides must have a copy of the same key, which isn't very safe. However, we do use it in a very specific way _internally_, as will be shown below.
 
-[multiKrypto.mjs](../lib/multiKrypto.mjs) extends [Krypto](#wrapping-subtlekrypto) in three ways:
+### Hybrid Encryption
 
-### 1. Hybrid encryption to provide longer encrypted messages
-The algorithm used by Krypto can only encrypt messages up to 446 bytes. MultiKrypto uses a _hybrid_ technique, such that any request to encrypt with a public key, will instead generate a new symmetric key to encrypt the arbitrarilly sized message, and then use the public key to encrypt the symmetric key itself, and include both in the output. Decryption with a public key is the reverse.  The encryption looks like this (without any newlines):
+The asymmetric algorithm used by Krypto can only encrypt messages up to 446 bytes. JOSE and Krypto uses a _hybrid_ technique, such that any request to encrypt with a public key, will instead generate a new symmetric key to encrypt the arbitrarilly sized message, and then use the public key to encrypt the symmetric key itself, and include both in the output. Decryption with a public key is the reverse.  The encryption looks like this (without any newlines):
 
 ```
-[684 bytes of a symmetric key encrypted by the given public key]
-~ (a tilde character)
+[less than 1k bytes of a symmetric key encrypted by the given public key]
+. (a separator character)
 [the message encrypted by the symmetric key]
 ```
-(Encryption in Distributed Security is base64 encoded, which does not include the tilde character.)
+(Encryption in Distributed Security is base64 encoded, which does not include the separator character.)
 
 The maximum memory size is not limited by the algorithm this way, but only by available memory. We unit-test with 10 MB messages.
 
-### 2. Sets of Keys
+## Combining Keys
+
+[multiKrypto.mjs](../lib/multiKrypto.mjs) is a wrapper around JOSE general serializations, extending [Krypto](#wrapping-subtlekrypto) in two ways:
+
+### Sets of Keys
 From an application standpoint, a [tag](../README.md#operations-and-tags) represents _the key_. But in fact, SubtleCrypto does not let you use the same keypair for encrypt/decrypt as for sign/verify. So Distributed Security must manage a _set_ of keys under a single tag. MultiKrypto allows a set of keys to be exported and imported as JSON. For example, a keyset of 
 
 ```
 {myDecryptingKey: [a private RSA key], 
  mySigningKey: [a private ECDSA key]}
 ```
-is exported by MultiKrypto as:
+is exported by MultiKrypto as, effectively:
 
 ```
-{"myDecryptingKey": "[about 3168 bytes of exported private RSA key]",
- "mySigningKey": "[248 btyes of exported private ECDSA key]"}
+{"myDecryptingKey": "[about 3k bytes of exported private RSA key]",
+ "mySigningKey": "[a couple hundred btyes of exported private ECDSA key]"}
 ```
-When importing a key SubtleKrypto requires that we specify what the imported key will be used for: `'decrypt'`, `'sign'`, etc. MultiKrypt also need to specify the usage for each of the JSON property names in the export:`importKey(exportedJSON, {myDecryptingKey: 'decrypt', mySigningKey: 'sign'}`.
 
+### Encrypting for Members
 
-### 3. Encrypting for Members
 Crypto systems regularly use the same keypair to directly represent an _identity_ such as a user or a role within an organization, regardless of what machine was used or who in that role used it. This requires the unencrypted key to be stored in multiple places for use and to guard against loss, which then of course presents opportunities for the keys to be co-opted. 
 
 Distributed Security takes a different approach, in which a key set is only ever externally seen _encrypted_. It is encrypted in such a way that it can be read by any of the entity's constituent members, _proven by their own keypairs_. This is done in MultiCrypto by extending the above hybrid encryption with sets of member keys.
@@ -74,6 +76,9 @@ In fact, though, encrypting with public keys is very verbose, and _each_ `[team 
 
 This is roughly the same total size for one member, and each additional member adds about 4.5 kbytes less than the conceptual version above.
 
+## Signing and Verifying with Members
+
+Krypto and JOSE compact formats can make signatures with a single key. MultiKrypto uses JOSE general format to provide the option to sign with mutiple keys. (We use this to sign by a team and a member of the team.) Verfication provides enough information that one can see which of the signatures were verfied by the supplied keys.
 
 ## Vaults: Object-Oriented Keys
 
@@ -94,6 +99,8 @@ Of the seven operations provided by [security.mjs](../lib/security.mjs), `create
 - Finally, a team may specify a "recovery member". The question (or an indicator of the question) is stored (unencrypted) with they (encrypted) key in the cloud, and the symmetric encrypt/decrypt key is dervied from the _answer_ to the question.  As with any other team key data, neither the application nor the authors of Distributed Security can decrypt a recovery key. 
 
 This search for valid keys is repeated for each new operation, because an individual may lose their membership in a team at any time. Thus each operation involves a number of round trips corresponding to the depth of membership in the team, which is rarely more than a few levels. (The fan out or "breadth" of a team having multiple members increases the traffic because the stored encrypted team keys are larger with more members, but the latency of access is only related to the depth of the teams because each member at the same level of a team is verified in parallel.)
+
+There is also code here that handles deep auditable validation. A user can sign for a team and cosign as the specific member of the team. During verification, both are verified, and additionally, we (optionally) check that the member is still on team at the time of verification. Additionally, we optionally check that signature is not made before the a given time, such as the time that the team was last created. We use this to protect the cloud storage of wrapped keys. The code is somewhat complicated by the need to bootstrap the signing for the first version of the wrapped keys.
 
 ## Web Worker and IFrame.
 

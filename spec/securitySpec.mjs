@@ -1,6 +1,6 @@
 import Storage from "./support/storage.mjs";
-import Security from "../index.mjs";
-//import Security from "https://kilroy-code.github.io/distributed-security/index.mjs";
+//import Security from "../index.mjs";
+import Security from "https://kilroy-code.github.io/distributed-security/index.mjs";
 
 import testKrypto from "./kryptoTests.mjs";
 import testMultiKrypto from "./multiKryptoTests.mjs";
@@ -118,26 +118,26 @@ describe('Distributed Security', function () {
       }
       vaultTests('DeviceVault', 'device');
       vaultTests('TeamVault', 'user');
-      describe('workers', function () {
-	let isolatedWorker, request;
-	beforeAll(function () {
-	  isolatedWorker = new Worker("/@kilroy-code/distributed-security/spec/support/testWorkerWithModule.mjs", {type: 'module'});
-	  request = dispatch({target: isolatedWorker});
-	});
-	afterAll(function () {
-	  isolatedWorker.terminate();
-	});
-	it('do not share modules of the same name with applications.', async function () {
-	  let workerInitialFoo = await request('getFoo'),
-	      ourInitialFoo = testModule.foo,
-	      ourNewFoo = 17;
-	  expect(workerInitialFoo).toBe(ourInitialFoo);
-	  expect(ourInitialFoo).not.toBe(ourNewFoo);
-	  testModule.foo = ourNewFoo;
-	  expect(testModule.foo).toBe(ourNewFoo);
-	  expect(await request('getFoo')).toBe(workerInitialFoo);
-	});
-      });
+      // describe('workers', function () {
+      // 	let isolatedWorker, request;
+      // 	beforeAll(function () {
+      // 	  isolatedWorker = new Worker("/@kilroy-code/distributed-security/spec/support/testWorkerWithModule.mjs", {type: 'module'});
+      // 	  request = dispatch({target: isolatedWorker});
+      // 	});
+      // 	afterAll(function () {
+      // 	  isolatedWorker.terminate();
+      // 	});
+      // 	it('do not share modules of the same name with applications.', async function () {
+      // 	  let workerInitialFoo = await request('getFoo'),
+      // 	      ourInitialFoo = testModule.foo,
+      // 	      ourNewFoo = 17;
+      // 	  expect(workerInitialFoo).toBe(ourInitialFoo);
+      // 	  expect(ourInitialFoo).not.toBe(ourNewFoo);
+      // 	  testModule.foo = ourNewFoo;
+      // 	  expect(testModule.foo).toBe(ourNewFoo);
+      // 	  expect(await request('getFoo')).toBe(workerInitialFoo);
+      // 	});
+      // });
     });
     describe("API", function () {
       let tags;

@@ -24,11 +24,9 @@
     "url": "https://github.com/kilroy-code/distributed-security/issues"
   },
   "homepage": "https://github.com/kilroy-code/distributed-security#readme",
-  "dependencies": {
-    "@kilroy-code/jsonrpc": "^0.0.1",
-    "jose": "^5.2.0"
-  },
   "devDependencies": {
+    "@kilroy-code/jsonrpc": "^0.0.1",
+    "jose": "^5.2.2",
     "jasmine": "^4.5.0"
   }
 }

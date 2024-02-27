@@ -28,7 +28,7 @@ function log(...args) { // Log message to element named "log".
 
 //log(`vault location: ${location.href}, referrer: ${document.referrer}`);
 const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
-      url = import.meta.url,
+      url = location.href,
       vaultOrigin = new URL('./lib/worker.mjs', url),
       api = {
 	sign(message, ...tags) { return postWorker('sign', message, ...tags); },
@@ -66,6 +66,7 @@ const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
 	targetLabel: 'worker',
 	namespace: hostAPI
       });
+console.log(`vault at ${url} loading workier ${vaultOrigin}`);
 postClient('ready', `${pkg.name} ${pkg.version} ${location.origin}`);
     </script>
   </body>

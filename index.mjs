@@ -1,4 +1,4 @@
-import dispatch from '../jsonrpc/index.mjs';
+import dispatch from './dependency/jsonrpc.mjs';
 
 const url = import.meta.url,
       vaultUrl = new URL('vault.html', url),

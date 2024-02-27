@@ -10,7 +10,7 @@
 
 
     <script type="module">
-import dispatch from '../jsonrpc/index.mjs';
+import dispatch from './dependency/jsonrpc.mjs';
 // import assert isn't yet supported across browsers...
 // import pkg from './package.json' assert {type: 'json'};
 // so hardcode the label.
@@ -66,7 +66,7 @@ const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
 	targetLabel: 'worker',
 	namespace: hostAPI
       });
-console.log(`vault at ${url} loading workier ${vaultOrigin}`);
+console.log(`vault at ${url} loading worker ${vaultOrigin}`);
 postClient('ready', `${pkg.name} ${pkg.version} ${location.origin}`);
     </script>
   </body>

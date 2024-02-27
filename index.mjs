@@ -1,6 +1,7 @@
 import dispatch from '../jsonrpc/index.mjs';
 
-const vaultUrl = new URL('vault.html', import.meta.url),
+const url = import.meta.url,
+      vaultUrl = new URL('vault.html', url),
       iframe = document.createElement('iframe'),
       resourcesForIframe = {
 	log(...args) { console.log(...args); }
@@ -28,6 +29,12 @@ const vaultUrl = new URL('vault.html', import.meta.url),
 	  iframe.setAttribute('src', vaultUrl);
 	})
       },
-      postIframe = dispatch({target: iframe.contentWindow, receiver: self, origin: vaultUrl.origin, namespace: resourcesForIframe});
+      postIframe = dispatch({
+	dispatcherLabel: url,
+	target: iframe.contentWindow,
+	targetLabel: 'vault',
+	receiver: self,
+	origin: vaultUrl.origin,
+	namespace: resourcesForIframe});
 
 export default api;

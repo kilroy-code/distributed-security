@@ -28,7 +28,8 @@ function log(...args) { // Log message to element named "log".
 
 //log(`vault location: ${location.href}, referrer: ${document.referrer}`);
 const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
-      vaultOrigin = new URL('./lib/worker.mjs', import.meta.url),
+      url = import.meta.url,
+      vaultOrigin = new URL('./lib/worker.mjs', url),
       api = {
 	sign(message, ...tags) { return postWorker('sign', message, ...tags); },
 	verify(signature, ...tags) { return postWorker('verify', signature, ...tags); },
@@ -39,7 +40,14 @@ const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
 	destroy(tagOrOptions) { return postWorker('destroy', tagOrOptions); },
 	clear(tag) { return postWorker('clear', tag); }
       },
-      postClient = dispatch({target:parent, receiver:self, namespace:api, origin:hostOrigin/*, log: (...args) => log('vault postClient', ...args)*/}),
+      postClient = dispatch({
+	dispatcherLabel: url,
+	target: parent,
+	targetLabel: parent.location.href,
+	receiver: self,
+	namespace: api,
+	origin: hostOrigin
+      }),
       hostAPI = {
 	store(resourceTag, ownerTag, string, signature) {
 	  return postClient('store', resourceTag, ownerTag, string, signature);
@@ -52,9 +60,13 @@ const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
 	}
       },
       worker = new Worker(vaultOrigin, {type: 'module'}),
-      postWorker = dispatch({target: worker, namespace: hostAPI/*, log: (...args) => log('vault postWorker', ...args)*/});
+      postWorker = dispatch({
+	dispatcherLabel: url,
+	target: worker,
+	targetLabel: 'worker',
+	namespace: hostAPI
+      });
 postClient('ready', `${pkg.name} ${pkg.version} ${location.origin}`);
-console.log(`vault origin: ${vaultOrigin} for host: ${hostOrigin}`);
     </script>
   </body>
 </html>

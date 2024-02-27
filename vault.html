@@ -6,27 +6,14 @@
   <body>
 
     <h3>Vault</h3>
-    <div id="log"></div>
-
 
     <script type="module">
 import dispatch from './dependency/jsonrpc.mjs';
-// import assert isn't yet supported across browsers...
-// import pkg from './package.json' assert {type: 'json'};
+// import assert isn't yet supported across browsers, e.g....
+//    import pkg from './package.json' assert {type: 'json'};
 // so hardcode the label.
 const pkg = {name: "@kilroy-code/distributed-security", version: "0.0.2"};
 
-function log(...args) { // Log message to element named "log".
-  console.log(...args);
-  // Use a fragment: browser will only render/reflow once.
-  let message = args.join(' '),
-      fragment = document.createDocumentFragment();
-  fragment.appendChild(document.createTextNode(message));
-  fragment.appendChild(document.createElement('br'));
-  document.querySelector("#log").appendChild(fragment);
-}
-
-//log(`vault location: ${location.href}, referrer: ${document.referrer}`);
 const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
       url = location.href,
       vaultOrigin = new URL('./lib/worker.mjs', url),
@@ -66,7 +53,6 @@ const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
 	targetLabel: 'worker',
 	namespace: hostAPI
       });
-console.log(`vault at ${url} loading worker ${vaultOrigin}`);
 postClient('ready', `${pkg.name} ${pkg.version} ${location.origin}`);
     </script>
   </body>

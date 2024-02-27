@@ -10,7 +10,7 @@ function dispatch({target,
 		   origin = ((target !== receiver) && target.location.origin),
 		   targetLabel = origin || target.location?.href || target,
 		   dispatcherLabel = receiver.location?.href || receiver,
-		   log = console.log.bind(console), //fixme () => null,
+		   log = () => null,
 		   warn:logwarn = console.warn.bind(console),
 		   error:logerror = console.error.bind(console)
 		  }) {

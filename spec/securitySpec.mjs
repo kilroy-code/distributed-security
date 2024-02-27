@@ -8,8 +8,8 @@ import testModule from "./support/testModuleWithFoo.mjs";
 import {scale, makeMessage, isBase64URL} from "./support/messageText.mjs";
 
 // Setup.
-jasmine.getEnv().configure({random: false});
-
+//jasmine.getEnv().configure({random: false});
+Storage.Security = Security;
 Security.Storage = Storage;
 let thisDeviceSecret = "secret",
     secret = thisDeviceSecret;
@@ -19,20 +19,20 @@ async function withSecret(thunk) {
   secret = thisDeviceSecret;
 }
 function getSecret(tag, recoveryPrompt = '') {
-  return recoveryPrompt + secret;;
+  return recoveryPrompt + secret;
 }
 Security.getUserDeviceSecret = getSecret;
 
 // For testing internals.
-import * as JOSE from '../node_modules/jose/dist/browser/index.js';
+import * as JOSE from "../dependency/jose.mjs";
 import Krypto from "../lib/krypto.mjs";
 import MultiKrypto from "../lib/multiKrypto.mjs";
-// import InternalSecurity from "../lib/api.mjs";
-// import dispatch from "../../jsonrpc/index.mjs";
-// InternalSecurity.Storage = Storage;
-// InternalSecurity.getUserDeviceSecret = getSecret;
-// import {Vault, DeviceVault, TeamVault} from "../lib/vault.mjs";
-// Object.assign(window, {Krypto, MultiKrypto, Security, Storage, InternalSecurity, JOSE}); // export to browser console for development/debugging experiments.
+import InternalSecurity from "../lib/api.mjs";
+import dispatch from "../dependency/jsonrpc.mjs";
+InternalSecurity.Storage = Storage;
+InternalSecurity.getUserDeviceSecret = getSecret;
+import {Vault, DeviceVault, TeamVault} from "../lib/vault.mjs";
+Object.assign(window, {Krypto, MultiKrypto, Security, Storage, InternalSecurity, JOSE}); // export to browser console for development/debugging experiments.
 
 
 describe('Distributed Security', function () {
@@ -78,7 +78,7 @@ describe('Distributed Security', function () {
 	await scope.destroy(tags.otherDevice);
       });
     }
-    xdescribe('internal machinery', function () {
+    describe('internal machinery', function () {
       let tags;
       beforeAll(async function () {
 	tags = await makeVaults(InternalSecurity);
@@ -118,26 +118,26 @@ describe('Distributed Security', function () {
       }
       vaultTests('DeviceVault', 'device');
       vaultTests('TeamVault', 'user');
-      // describe('workers', function () {
-      // 	let isolatedWorker, request;
-      // 	beforeAll(function () {
-      // 	  isolatedWorker = new Worker("/@kilroy-code/distributed-security/spec/support/testWorkerWithModule.mjs", {type: 'module'});
-      // 	  request = dispatch({target: isolatedWorker});
-      // 	});
-      // 	afterAll(function () {
-      // 	  isolatedWorker.terminate();
-      // 	});
-      // 	it('do not share modules of the same name with applications.', async function () {
-      // 	  let workerInitialFoo = await request('getFoo'),
-      // 	      ourInitialFoo = testModule.foo,
-      // 	      ourNewFoo = 17;
-      // 	  expect(workerInitialFoo).toBe(ourInitialFoo);
-      // 	  expect(ourInitialFoo).not.toBe(ourNewFoo);
-      // 	  testModule.foo = ourNewFoo;
-      // 	  expect(testModule.foo).toBe(ourNewFoo);
-      // 	  expect(await request('getFoo')).toBe(workerInitialFoo);
-      // 	});
-      // });
+      describe('workers', function () {
+	let isolatedWorker, request;
+	beforeAll(function () {
+	  isolatedWorker = new Worker("/@kilroy-code/distributed-security/spec/support/testWorkerWithModule.mjs", {type: 'module'});
+	  request = dispatch({target: isolatedWorker});
+	});
+	afterAll(function () {
+	  isolatedWorker.terminate();
+	});
+	it('do not share modules of the same name with applications.', async function () {
+	  let workerInitialFoo = await request('getFoo'),
+	      ourInitialFoo = testModule.foo,
+	      ourNewFoo = 17;
+	  expect(workerInitialFoo).toBe(ourInitialFoo);
+	  expect(ourInitialFoo).not.toBe(ourNewFoo);
+	  testModule.foo = ourNewFoo;
+	  expect(testModule.foo).toBe(ourNewFoo);
+	  expect(await request('getFoo')).toBe(workerInitialFoo);
+	});
+      });
     });
     describe("API", function () {
       let tags;

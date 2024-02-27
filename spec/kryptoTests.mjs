@@ -1,5 +1,5 @@
 import {makeMessage, isBase64URL} from "./support/messageText.mjs";
-import * as JOSE from '../node_modules/jose/dist/browser/index.js';
+import * as JOSE from "../dependency/jose.mjs";
 
 export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 				    encryptableSize = 446) {

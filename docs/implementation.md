@@ -116,4 +116,4 @@ The communication between index.mjs and the vault.html iframe, and between vault
 
 ## Dependency Copies
 
-We cannot bring in libraries from other domains within a web worker, so we make a copy of jsonrpc and jose. These are from pulled as though by `curl https://cdnjs.cloudflare.com/ajax/libs/jose/5.2.2/index.bundle.min.js > dependency/jose.mjs` and `https://kilroy-code.github.io/jsonrpc/index.mjs > dependency/jsonrpc.mjs`, and checked in to the repo.
+To function within a web worker, we make a copy of jsonrpc and jose so that it is served from the same domain. These are from pulled as though by `curl https://cdnjs.cloudflare.com/ajax/libs/jose/5.2.2/index.bundle.min.js > dependency/jose.mjs` and `https://kilroy-code.github.io/jsonrpc/index.mjs > dependency/jsonrpc.mjs`, and checked in to the repo.

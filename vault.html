@@ -43,7 +43,7 @@ const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
       postClient = dispatch({
 	dispatcherLabel: url,
 	target: parent,
-	targetLabel: parent.location.href,
+	targetLabel: 'entry',
 	receiver: self,
 	namespace: api,
 	origin: hostOrigin

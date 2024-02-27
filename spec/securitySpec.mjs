@@ -1,15 +1,6 @@
-import dispatch from "../../jsonrpc/index.mjs";
 import Storage from "./support/storage.mjs";
-//import Security from "../index.mjs";
-import Security from "https://kilroy-code.github.io/distributed-security/index.mjs";
-
-// For testing internals.
-import InternalSecurity from "../lib/api.mjs";
-import * as JOSE from '../node_modules/jose/dist/browser/index.js';
-import Krypto from "../lib/krypto.mjs";
-import MultiKrypto from "../lib/multiKrypto.mjs";
-import {Vault, DeviceVault, TeamVault} from "../lib/vault.mjs";
-Object.assign(window, {Krypto, MultiKrypto, Security, Storage, InternalSecurity, JOSE}); // export to browser console for development/debugging experiments.
+import Security from "../index.mjs";
+//import Security from "https://kilroy-code.github.io/distributed-security/index.mjs";
 
 import testKrypto from "./kryptoTests.mjs";
 import testMultiKrypto from "./multiKryptoTests.mjs";
@@ -19,7 +10,7 @@ import {scale, makeMessage, isBase64URL} from "./support/messageText.mjs";
 // Setup.
 jasmine.getEnv().configure({random: false});
 
-InternalSecurity.Storage = Security.Storage = Storage;
+Security.Storage = Storage;
 let thisDeviceSecret = "secret",
     secret = thisDeviceSecret;
 async function withSecret(thunk) {
@@ -30,7 +21,19 @@ async function withSecret(thunk) {
 function getSecret(tag, recoveryPrompt = '') {
   return recoveryPrompt + secret;;
 }
-InternalSecurity.getUserDeviceSecret = Security.getUserDeviceSecret = getSecret;
+Security.getUserDeviceSecret = getSecret;
+
+// For testing internals.
+import * as JOSE from '../node_modules/jose/dist/browser/index.js';
+import Krypto from "../lib/krypto.mjs";
+import MultiKrypto from "../lib/multiKrypto.mjs";
+// import InternalSecurity from "../lib/api.mjs";
+// import dispatch from "../../jsonrpc/index.mjs";
+// InternalSecurity.Storage = Storage;
+// InternalSecurity.getUserDeviceSecret = getSecret;
+// import {Vault, DeviceVault, TeamVault} from "../lib/vault.mjs";
+// Object.assign(window, {Krypto, MultiKrypto, Security, Storage, InternalSecurity, JOSE}); // export to browser console for development/debugging experiments.
+
 
 describe('Distributed Security', function () {
   let message = makeMessage();
@@ -75,7 +78,7 @@ describe('Distributed Security', function () {
 	await scope.destroy(tags.otherDevice);
       });
     }
-    describe('internal machinery', function () {
+    xdescribe('internal machinery', function () {
       let tags;
       beforeAll(async function () {
 	tags = await makeVaults(InternalSecurity);

@@ -14,7 +14,7 @@ import dispatch from '../jsonrpc/index.mjs';
 // import assert isn't yet supported across browsers...
 // import pkg from './package.json' assert {type: 'json'};
 // so hardcode the label.
-const pkg = {name: "@kilroy-code/distributed-security", version: "0.0.1"};
+const pkg = {name: "@kilroy-code/distributed-security", version: "0.0.2"};
 
 function log(...args) { // Log message to element named "log".
   console.log(...args);
@@ -28,6 +28,7 @@ function log(...args) { // Log message to element named "log".
 
 //log(`vault location: ${location.href}, referrer: ${document.referrer}`);
 const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
+      vaultOrigin = new URL('./lib/worker.mjs', import.meta.url),
       api = {
 	sign(message, ...tags) { return postWorker('sign', message, ...tags); },
 	verify(signature, ...tags) { return postWorker('verify', signature, ...tags); },
@@ -50,9 +51,10 @@ const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
 	  return postClient('getUserDeviceSecret', ...args);
 	}
       },
-      worker = new Worker(new URL('./lib/worker.mjs', import.meta.url), {type: 'module'}),
+      worker = new Worker(vaultOrigin, {type: 'module'}),
       postWorker = dispatch({target: worker, namespace: hostAPI/*, log: (...args) => log('vault postWorker', ...args)*/});
-      postClient('ready', `${pkg.name} ${pkg.version}`);
+postClient('ready', `${pkg.name} ${pkg.version} ${location.origin}`);
+console.log(`vault origin: ${vaultOrigin} for host: ${hostOrigin}`);
     </script>
   </body>
 </html>

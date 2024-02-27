@@ -1,5 +1,6 @@
 import {scale, makeMessage} from "./support/messageText.mjs";
 import testKrypto from "./kryptoTests.mjs";
+import * as JOSE from '../node_modules/jose/dist/browser/index.js';
 
 export default function testMultiKrypto(multiKrypto) {
   const slowKeyCreation = 20e3, // Android

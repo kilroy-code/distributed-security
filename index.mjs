@@ -1,5 +1,4 @@
 import dispatch from '../jsonrpc/index.mjs';
-import {isEmptyJWS} from './lib/payload-utilities.mjs'; // FIXME: do clients need this? (We were using it before verifying storage.)
 
 const vaultUrl = new URL('vault.html', import.meta.url),
       iframe = document.createElement('iframe'),
@@ -7,7 +6,6 @@ const vaultUrl = new URL('vault.html', import.meta.url),
 	log(...args) { console.log(...args); }
       }, // Will get handlers for messages from the iframe.
       api = {
-	isEmptyJWS,
 	sign(message, ...tags) { return postIframe('sign', message, ...tags); },
 	verify(signature, ...tags) { return postIframe('verify', signature, ...tags); },
 	encrypt(message, ...tags) { return postIframe('encrypt', message, ...tags); },

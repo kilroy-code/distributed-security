@@ -1,9 +1,6 @@
 # Remaining Work for Distributed Security
 
 ### Code Cleanup
-- remove ad-hoc JSON.stringfy/parts 
-  - [ ] Underlying krypto/multiKrypto decrypt should return whole JOSE result, which in our version already has text/json properties as appropriate. Update callers.
-  - [ ] Remove various JSON.stringify in vault.mjs, and replace JSON.parse with reference to result.json.
 - API - error handling
   - [ ] Give errors for at least some errors (e.g., badly formed arguments) instead of undefined. Maybe all errors?
   - [ ] Error messages should state issue up front with shortened tag at end.

@@ -24,7 +24,7 @@ This README covers:
   - [Distributed-Security Basics](#distributed-security-basics) - The much simpler API for the four basic cryptography operations.
 - [Creating Tags and Changing Membership](#creating-tags-and-changing-membership) - Practical key management.
 - [Encryption with Multiple Tags and Other Encryption Options](#encryption-with-multiple-tags-and-other-encryption-options)
-- [Signatures with Multiple Tags and Other Signature Options](#signatures-with-multiple-tags-and-other-signature-operations)
+- [Signatures with Multiple Tags and Other Signature Options](#signatures-with-multiple-tags-and-other-signature-options)
 - [Application Use](#application-use)
   - [Library Installation and Declaration](#library-installation-and-declaration)
   - [Storing Keys using the Cloud Storage API](#storing-keys-using-the-cloud-storage-api)

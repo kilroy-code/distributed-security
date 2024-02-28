@@ -79,13 +79,15 @@ There are more complications. SubtleCrypto provides a number of different kinds 
 
 ```
 encrypt(originalTextOrBinaryOrObject, tag) -> encryptedData
-decrypt(encryptedData, tag) -> originalTextOrBinaryOrObject
+decrypt(encryptedData, tag) -> {payload: originalBinary, text: originalTextOrJSON, json: originalObject}  
+
 
 sign(originalTextOrBinaryOrObject, tag) -> signature
 verify(signature, tag) -> {payload: originalBinary, text: originalTextOrJSON, json: originalObject} 
-                          // if signature is valid, else undefined
-                          // text is undefined if original data was binary
-                          // json is undefined if original data was binary or a string
+  
+// signature/decryption return undfined if invalid
+// text is undefined if original data was binary
+// json is undefined if original data was binary or a string
 ```
 
 All distributed security operations are asynchronous - the call immediately returns a Javascript [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises) that resolves to the specified value.

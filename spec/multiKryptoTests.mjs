@@ -49,7 +49,7 @@ export default function testMultiKrypto(multiKrypto) {
 	    signature = await multiKrypto.sign(multiSign, message, {iss, act, iat}),
 	    verified = await multiKrypto.verify(multiVerify, signature);
 	expect(verified).toBeTruthy();
-	JSON.parse(signature).signatures.forEach(subSignature => {
+	signature.signatures.forEach(subSignature => {
 	  let header = JOSE.decodeProtectedHeader(subSignature);
 	  expect(header.iss).toBe(iss);
 	  expect(header.act).toBe(act);
@@ -130,26 +130,26 @@ export default function testMultiKrypto(multiKrypto) {
 	symmetric = await multiKrypto.generateSymmetricKey();
 	keypair = await multiKrypto.generateEncryptingKey();
 	encrypted = await multiKrypto.encrypt({a: symmetric, b: keypair.publicKey, c: secretText}, message);
-	recipients = JSON.parse(encrypted).recipients;
+	recipients = encrypted.recipients;
 	let otherKeypair = await multiKrypto.generateEncryptingKey();
 	encryptingMulti = {a: keypair.publicKey, b: otherKeypair.publicKey};
 	decryptingMulti = {a: keypair.privateKey, b: otherKeypair.privateKey};
       }, slowKeyCreation);
       it('works with symmetric members.', async function () {
 	let decrypted = await multiKrypto.decrypt({a: symmetric}, encrypted);
-	expect(decrypted).toBe(message);
+	expect(decrypted.text).toBe(message);
 	expect(recipients[0].header.kid).toBe('a');
 	expect(recipients[0].header.alg).toBe('A256GCMKW');
       });
       it('works with keypair members.', async function () {
 	let decrypted = await multiKrypto.decrypt({b: keypair.privateKey}, encrypted);
-	expect(decrypted).toBe(message);
+	expect(decrypted.text).toBe(message);
 	expect(recipients[1].header.kid).toBe('b');
 	expect(recipients[1].header.alg).toBe('RSA-OAEP-256');
       });
       it('works with secret text members.', async function () {
 	let decrypted = await multiKrypto.decrypt({c: secretText}, encrypted);
-	expect(decrypted).toBe(message);
+	expect(decrypted.text).toBe(message);
 	expect(recipients[2].header.kid).toBe('c');
 	expect(recipients[2].header.alg).toBe('PBES2-HS512+A256KW');
       });
@@ -158,24 +158,24 @@ export default function testMultiKrypto(multiKrypto) {
 	let message = new Uint8Array([21, 31]),
 	    encrypted = await multiKrypto.encrypt(encryptingMulti, message),
 	    decrypted = await multiKrypto.decrypt(decryptingMulti, encrypted),
-	    header = JOSE.decodeProtectedHeader(JSON.parse(encrypted));
+	    header = JOSE.decodeProtectedHeader(encrypted);
 	expect(header.cty).toBeUndefined();
-	expect(decrypted).toEqual(message);
+	expect(decrypted.payload).toEqual(message);
       });
       it('handles text, and decrypts as same.', async function () {
 	let encrypted = await multiKrypto.encrypt(encryptingMulti, message),
 	    decrypted = await multiKrypto.decrypt(decryptingMulti, encrypted),
-	    header = JOSE.decodeProtectedHeader(JSON.parse(encrypted));
+	    header = JOSE.decodeProtectedHeader(encrypted);
 	expect(header.cty).toBe('text/plain');
-	expect(decrypted).toBe(message);
+	expect(decrypted.text).toBe(message);
       });
       it('handles json, and decrypts as same.', async function () {
 	let message = {foo: 'bar'},
 	    encrypted = await multiKrypto.encrypt(encryptingMulti, message);
-	let header = JOSE.decodeProtectedHeader(JSON.parse(encrypted)),
+	let header = JOSE.decodeProtectedHeader(encrypted),
 	    decrypted = await multiKrypto.decrypt(decryptingMulti, encrypted);
 	expect(header.cty).toBe('json');
-	expect(decrypted).toEqual(message);
+	expect(decrypted.json).toEqual(message);
       });
       it('Uses specified headers if supplied, including cty.', async function () {
 	let cty = 'text/html',
@@ -184,11 +184,11 @@ export default function testMultiKrypto(multiKrypto) {
 	    message = "<something else>",
 	    encrypted = await multiKrypto.encrypt(encryptingMulti, message, {cty, iat, foo}),
 	    decrypted = await multiKrypto.decrypt(decryptingMulti, encrypted),
-	    header = JOSE.decodeProtectedHeader(JSON.parse(encrypted))
+	    header = JOSE.decodeProtectedHeader(encrypted)
 	expect(header.cty).toBe(cty);
 	expect(header.iat).toBe(iat);
 	expect(header.foo).toBe(foo);
-	expect(decrypted).toBe(message);
+	expect(decrypted.text).toBe(message);
       });
 
       it('produces undefined for wrong symmetric key.', async function () {
@@ -231,7 +231,7 @@ export default function testMultiKrypto(multiKrypto) {
 	  decrypted = await multiKrypto.decrypt(decryptingMultikey, encrypted);
       expect(exported.keys[0].kid).toBe('a');
       expect(exported.keys[1].kid).toBe('b');
-      expect(decrypted).toBe(message);
+      expect(decrypted.text).toBe(message);
     });
     it('export heterogenous members.', async function () {
       let encryptingKeypair = await multiKrypto.generateEncryptingKey(),
@@ -245,7 +245,7 @@ export default function testMultiKrypto(multiKrypto) {
 	  signed = await multiKrypto.sign(imported.mySign, message);
       expect(exported.keys[0].kid).toBe('myDecrypt');
       expect(exported.keys[1].kid).toBe('mySign');
-      expect(decrypted).toBe(message);
+      expect(decrypted.text).toBe(message);
       expect(await multiKrypto.verify(signingKeypair.publicKey, signed)).toBeTruthy();
     });
 
@@ -256,7 +256,7 @@ export default function testMultiKrypto(multiKrypto) {
 	  // Cool, now prove that worked.
 	  encrypted = await multiKrypto.encrypt(unwrapped, message),
 	  decrypted = await multiKrypto.decrypt(key, encrypted);
-      expect(decrypted).toBe(message);
+      expect(decrypted.text).toBe(message);
     });
     it('can be wrapped/unwrapped by a symmetric key with homogenous members.', async function () {
       let wrappingKey = await multiKrypto.generateSymmetricKey(),
@@ -265,7 +265,7 @@ export default function testMultiKrypto(multiKrypto) {
 	  // Cool, now prove that worked.
 	  encrypted = await multiKrypto.encrypt(unwrapped, message),
 	  decrypted = await multiKrypto.decrypt(decryptingMultikey, encrypted);
-      expect(decrypted).toBe(message);
+      expect(decrypted.text).toBe(message);
     });
     it('can wrap/unwrap a symmetric multikey with homogenous members.', async function () {
       let key = {x: await multiKrypto.generateSymmetricKey(), y: await multiKrypto.generateSymmetricKey()},
@@ -275,7 +275,7 @@ export default function testMultiKrypto(multiKrypto) {
 	  message = makeMessage(),
 	  encrypted = await multiKrypto.encrypt(unwrapped, message),
 	  decrypted = await multiKrypto.decrypt(key, encrypted);
-      expect(decrypted).toBe(message);
+      expect(decrypted.text).toBe(message);
     });
     it('can wrap/unwrap a heterogeneous multikey.', async function () {
       let encryptingKeypair = await multiKrypto.generateEncryptingKey(),
@@ -287,7 +287,7 @@ export default function testMultiKrypto(multiKrypto) {
 	  encrypted = await multiKrypto.encrypt(encryptingKeypair.publicKey, message),
 	  decrypted = await multiKrypto.decrypt(unwrapped.myDecrypt, encrypted),
 	  signature = await multiKrypto.sign(unwrapped.mySign, message);
-      expect(decrypted).toBe(message),
+      expect(decrypted.text).toBe(message),
       expect(await multiKrypto.verify(signingKeypair.publicKey, signature)).toBeTruthy();
     }, slowKeyCreation);
   });

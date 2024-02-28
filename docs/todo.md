@@ -5,7 +5,7 @@
   - [ ] Underlying krypto/multiKrypto decrypt should return whole JOSE result, which in our version already has text/json properties as appropriate. Update callers.
   - [ ] Remove various JSON.stringify in vault.mjs, and replace JSON.parse with reference to result.json.
 - API - error handling
-  - [ ] Good error messages for badly formatted tags, signature, encrypted. 
+  - [ ] Give errors for at least some errors (e.g., badly formed arguments) instead of undefined. Maybe all errors?
   - [ ] Error messages should state issue up front with shortened tag at end.
   - [ ] Display an ugly warning if vault is used from same origin as application.
   - [ ] feature-detection and messaging for unsupportable browsers
@@ -23,7 +23,7 @@
   - [ ] changeMembers will fail if not a member
   - [ ] device and recovery jws use a different iv each time they are encrypted
   - [ ] cycles within recursive team membership is not a problem.
-  - [ ] Tests for error messages.
+  - [ ] Tests for error messages.	
 - [ ] Doc: the term of art for multi is "multiparty encryption". Are there places where I should use that term? Similarly for "content encryption key" (CEK) or "direct encryption".
 
 ### dependencies

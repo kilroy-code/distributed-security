@@ -1,6 +1,6 @@
 import Storage from "./support/storage.mjs";
-//import Security from "../index.mjs";
-import Security from "https://kilroy-code.github.io/distributed-security/index.mjs";
+import Security from "../index.mjs";
+//import Security from "https://kilroy-code.github.io/distributed-security/index.mjs";
 
 import testKrypto from "./kryptoTests.mjs";
 import testMultiKrypto from "./multiKryptoTests.mjs";
@@ -8,7 +8,7 @@ import testModule from "./support/testModuleWithFoo.mjs";
 import {scale, makeMessage, isBase64URL} from "./support/messageText.mjs";
 
 // Setup.
-//jasmine.getEnv().configure({random: false});
+jasmine.getEnv().configure({random: false});
 Storage.Security = Security;
 Security.Storage = Storage;
 let thisDeviceSecret = "secret",
@@ -51,16 +51,17 @@ describe('Distributed Security', function () {
 	scope.create(),
 	scope.create({prompt: "what?"}),
 	scope.create({prompt: "nope!"})
-      ]);
+      ])
       let otherDevice, otherUser;
       await withSecret(async function () {
 	otherDevice = await scope.create();
 	otherUser = await scope.create(otherDevice);
       });
       let user = await scope.create(device);
-      // Note: same members, but a different identity.
+      // // Note: same members, but a different identity.
       let [team, otherTeam] = await Promise.all([scope.create(user, otherUser), scope.create(otherUser, user)]);
-      tags.device = device; tags.otherDevice = otherDevice;
+      tags.device = device;
+      tags.otherDevice = otherDevice;
       tags.recovery = recovery; tags.otherRecovery = otherRecovery;
       tags.user = user; tags.otherUser = otherUser;
       tags.team = team; tags.otherTeam = otherTeam;
@@ -94,11 +95,12 @@ describe('Distributed Security', function () {
 	    vault = await Vault.ensure(tag);
 	  });
 	  it('tag is exported verify key, and sign() pairs with it.', async function () {
-	    let tag = vault.tag,
-		verifyKey = await MultiKrypto.importRaw(tag),
+	    let verifyKey = await MultiKrypto.importRaw(tag),
 		exported = await MultiKrypto.exportRaw(verifyKey);
 	    expect(typeof tag).toBe('string');
 	    expect(exported).toBe(tag);
+
+	    let vault = await Vault.ensure(tag);
 
 	    let signature = await Vault.sign(message, {tags: [tag], signingKey: vault.signingKey}),
 		verification = await MultiKrypto.verify(verifyKey, signature);
@@ -109,14 +111,15 @@ describe('Distributed Security', function () {
 	    let tag = vault.tag,
 		retrieved = await Storage.retrieve('EncryptionKey', tag),
 		verified = await Security.verify(retrieved, tag),
-		imported = await MultiKrypto.importJWK(JSON.parse(verified.text)),
+		imported = await MultiKrypto.importJWK(verified.json),
 		encrypted = await MultiKrypto.encrypt(imported, message),
 		decrypted = await vault.decrypt(encrypted);
-	    expect(decrypted).toBe(message);
+	    expect(decrypted.text).toBe(message);
 	  });
 	});
       }
       vaultTests('DeviceVault', 'device');
+      vaultTests('RecoveryVault', 'recovery');
       vaultTests('TeamVault', 'user');
       describe('workers', function () {
 	let isolatedWorker, request;
@@ -274,7 +277,7 @@ describe('Distributed Security', function () {
 		let encrypted = await Security.encrypt(message, tag),
 		    decrypted = await Security.decrypt(encrypted, tag);
 		isBase64URL(encrypted);
-		expect(decrypted).toBe(message);
+		expect(decrypted.text).toBe(message);
 	      });
 	      it('is url-safe base64.', async function () {
 		isBase64URL(await Security.encrypt(message, tag));
@@ -298,14 +301,14 @@ describe('Distributed Security', function () {
 		    decrypted = await Security.decrypt(encrypted, tag),
 		    header = JOSE.decodeProtectedHeader(encrypted);
 		expect(header.cty).toBeUndefined();
-		expect(decrypted).toEqual(message);
+		expect(decrypted.payload).toEqual(message);
 	      });
 	      it('handles text, and decrypts as same.', async function () {
 		let encrypted = await Security.encrypt(message, tag),
 		    decrypted = await Security.decrypt(encrypted, tag),
 		    header = JOSE.decodeProtectedHeader(encrypted);
 		expect(header.cty).toBe('text/plain');
-		expect(decrypted).toBe(message);
+		expect(decrypted.text).toBe(message);
 	      });
 	      it('handles json, and decrypts as same.', async function () {
 		let message = {foo: 'bar'},
@@ -313,7 +316,7 @@ describe('Distributed Security', function () {
 		    decrypted = await Security.decrypt(encrypted, tag),
 		    header = JOSE.decodeProtectedHeader(encrypted);
 		expect(header.cty).toBe('json');
-		expect(decrypted).toEqual(message);
+		expect(decrypted.json).toEqual(message);
 	      });
 	      it('uses contentType and time if supplied.', async function () {
 		let contentType = 'text/html',
@@ -324,7 +327,7 @@ describe('Distributed Security', function () {
 		    header = JOSE.decodeProtectedHeader(encrypted);
 		expect(header.cty).toBe(contentType);
 		expect(header.iat).toBe(time);
-		expect(decrypted).toBe(message);
+		expect(decrypted.text).toBe(message);
 	      });
 	    });
 	    describe('with multiple tags', function () {
@@ -332,15 +335,15 @@ describe('Distributed Security', function () {
 		let encrypted = await Security.encrypt(message, tag, otherOwnedTag),
 		    decrypted1 = await Security.decrypt(encrypted, tag),
 		    decrypted2 = await Security.decrypt(encrypted, otherOwnedTag);
-		expect(decrypted1).toBe(message);
-		expect(decrypted2).toBe(message);	      
+		expect(decrypted1.text).toBe(message);
+		expect(decrypted2.text).toBe(message);	      
 	      });
 	      it('can be be made with tags you do not own.', async function () {
 		let encrypted = await Security.encrypt(message, tag, tags[unownedTagName], otherOwnedTag),
 		    decrypted1 = await Security.decrypt(encrypted, tag),
 		    decrypted2 = await Security.decrypt(encrypted, otherOwnedTag);
-		expect(decrypted1).toBe(message);
-		expect(decrypted2).toBe(message);	      
+		expect(decrypted1.text).toBe(message);
+		expect(decrypted2.text).toBe(message);	      
 	      });
 	      it('cannot be decrypted by a different tag.', async function () {
 		let encrypted = await Security.encrypt(message, tag, tags[unownedTagName]),
@@ -349,7 +352,7 @@ describe('Distributed Security', function () {
 	      });
 	      it('specifies kid in each recipient.', async function () {
 		let encrypted = await Security.encrypt(message, tag, otherOwnedTag),
-		    recipients = JSON.parse(encrypted).recipients;
+		    recipients = encrypted.recipients;
 		expect(recipients.length).toBe(2);
 		expect(recipients[0].header.kid).toBe(tag);
 		expect(recipients[1].header.kid).toBe(otherOwnedTag);
@@ -359,24 +362,24 @@ describe('Distributed Security', function () {
 		let message = new Uint8Array([21, 31]),
 		    encrypted = await Security.encrypt(message, tag, otherOwnedTag),
 		    decrypted = await Security.decrypt(encrypted, tag),
-		    header = JOSE.decodeProtectedHeader(JSON.parse(encrypted));
+		    header = JOSE.decodeProtectedHeader(encrypted);
 		expect(header.cty).toBeUndefined();
-		expect(decrypted).toEqual(message);
+		expect(decrypted.payload).toEqual(message);
 	      });
 	      it('handles text, and decrypts as same.', async function () {
 		let encrypted = await Security.encrypt(message, tag, otherOwnedTag),
 		    decrypted = await Security.decrypt(encrypted, tag),
-		    header = JOSE.decodeProtectedHeader(JSON.parse(encrypted));
+		    header = JOSE.decodeProtectedHeader(encrypted);
 		expect(header.cty).toBe('text/plain');
-		expect(decrypted).toBe(message);
+		expect(decrypted.text).toBe(message);
 	      });
 	      it('handles json, and decrypts as same.', async function () {
 		let message = {foo: 'bar'},
 		    encrypted = await Security.encrypt(message, tag, otherOwnedTag),
 		    decrypted = await Security.decrypt(encrypted, tag),
-		    header = JOSE.decodeProtectedHeader(JSON.parse(encrypted));
+		    header = JOSE.decodeProtectedHeader(encrypted);
 		expect(header.cty).toBe('json');
-		expect(decrypted).toEqual(message);
+		expect(decrypted.json).toEqual(message);
 	      });
 	      it('uses contentType and time if supplied.', async function () {
 		let contentType = 'text/html',
@@ -384,10 +387,10 @@ describe('Distributed Security', function () {
 		    message = "<something else>",
 		    encrypted = await Security.encrypt(message, {tags: [tag, otherOwnedTag], contentType, time}),
 		    decrypted = await Security.decrypt(encrypted, tag),
-		    header = JOSE.decodeProtectedHeader(JSON.parse(encrypted))
+		    header = JOSE.decodeProtectedHeader(encrypted)
 		expect(header.cty).toBe(contentType);
 		expect(header.iat).toBe(time);
-		expect(decrypted).toBe(message);
+		expect(decrypted.text).toBe(message);
 	      });
 	    });
 	  });
@@ -418,7 +421,7 @@ describe('Distributed Security', function () {
 	describe('automatically supplies a valid member', function () {
 	  it('if you have access', async function () {
 	    let signature = await Security.sign(message, {team: tags.team}),
-		member = JOSE.decodeProtectedHeader(JSON.parse(signature).signatures[0]).act,
+		member = JOSE.decodeProtectedHeader(signature.signatures[0]).act,
 		verification = await Security.verify(signature, tags.team, member);
 	    expect(verification).toBeTruthy();
 	    expect(member).toBeTruthy();
@@ -477,18 +480,21 @@ describe('Distributed Security', function () {
 	    u = await Security.create(d1, d2),
 	    t = await Security.create(u);
 
-	let encrypted = await Security.encrypt(message, t);
-	expect(await Security.decrypt(encrypted, t)).toBe(message);
+	let encrypted = await Security.encrypt(message, t),
+	    decrypted = await Security.decrypt(encrypted, t);
+	expect(decrypted.text).toBe(message);
 	// Remove the first deep member
+	decrypted = await Security.decrypt(encrypted, t);
 	await Security.changeMembership({tag: u, remove: [d1]});
-	expect(await Security.decrypt(encrypted, t)).toBe(message);
+	expect(decrypted.text).toBe(message);
 	// Put it back.
 	await Security.changeMembership({tag: u, add: [d1]});
-	expect(await Security.decrypt(encrypted, t)).toBe(message);
+	decrypted = await Security.decrypt(encrypted, t)
+	expect(decrypted.text).toBe(message);
 	// Make the other unavailable
 	await Security.destroy(d2);
-	
-	expect(await Security.decrypt(encrypted, t)).toBe(message);
+	decrypted = await Security.decrypt(encrypted, t);
+	expect(decrypted.text).toBe(message);
 	// Destroy it all the way down.
 	await Security.destroy({tag: t, recursiveMembers: true});
 	let errorMessage = await Security.decrypt(encrypted, t).then(_ => null, e => e.message);
@@ -509,8 +515,9 @@ describe('Distributed Security', function () {
 	    user = await Security.create(recovery),
 	    message = "red.white",
 	    encrypted = await Security.encrypt(message, user),
+	    decrypted = await Security.decrypt(encrypted, user),
 	    signed = await Security.sign(message, user);
-	expect(await Security.decrypt(encrypted, user)).toBe(message);
+	expect(decrypted.text).toBe(message);
 	expect(await Security.verify(signed, user)).toBeTruthy();
 	await Security.destroy({tag: user, recursiveMembers: true});
       });

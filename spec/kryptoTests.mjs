@@ -68,17 +68,19 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
     it(`can work up through at least ${encryptableSize} bytes with an asymmetric keypair.`, async function () {
       // Public key encrypt will work up through 446 bytes, but the result will not decrypt.
       let message = makeMessage(encryptableSize),
-	  encrypted = await krypto.encrypt(keypair.publicKey, message);
+	  encrypted = await krypto.encrypt(keypair.publicKey, message),
+	  decrypted = await krypto.decrypt(keypair.privateKey, encrypted);
       isBase64URL(encrypted);
-      expect(await krypto.decrypt(keypair.privateKey, encrypted)).toBe(message)
+      expect(decrypted.text).toBe(message)
     }, slowHybrid);
     function testSymmetric(label, promise, decryptPromise = promise) {
       it(`can work on much larger data with a ${label}.`, async function () {
 	let key = await promise,
 	    decryptKey = await decryptPromise,
-	    encrypted = await krypto.encrypt(key, message);
+	    encrypted = await krypto.encrypt(key, message),
+	    decrypted = await krypto.decrypt(decryptKey, encrypted);
 	isBase64URL(encrypted);
-	expect(await krypto.decrypt(decryptKey, encrypted)).toBe(message);
+	expect(decrypted.text).toBe(message);
       });
     }
     testSymmetric('fixed symmetric key',
@@ -93,14 +95,14 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 	  decrypted = await krypto.decrypt(keypair.privateKey, encrypted),
 	  header = JOSE.decodeProtectedHeader(encrypted);
       expect(header.cty).toBeUndefined();
-      expect(decrypted).toEqual(message);
+      expect(decrypted.payload).toEqual(message);
     });
     it('handles text, and decrypts as same.', async function () {
       let encrypted = await krypto.encrypt(keypair.publicKey, message),
 	  decrypted = await krypto.decrypt(keypair.privateKey, encrypted),
 	  header = JOSE.decodeProtectedHeader(encrypted);
       expect(header.cty).toBe('text/plain');
-      expect(decrypted).toBe(message);
+      expect(decrypted.text).toBe(message);
     });
     it('handles json, and decrypts as same.', async function () {
       let message = {foo: 'bar'},
@@ -108,7 +110,7 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
       let header = JOSE.decodeProtectedHeader(encrypted),
 	  decrypted = await krypto.decrypt(keypair.privateKey, encrypted);
       expect(header.cty).toBe('json');
-      expect(decrypted).toEqual(message);
+      expect(decrypted.json).toEqual(message);
     });
     it('Uses specified headers if supplied, including cty.', async function () {
       let cty = 'text/html',
@@ -121,7 +123,7 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
       expect(header.cty).toBe(cty);
       expect(header.iat).toBe(iat);
       expect(header.foo).toBe(foo);
-      expect(decrypted).toBe(message);
+      expect(decrypted.text).toBe(message);
     });
     
     function failsWithWrong(label, keysThunk) {
@@ -194,10 +196,11 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 	    serializedPrivateKey = await exportKey(keypair.privateKey),
 	    importedPrivateKey = await importKey(serializedPrivateKey),
 	    message = makeMessage(446),
-	    encrypted = await krypto.encrypt(keypair.publicKey, message);
+	    encrypted = await krypto.encrypt(keypair.publicKey, message),
+	    decrypted = await krypto.decrypt(importedPrivateKey, encrypted);
 	expect(serializedPrivateKey.length).toBeGreaterThanOrEqual(privateEncryptingKeySize[0]);
 	expect(serializedPrivateKey.length).toBeLessThanOrEqual(privateEncryptingKeySize[1]);
-	expect(await krypto.decrypt(importedPrivateKey, encrypted)).toBe(message)
+	expect(decrypted.text).toBe(message)
       });
       const publicEncryptingKeySize = 735; // raw 736; // with a 4k modulusSize key
       it(`works with the public key as a ${publicEncryptingKeySize} byte serialization.`, async function () {
@@ -205,9 +208,10 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 	    serializedPublicKey = await exportKey(keypair.publicKey),
 	    importedPublicKey = await importKey(serializedPublicKey),
 	    message = makeMessage(446),
-	    encrypted = await krypto.encrypt(importedPublicKey, message);
+	    encrypted = await krypto.encrypt(importedPublicKey, message),
+	    decrypted = await krypto.decrypt(keypair.privateKey, encrypted);
 	expect(serializedPublicKey.length).toBe(publicEncryptingKeySize);
-	expect(await krypto.decrypt(keypair.privateKey, encrypted)).toBe(message)
+	expect(decrypted.text).toBe(message)
       });
     });
 
@@ -217,9 +221,10 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 	let key = await await krypto.generateSymmetricKey(),
 	    serializedKey = await exportKey(key),
 	    importedKey = await importKey(serializedKey),
-	    encrypted = await krypto.encrypt(key, message);
+	    encrypted = await krypto.encrypt(key, message),
+	    decrypted = await krypto.decrypt(importedKey, encrypted);
 	 expect(serializedKey.length).toBe(symmetricKeySize);
-	expect(await krypto.decrypt(importedKey, encrypted)).toBe(message);
+	expect(decrypted.text).toBe(message);
       });
     });
   });
@@ -231,9 +236,9 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 
 	// Cycle it through export,encrypt to encrypted key, and decrypt,import to imported key.
 	exported = await krypto.exportJWK(encryptableKey),
-	encrypted = await krypto.encrypt(wrappingKey.publicKey, JSON.stringify(exported)),
+	encrypted = await krypto.encrypt(wrappingKey.publicKey, exported),
 	decrypted = await krypto.decrypt(wrappingKey.privateKey, encrypted),
-	imported = await krypto.importJWK(JSON.parse(decrypted)),
+	imported = await krypto.importJWK(decrypted.json),
 
 	// Cycle it through wrap and unwrap.
 	wrapped = await krypto.wrapKey(encryptableKey, wrappingKey.publicKey),
@@ -244,6 +249,6 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 	encryptedMessage = await krypto.encrypt(unwrapped, message),
 	decryptedMessage = await krypto.decrypt(imported, encryptedMessage);
     isBase64URL(wrapped);
-    expect(decryptedMessage).toBe(message);
+    expect(decryptedMessage.text).toBe(message);
   }, slowKeyCreation);
 }

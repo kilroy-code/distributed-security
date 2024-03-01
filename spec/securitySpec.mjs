@@ -8,7 +8,7 @@ import testModule from "./support/testModuleWithFoo.mjs";
 import {scale, makeMessage, isBase64URL} from "./support/messageText.mjs";
 
 // Setup.
-jasmine.getEnv().configure({random: false});
+//jasmine.getEnv().configure({random: false});
 Storage.Security = Security;
 Security.Storage = Storage;
 let thisDeviceSecret = "secret",

@@ -6,6 +6,8 @@
   <body>
 
     <h3>Vault</h3>
+    See <a href="https://kilroy-code.github.io/distributed-security/docs/implementation.html#web-worker-and-iframe">implmentation.md</a>
+  
 
     <script type="module">
 import dispatch from './dependency/jsonrpc.mjs';
@@ -14,10 +16,8 @@ import dispatch from './dependency/jsonrpc.mjs';
 // so hardcode the label.
 const pkg = {name: "@kilroy-code/distributed-security", version: "0.0.2"};
 
-const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
-      url = location.href,
-      vaultOrigin = new URL('./lib/worker.mjs', url),
-      api = {
+// We don't just blindly forward messages in either direction. There is a specific set of operations.
+const api = { // jsonrpc requests from the client are handled by these, which answers them by making requests to the worker.
 	sign(message, ...tags) { return postWorker('sign', message, ...tags); },
 	verify(signature, ...tags) { return postWorker('verify', signature, ...tags); },
 	encrypt(message, ...tags) { return postWorker('encrypt', message, ...tags); },
@@ -27,6 +27,25 @@ const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
 	destroy(tagOrOptions) { return postWorker('destroy', tagOrOptions); },
 	clear(tag) { return postWorker('clear', tag); }
       },
+
+      hostAPI = { // jsonrpc request from the worker are handled by thise, which answers them by make requests to the client.
+	store(resourceTag, ownerTag, signature) {
+	  return postClient('store', resourceTag, ownerTag, signature);
+	},
+	retrieve(resourceTag, ownerTag) {
+	  return postClient('retrieve', resourceTag, ownerTag);
+	},
+	getUserDeviceSecret(...args) {
+	  return postClient('getUserDeviceSecret', ...args);
+	},
+	ready() {
+	  postClient('ready', `${pkg.name} ${pkg.version} ${location.origin}`);
+	}
+      },
+
+      // Sets up the jsonrpc  connection to the client (index.mjs).
+      hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
+      url = location.href,
       postClient = dispatch({
 	dispatcherLabel: url,
 	target: parent,
@@ -35,17 +54,9 @@ const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
 	namespace: api,
 	origin: hostOrigin
       }),
-      hostAPI = {
-	store(resourceTag, ownerTag, string, signature) {
-	  return postClient('store', resourceTag, ownerTag, string, signature);
-	},
-	retrieve(resourceTag, ownerTag) {
-	  return postClient('retrieve', resourceTag, ownerTag);
-	},
-	getUserDeviceSecret(...args) {
-	  return postClient('getUserDeviceSecret', ...args);
-	}
-      },
+
+      // Sets up the jsonrpc connection to the worker.
+      vaultOrigin = new URL('./lib/worker.mjs', url),
       worker = new Worker(vaultOrigin, {type: 'module'}),
       postWorker = dispatch({
 	dispatcherLabel: url,
@@ -53,7 +64,7 @@ const hostOrigin = document.referrer ? new URL(document.referrer).origin : '*',
 	targetLabel: 'worker',
 	namespace: hostAPI
       });
-postClient('ready', `${pkg.name} ${pkg.version} ${location.origin}`);
+
     </script>
   </body>
 </html>

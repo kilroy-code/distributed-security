@@ -38,7 +38,7 @@ We call it "distributed security" because:
 - Individuals are not represented by a single keypair that can be lost, but are rather distributed over different keypairs for each device used by that individual.
 - Arbitrary teams of individuals can have their own keypairs, managed by their members in accordance with the rules of whatever app they are for, with the encrypted keypairs stored in the cloud rather than by any one member of the team.  (In the blockchain community, teams are called [DAO](https://en.wikipedia.org/wiki/Decentralized_autonomous_organization)s.)
 
-Other documents describe [the implementation](docs/implementation.md) and identifies [risks](docs/risks.md) and [remaining work](docs/todo.md).
+Other documents describe [the implementation](docs/implementation.md) and identifies [risks](docs/risks.md), the [use of JOSE](docs/in-jose-terms.md), and [remaining work](docs/todo.md).
 
 ## Operations and Tags
 

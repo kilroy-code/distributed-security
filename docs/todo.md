@@ -7,10 +7,8 @@
   - [ ] Display an ugly warning if vault is used from same origin as application.
   - [ ] feature-detection and messaging for unsupportable browsers
   - [ ] give specialized error messages for common mistakes: not waiting for ready, passing a promise for a tag, ....
-- [ ] Browsers that support dynamic state paritioning will not be able to share device tags across applications from different domains, even when they share the same module domain. (They will still be able to share team tags.) Formalize this as a requirement in the doc, and store referrer with the device tag to effectively implement our own dynamic state partitioning. How do we unit-test this?
-- [ ] Change the vault.mjs and its contients to some other name, since we are using vault.html to mean the iframe isolation mechanism.      
+- [ ] Browsers that support dynamic state paritioning will not be able to share device tags across applications from different domains, even when they share the same module domain. (They will still be able to share team tags.) Formalize this as a requirement in the doc, and store referrer with the device tag to effectively implement our own dynamic state partitioning. How do we unit-test this?  
 - [ ] Use symbols/getters/internals for internals
-- [ ] Andreas' rule. (Every operation gets a one-sentence comment.)
 - Add to unit tests:
   - [ ] speed tests
   - [ ] Multiple apps using the same vault can use the same team tags. But this is not true for device and recovery tags.
@@ -18,20 +16,35 @@
   - [ ] storage/getUserDeviceSecret on a direct import of security.mjs does not effect that used by a properly origined index.mjs.
   - [ ] changeMembership of a device or recovery will fail
   - [ ] changeMembers will fail if not a member
-  - [ ] device and recovery jws use a different iv each time they are encrypted
   - [ ] cycles within recursive team membership is not a problem.
-  - [ ] Tests for error messages.	
-- [ ] Doc: the term of art for multi is "multiparty encryption". Are there places where I should use that term? Similarly for "content encryption key" (CEK) or "direct encryption".
+
+### demo
+- [ ] Show that encrypted text is usable only by team
+- [ ] Show that signature provides attribution
+- [ ] Include media (e.g., pictures)
+
+Proposed "game":
+
+- [ ] No signup or real names. Just assign a generated name/pic.
+- [ ] qr code to make it easy for a person to play with themselves or a demo-buddy on second device.
+- [ ] Show N most recent players and their "scores"
+- [ ] User picks M to post to. (creates team) Post will initially show as encrypted garbage, and then becomes clear post IFF you are a member of the team.
+- [ ] User picks who post purports to be from. Post shows claimed attribution, but any other user can challenge a post by clicking on the attribution. If it was a lie, the challenger gets a point. If it was really by the sender, the sender gets a point.
+- [ ] Stretch: Old users can safely rejoin: As old users fall off the end of the N most recent, they are dropped from the data but their name/pic/score is signed by the system and saved locally. If they rejoin later, the data is verified and added to the live data.
+
+
+### doc
+- [ ] Animation in explainer showing the core vault/cloud relationship
+- [ ] The CFO example [in explainer](https://docs.google.com/document/d/1sN_6kgt__jSAJ4yy0pD6h7tuWQs8IZ6JCBXSllRt2g8/edit#heading=h.wbt6h9enb7ob).  (Should this be a separate .md doc?)
+- [ ] Should explainer [technical appendix ](https://docs.google.com/document/d/1sN_6kgt__jSAJ4yy0pD6h7tuWQs8IZ6JCBXSllRt2g8/edit#heading=h.hk2o4clt7wiu)be a separate .md doc?
+- [ ] the term of art for multi is "multiparty encryption". Are there places where I should use that term? Similarly for "content encryption key" (CEK) or "direct encryption".
 
 ### dependencies
-- JOSE 
-  - [ ] Both JOSE and Distributed-Security use E6 modules. Work out how to make our references to JOSE load, with or without an importmap and with or without a build step.
 - [jsonrpc](https://github.com/kilroy-code/jsonrpc)
   - [ ] unit tests
-  - [ ] make sure logging is effective but secure in "tracing"
   
 ### internal infrastructure
-- [ ] NodeJS implementation, for use on servers and for running unit tests. (e.g., 1. When loading index.mjs outside the browser, load security.mjs directly instead of through vault. 2. lib/store and spec/support/storage to use something else under node.)
+- [ ] NodeJS implementation, for use on servers and for running unit tests. (e.g., 1. When loading index.mjs outside the browser, load api.mjs directly instead of through index => vault.html. 2. lib/store and spec/support/storage to use something else under node.)
 - [ ] GitHub Action to run test suite, like other parts of ki1r0y. 
 - [ ] version 0.1 package release
 - [ ] replace older ki1r0y storage scaffolding

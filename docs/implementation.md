@@ -82,27 +82,27 @@ Krypto and JOSE compact formats can make signatures with a single key. MultiKryp
 
 ## Inside The Vault
 
-In [vault.mjs](../lib/vault.mjs), we define objects that manage each individual identity, using multiKrypto.
+In [keySet.mjs](../lib/keySet.mjs), we define objects that manage each individual identity, using multiKrypto.
 
-The vault keeps the private signing key and the private encrypting key.
+The KeySet keeps the private signing key and the private encrypting key.
 
-The vault's public *encrypting* key is exported and stored in clear text in the public storage provided by the application. This allows users of the application to encrypt a message that can only be read by the corresponding vault.
+The KeySet's public *encrypting* key is exported and stored in clear text in the public storage provided by the application. This allows users of the application to encrypt a message that can only be read by the corresponding vault.
 
-The vault's public *signing* key is exported and used as the tag. For example, if you have a message, a tag, and a signature, any software has everything it needs to verify the message, without needing to access any application resources or anything else.
+The KeySet's public *signing* key is exported and used as the tag. For example, if you have a tag, and a signature, any software has everything it needs to verify the message, without needing to access any application resources or anything else.
 
-Thus copies of mesages can be verified forever, even if the application is no longer providing access to storage, but new message can only be encrypted for application tags as long as the application is still providing storage. Of course, storage may be third-party storage or a p2p file sharing network.
+Thus copies of messages can be verified forever, even if the application is no longer providing access to storage, but new message can only be encrypted for application tags as long as the application is still providing storage. Of course, storage may be third-party storage or a p2p file sharing network.
 
 Of the seven operations provided by [api.mjs](../lib/api.mjs), `create`, `encrypt`, and `verify` can all be done without needing to create a vault. However, `destroy`, `changeMembership`, `decrypt`, and `sign` all need to `ensure` a vault corresponding to the given tag. To do so, `ensure` either has one cached for the given key or creates one. It then verifies that the vault is still good:
 
-- If the tag corresponds to the device the software is running on, there will be a locally stored key that never leaves the device. (There is no reason to export it elsewhere.) The stored key is then used directly, and the vault is ready.
-- Otherwise, if there is an encrypted team key in public storage for this tag, it is retrieve and Security will attempt to unwrap it by checking to see if this computer has access to any of the specified members, recursively applying this whole search down to finding either this device or failing.
-- Finally, a team may specify a "recovery member". The question (or an indicator of the question) is stored (unencrypted) with they (encrypted) key in the cloud, and the symmetric encrypt/decrypt key is dervied from the _answer_ to the question.  As with any other team key data, neither the application nor the authors of Distributed Security can decrypt a recovery key. 
+- If the tag corresponds to the device the software is running on, there will be a locally stored multKey that never leaves the device. (There is no reason to export it elsewhere.) The stored multiKey is then used directly, and the vault is ready.
+- Otherwise, if there is an encrypted team multiKey in public storage for this tag, it is retrieved and Security will attempt to unwrap it by checking to see if this computer has access to any of the specified members, recursively applying this whole search down to finding either this device or failing.
+- Finally, a team may specify a "recovery member". The question (or an indicator of the question) is stored (unencrypted) with the (encrypted) multiKey in the cloud, and the symmetric encrypt/decrypt key is dervied from the _answer_ to the question.  As with any other team key data, neither the application nor the authors of Distributed Security can decrypt a recovery key. 
 
 This search for valid keys is repeated for each new operation, because an individual may lose their membership in a team at any time. Thus each operation involves a number of round trips corresponding to the depth of membership in the team, which is rarely more than a few levels. (The fan out or "breadth" of a team having multiple members increases the traffic because the stored encrypted team keys are larger with more members, but the latency of access is only related to the depth of the teams because each member at the same level of a team is verified in parallel.)
 
-There is also code here that handles deep auditable validation. A user can sign for a team and cosign as the specific member of the team. During verification, both are verified, and additionally, we (optionally) check that the member is still on team at the time of verification. Additionally, we optionally check that signature is not made before the a given time, such as the time that the team was last created. We use this to protect the cloud storage of wrapped keys. The code is somewhat complicated by the need to bootstrap the signing for the first version of the wrapped keys.
+There is also code here that handles deep auditable validation. A user can sign for a team and cosign as the specific member of the team. During verification, both are verified, and additionally, we (optionally) check that the member is still on the 	team at the time of verification. Additionally, we optionally check that signature is not made before the a given time, such as the time that the team was last created. We use this to protect the cloud storage of wrapped keys. The code is somewhat complicated by the need to bootstrap the signing for the first version of the wrapped keys.
 
-## Creating The Vault: Web Worker and IFrame.
+## Creating The Vault: Web Worker and IFrame
 
 Everyone has access to the encrypted team keys, but no one can decrypt it other than its members. We also want to make sure that application software itself cannot read the decrypted key. (Its not just a matter of trusting the intent of the application, but also that the application has not been compromised.) To do this, the [vaults](#vaults-object-oriented-keys) do not run in the same environment as the application, but in a separate sandbox called a [Web Worker](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API). Communication between the application and the worker is by means of messages defined by the worker, and we do not define any messages that export unencrypted keys. While desktop browser extensions generally have unfettered access to the application code and data, they do not have access to the worker data. The same is true for any malevolent code that has wormed its way into the application from dependendencies or other attacks. However, desktop users must still be vigilant to not be dupped into using various developer tools by which some browser-makers expose worker data to interactive inspection.
 

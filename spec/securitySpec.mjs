@@ -31,7 +31,7 @@ import InternalSecurity from "../lib/api.mjs";
 import dispatch from "../dependency/jsonrpc.mjs";
 InternalSecurity.Storage = Storage;
 InternalSecurity.getUserDeviceSecret = getSecret;
-import {Vault, DeviceVault, TeamVault} from "../lib/vault.mjs";
+import {KeySet, DeviceKeySet, TeamKeySet} from "../lib/keySet.mjs";
 Object.assign(window, {Krypto, MultiKrypto, Security, Storage, InternalSecurity, JOSE}); // export to browser console for development/debugging experiments.
 
 
@@ -45,7 +45,7 @@ describe('Distributed Security', function () {
   });
   describe('Security', function () {
     const slowKeyCreation = 25e3; // e.g., Safari needs about 15 seconds. Android needs more
-    async function makeVaults(scope) { // Create a standard set of test vaults through context.
+    async function makeKeySets(scope) { // Create a standard set of test vaults through context.
       let tags = {};
       let [device, recovery, otherRecovery] = await Promise.all([
 	scope.create(),
@@ -67,7 +67,7 @@ describe('Distributed Security', function () {
       tags.team = team; tags.otherTeam = otherTeam;
       return tags;
     }
-    async function destroyVaults(scope, tags) {
+    async function destroyKeySets(scope, tags) {
       await scope.destroy(tags.otherTeam);
       await scope.destroy(tags.team);
       await scope.destroy(tags.user);
@@ -82,17 +82,17 @@ describe('Distributed Security', function () {
     describe('internal machinery', function () {
       let tags;
       beforeAll(async function () {
-	tags = await makeVaults(InternalSecurity);
+	tags = await makeKeySets(InternalSecurity);
       }, slowKeyCreation);
       afterAll(async function () {
-	await destroyVaults(InternalSecurity, tags);
+	await destroyKeySets(InternalSecurity, tags);
       }, slowKeyCreation);
       function vaultTests(label, tagsKey) {
 	describe(label, function () {	
 	  let vault, tag;
 	  beforeAll(async function () {
 	    tag = tags[tagsKey];
-	    vault = await Vault.ensure(tag);
+	    vault = await KeySet.ensure(tag);
 	  });
 	  it('tag is exported verify key, and sign() pairs with it.', async function () {
 	    let verifyKey = await MultiKrypto.importRaw(tag),
@@ -100,9 +100,9 @@ describe('Distributed Security', function () {
 	    expect(typeof tag).toBe('string');
 	    expect(exported).toBe(tag);
 
-	    let vault = await Vault.ensure(tag);
+	    let vault = await KeySet.ensure(tag);
 
-	    let signature = await Vault.sign(message, {tags: [tag], signingKey: vault.signingKey}),
+	    let signature = await KeySet.sign(message, {tags: [tag], signingKey: vault.signingKey}),
 		verification = await MultiKrypto.verify(verifyKey, signature);
 	    isBase64URL(signature);
 	    expect(verification).toBeTruthy();
@@ -118,9 +118,9 @@ describe('Distributed Security', function () {
 	  });
 	});
       }
-      vaultTests('DeviceVault', 'device');
-      vaultTests('RecoveryVault', 'recovery');
-      vaultTests('TeamVault', 'user');
+      vaultTests('DeviceKeySet', 'device');
+      vaultTests('RecoveryKeySet', 'recovery');
+      vaultTests('TeamKeySet', 'user');
       describe('workers', function () {
 	let isolatedWorker, request;
 	beforeAll(function () {
@@ -146,10 +146,10 @@ describe('Distributed Security', function () {
       let tags;
       beforeAll(async function () {
 	console.log(await Security.ready);
-	tags = await makeVaults(Security);
+	tags = await makeKeySets(Security);
       }, slowKeyCreation);
       afterAll(async function () {
-	await destroyVaults(Security, tags);
+	await destroyKeySets(Security, tags);
       }, slowKeyCreation);
       function test(label, tagsName, otherOwnedTagsName, unownedTagName) {
 	describe(label, function () {
@@ -396,10 +396,10 @@ describe('Distributed Security', function () {
 	  });
 	});
       }
-      test('DeviceVault', 'device', 'user', 'otherDevice'); // We own user, but it isn't the same as device.
-      test('RecoveryVault', 'recovery', 'otherRecovery', 'otherDevice');
-      test('User TeamVault', 'user', 'device', 'otherUser'); // We ownd device, but it isn't the same as user.
-      test('Team TeamVault', 'team', 'otherTeam', 'otherUser');
+      test('DeviceKeySet', 'device', 'user', 'otherDevice'); // We own user, but it isn't the same as device.
+      test('RecoveryKeySet', 'recovery', 'otherRecovery', 'otherDevice');
+      test('User TeamKeySet', 'user', 'device', 'otherUser'); // We ownd device, but it isn't the same as user.
+      test('Team TeamKeySet', 'team', 'otherTeam', 'otherUser');
       describe('auditable signatures', function () {
 	describe('by an explicit member', function () {
 	  let signature, verification;

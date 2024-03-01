@@ -4,7 +4,6 @@
 ### doc
 - [ ] Animation in explainer showing the core vault/cloud relationship
 - [ ] The CFO example [in explainer](https://docs.google.com/document/d/1sN_6kgt__jSAJ4yy0pD6h7tuWQs8IZ6JCBXSllRt2g8/edit#heading=h.wbt6h9enb7ob).  (Should this be a separate .md doc?)
-- [ ] Should explainer [technical appendix ](https://docs.google.com/document/d/1sN_6kgt__jSAJ4yy0pD6h7tuWQs8IZ6JCBXSllRt2g8/edit#heading=h.hk2o4clt7wiu)be a separate .md doc?
 - [ ] the term of art for multi is "multiparty encryption". Are there places where I should use that term? Similarly for "content encryption key" (CEK) or "direct encryption".
 
 ### demo

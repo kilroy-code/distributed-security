@@ -21,7 +21,7 @@ const api = { // jsonrpc requests from the client are handled by these, which an
 	sign(message, ...tags) { return postWorker('sign', message, ...tags); },
 	verify(signature, ...tags) { return postWorker('verify', signature, ...tags); },
 	encrypt(message, ...tags) { return postWorker('encrypt', message, ...tags); },
-	decrypt(encrypted, tag) { return postWorker('decrypt', encrypted, tag); },
+	decrypt(encrypted, ...tags) { return postWorker('decrypt', encrypted, ...tags); },
 	create(...optionalMembers) { return postWorker('create', ...optionalMembers); },
 	changeMembership(options) { return postWorker('changeMembership', options); },
 	destroy(tagOrOptions) { return postWorker('destroy', tagOrOptions); },

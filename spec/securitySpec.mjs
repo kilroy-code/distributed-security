@@ -165,6 +165,10 @@ describe('Distributed Security', function () {
 		isBase64URL(signature);
 		expect(await Security.verify(signature, tag)).toBeTruthy();
 	      });
+	      it('can be verified with the tag included in the signature.', async function () {
+		let signature = await Security.sign(message, tag);
+		expect(await Security.verify(signature)).toBeTruthy();
+	      });
 	      it('cannot sign for a different key.', async function () {
 		let signature = await Security.sign(message, otherOwnedTag);
 		expect(await Security.verify(signature, tag)).toBeUndefined();
@@ -210,6 +214,10 @@ describe('Distributed Security', function () {
 	      it('can sign and be verified.', async function () {
 		let signature = await Security.sign(message, tag, otherOwnedTag);
 		expect(await Security.verify(signature, otherOwnedTag, tag)).toBeTruthy(); // order does not matter
+	      });
+	      it('can be verified with the tag included in the signature.', async function () {
+		let signature = await Security.sign(message, tag, otherOwnedTag);
+		expect(await Security.verify(signature)).toBeTruthy();
 	      });
 	      describe('bad verification', function () {
 		let oneMore;
@@ -279,6 +287,11 @@ describe('Distributed Security', function () {
 		isBase64URL(encrypted);
 		expect(decrypted.text).toBe(message);
 	      });
+	      it('can be decrypted using the tag included in the encryption.', async function () {
+		let encrypted = await Security.encrypt(message, tag),
+		    decrypted = await Security.decrypt(encrypted);
+		expect(decrypted.text).toBe(message);
+	      });
 	      it('is url-safe base64.', async function () {
 		isBase64URL(await Security.encrypt(message, tag));
 	      });
@@ -337,6 +350,11 @@ describe('Distributed Security', function () {
 		    decrypted2 = await Security.decrypt(encrypted, otherOwnedTag);
 		expect(decrypted1.text).toBe(message);
 		expect(decrypted2.text).toBe(message);	      
+	      });
+	      it('can be decrypted using the tag included in the encryption.', async function () {
+		let encrypted = await Security.encrypt(message, tag, otherOwnedTag),
+		    decrypted = await Security.decrypt(encrypted);
+		expect(decrypted.text).toBe(message);
 	      });
 	      it('can be be made with tags you do not own.', async function () {
 		let encrypted = await Security.encrypt(message, tag, tags[unownedTagName], otherOwnedTag),

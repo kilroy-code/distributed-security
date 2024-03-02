@@ -6,8 +6,8 @@
 2. Distributed-Security is an [open-source Javascript library](https://github.com/kilroy-code/distributed-security) that implements (1) using the [panva JOSE library](https://www.npmjs.com/package/jose), which in turn uses [`subtle.crypto`](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto) API in browsers and the [`crypto`](https://nodejs.org/docs/latest/api/crypto.html) API in [NodeJS](https://nodejs.org/).
 3. Each individual or team of individuals is identified in the application by a *tag* string, which appears as the [`kid`](https://datatracker.ietf.org/doc/html/rfc7515#section-4.1.4) property in `JWS` and `JWE`.
 4. All systems (including external ones if permitted by the application) may obtain the *public keys* for a tag:
-  1. The public *encrypting* [`JWK`](https://datatracker.ietf.org/doc/html/rfc7517) is freely available from the cloud, via a permissionless read operation provided by the application (and used internally by Distributed-Security).
-  2. The tag itself is the Base64URL serialization of the raw public *verification* key, and so the public verification key is available directly, without reference to the cloud.
+   1. The public *encrypting* [`JWK`](https://datatracker.ietf.org/doc/html/rfc7517) is freely available from the cloud, via a permissionless read operation provided by the application (and used internally by Distributed-Security).
+   2. The tag itself is the Base64URL serialization of the raw public *verification* key, and so the public verification key is available directly, without reference to the cloud.
 
 ## 5. Wrapped Private Keys in the Cloud
 

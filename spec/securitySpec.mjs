@@ -24,7 +24,6 @@ function getSecret(tag, recoveryPrompt = '') {
 Security.getUserDeviceSecret = getSecret;
 
 // For testing internals.
-import * as JOSE from "../dependency/jose.mjs";
 import Krypto from "../lib/krypto.mjs";
 import MultiKrypto from "../lib/multiKrypto.mjs";
 import InternalSecurity from "../lib/api.mjs";
@@ -32,7 +31,7 @@ import dispatch from "../dependency/jsonrpc.mjs";
 InternalSecurity.Storage = Storage;
 InternalSecurity.getUserDeviceSecret = getSecret;
 import {KeySet, DeviceKeySet, TeamKeySet} from "../lib/keySet.mjs";
-Object.assign(window, {Krypto, MultiKrypto, Security, Storage, InternalSecurity, JOSE}); // export to browser console for development/debugging experiments.
+Object.assign(window, {Krypto, MultiKrypto, Security, Storage, InternalSecurity}); // export to browser console for development/debugging experiments.
 
 
 describe('Distributed Security', function () {
@@ -296,7 +295,7 @@ describe('Distributed Security', function () {
 		isBase64URL(await Security.encrypt(message, tag));
 	      });
 	      it('specifies kid.', async function () {
-		let header = JOSE.decodeProtectedHeader(await Security.encrypt(message, tag));
+		let header = Krypto.decodeProtectedHeader(await Security.encrypt(message, tag));
 		expect(header.kid).toBe(tag);
 	      });
 	      it('cannot decrypt what is encrypted for a different key.', async function () {
@@ -312,14 +311,14 @@ describe('Distributed Security', function () {
 		let message = new Uint8Array([21, 31]),
 		    encrypted = await Security.encrypt(message, tag),
 		    decrypted = await Security.decrypt(encrypted, tag),
-		    header = JOSE.decodeProtectedHeader(encrypted);
+		    header = Krypto.decodeProtectedHeader(encrypted);
 		expect(header.cty).toBeUndefined();
 		expect(decrypted.payload).toEqual(message);
 	      });
 	      it('handles text, and decrypts as same.', async function () {
 		let encrypted = await Security.encrypt(message, tag),
 		    decrypted = await Security.decrypt(encrypted, tag),
-		    header = JOSE.decodeProtectedHeader(encrypted);
+		    header = Krypto.decodeProtectedHeader(encrypted);
 		expect(header.cty).toBe('text/plain');
 		expect(decrypted.text).toBe(message);
 	      });
@@ -327,7 +326,7 @@ describe('Distributed Security', function () {
 		let message = {foo: 'bar'},
 		    encrypted = await Security.encrypt(message, tag),
 		    decrypted = await Security.decrypt(encrypted, tag),
-		    header = JOSE.decodeProtectedHeader(encrypted);
+		    header = Krypto.decodeProtectedHeader(encrypted);
 		expect(header.cty).toBe('json');
 		expect(decrypted.json).toEqual(message);
 	      });
@@ -337,7 +336,7 @@ describe('Distributed Security', function () {
 		    message = "<something else>",
 		    encrypted = await Security.encrypt(message, {tags: [tag], contentType, time}),
 		    decrypted = await Security.decrypt(encrypted, tag),
-		    header = JOSE.decodeProtectedHeader(encrypted);
+		    header = Krypto.decodeProtectedHeader(encrypted);
 		expect(header.cty).toBe(contentType);
 		expect(header.iat).toBe(time);
 		expect(decrypted.text).toBe(message);
@@ -380,14 +379,14 @@ describe('Distributed Security', function () {
 		let message = new Uint8Array([21, 31]),
 		    encrypted = await Security.encrypt(message, tag, otherOwnedTag),
 		    decrypted = await Security.decrypt(encrypted, tag),
-		    header = JOSE.decodeProtectedHeader(encrypted);
+		    header = Krypto.decodeProtectedHeader(encrypted);
 		expect(header.cty).toBeUndefined();
 		expect(decrypted.payload).toEqual(message);
 	      });
 	      it('handles text, and decrypts as same.', async function () {
 		let encrypted = await Security.encrypt(message, tag, otherOwnedTag),
 		    decrypted = await Security.decrypt(encrypted, tag),
-		    header = JOSE.decodeProtectedHeader(encrypted);
+		    header = Krypto.decodeProtectedHeader(encrypted);
 		expect(header.cty).toBe('text/plain');
 		expect(decrypted.text).toBe(message);
 	      });
@@ -395,7 +394,7 @@ describe('Distributed Security', function () {
 		let message = {foo: 'bar'},
 		    encrypted = await Security.encrypt(message, tag, otherOwnedTag),
 		    decrypted = await Security.decrypt(encrypted, tag),
-		    header = JOSE.decodeProtectedHeader(encrypted);
+		    header = Krypto.decodeProtectedHeader(encrypted);
 		expect(header.cty).toBe('json');
 		expect(decrypted.json).toEqual(message);
 	      });
@@ -405,7 +404,7 @@ describe('Distributed Security', function () {
 		    message = "<something else>",
 		    encrypted = await Security.encrypt(message, {tags: [tag, otherOwnedTag], contentType, time}),
 		    decrypted = await Security.decrypt(encrypted, tag),
-		    header = JOSE.decodeProtectedHeader(encrypted)
+		    header = Krypto.decodeProtectedHeader(encrypted)
 		expect(header.cty).toBe(contentType);
 		expect(header.iat).toBe(time);
 		expect(decrypted.text).toBe(message);
@@ -439,7 +438,7 @@ describe('Distributed Security', function () {
 	describe('automatically supplies a valid member', function () {
 	  it('if you have access', async function () {
 	    let signature = await Security.sign(message, {team: tags.team}),
-		member = JOSE.decodeProtectedHeader(signature.signatures[0]).act,
+		member = Krypto.decodeProtectedHeader(signature.signatures[0]).act,
 		verification = await Security.verify(signature, tags.team, member);
 	    expect(verification).toBeTruthy();
 	    expect(member).toBeTruthy();

@@ -1,6 +1,5 @@
 import {scale, makeMessage} from "./support/messageText.mjs";
 import testKrypto from "./kryptoTests.mjs";
-import * as JOSE from "../dependency/jose.mjs";
 
 export default function testMultiKrypto(multiKrypto) {
   const slowKeyCreation = 20e3, // Android
@@ -50,7 +49,7 @@ export default function testMultiKrypto(multiKrypto) {
 	    verified = await multiKrypto.verify(multiVerify, signature);
 	expect(verified).toBeTruthy();
 	signature.signatures.forEach(subSignature => {
-	  let header = JOSE.decodeProtectedHeader(subSignature);
+	  let header = multiKrypto.decodeProtectedHeader(subSignature);
 	  expect(header.iss).toBe(iss);
 	  expect(header.act).toBe(act);
 	  expect(header.iat).toBe(iat);
@@ -158,21 +157,21 @@ export default function testMultiKrypto(multiKrypto) {
 	let message = new Uint8Array([21, 31]),
 	    encrypted = await multiKrypto.encrypt(encryptingMulti, message),
 	    decrypted = await multiKrypto.decrypt(decryptingMulti, encrypted),
-	    header = JOSE.decodeProtectedHeader(encrypted);
+	    header = multiKrypto.decodeProtectedHeader(encrypted);
 	expect(header.cty).toBeUndefined();
 	expect(decrypted.payload).toEqual(message);
       });
       it('handles text, and decrypts as same.', async function () {
 	let encrypted = await multiKrypto.encrypt(encryptingMulti, message),
 	    decrypted = await multiKrypto.decrypt(decryptingMulti, encrypted),
-	    header = JOSE.decodeProtectedHeader(encrypted);
+	    header = multiKrypto.decodeProtectedHeader(encrypted);
 	expect(header.cty).toBe('text/plain');
 	expect(decrypted.text).toBe(message);
       });
       it('handles json, and decrypts as same.', async function () {
 	let message = {foo: 'bar'},
 	    encrypted = await multiKrypto.encrypt(encryptingMulti, message);
-	let header = JOSE.decodeProtectedHeader(encrypted),
+	let header = multiKrypto.decodeProtectedHeader(encrypted),
 	    decrypted = await multiKrypto.decrypt(decryptingMulti, encrypted);
 	expect(header.cty).toBe('json');
 	expect(decrypted.json).toEqual(message);
@@ -184,7 +183,7 @@ export default function testMultiKrypto(multiKrypto) {
 	    message = "<something else>",
 	    encrypted = await multiKrypto.encrypt(encryptingMulti, message, {cty, iat, foo}),
 	    decrypted = await multiKrypto.decrypt(decryptingMulti, encrypted),
-	    header = JOSE.decodeProtectedHeader(encrypted)
+	    header = multiKrypto.decodeProtectedHeader(encrypted)
 	expect(header.cty).toBe(cty);
 	expect(header.iat).toBe(iat);
 	expect(header.foo).toBe(foo);

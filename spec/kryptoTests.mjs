@@ -1,5 +1,4 @@
 import {makeMessage, isBase64URL} from "./support/messageText.mjs";
-import * as JOSE from "../dependency/jose.mjs";
 
 export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 				    encryptableSize = 446) {
@@ -93,21 +92,21 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
       let message = new Uint8Array([21, 31]),
 	  encrypted = await krypto.encrypt(keypair.publicKey, message),
 	  decrypted = await krypto.decrypt(keypair.privateKey, encrypted),
-	  header = JOSE.decodeProtectedHeader(encrypted);
+	  header = krypto.decodeProtectedHeader(encrypted);
       expect(header.cty).toBeUndefined();
       expect(decrypted.payload).toEqual(message);
     });
     it('handles text, and decrypts as same.', async function () {
       let encrypted = await krypto.encrypt(keypair.publicKey, message),
 	  decrypted = await krypto.decrypt(keypair.privateKey, encrypted),
-	  header = JOSE.decodeProtectedHeader(encrypted);
+	  header = krypto.decodeProtectedHeader(encrypted);
       expect(header.cty).toBe('text/plain');
       expect(decrypted.text).toBe(message);
     });
     it('handles json, and decrypts as same.', async function () {
       let message = {foo: 'bar'},
 	  encrypted = await krypto.encrypt(keypair.publicKey, message);
-      let header = JOSE.decodeProtectedHeader(encrypted),
+      let header = krypto.decodeProtectedHeader(encrypted),
 	  decrypted = await krypto.decrypt(keypair.privateKey, encrypted);
       expect(header.cty).toBe('json');
       expect(decrypted.json).toEqual(message);
@@ -119,7 +118,7 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 	  message = "<something else>",
 	  encrypted = await krypto.encrypt(keypair.publicKey, message, {cty, iat, foo}),
 	  decrypted = await krypto.decrypt(keypair.privateKey, encrypted),
-	  header = JOSE.decodeProtectedHeader(encrypted)
+	  header = krypto.decodeProtectedHeader(encrypted)
       expect(header.cty).toBe(cty);
       expect(header.iat).toBe(iat);
       expect(header.foo).toBe(foo);

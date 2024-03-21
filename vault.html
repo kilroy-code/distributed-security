@@ -11,10 +11,6 @@
 
     <script type="module">
 import dispatch from './dependency/jsonrpc.mjs';
-// import assert isn't yet supported across browsers, e.g....
-//    import pkg from './package.json' assert {type: 'json'};
-// so hardcode the label.
-const pkg = {name: "@kilroy-code/distributed-security", version: "0.0.2"};
 
 // We don't just blindly forward messages in either direction. There is a specific set of operations.
 const api = { // jsonrpc requests from the client are handled by these, which answers them by making requests to the worker.
@@ -38,8 +34,8 @@ const api = { // jsonrpc requests from the client are handled by these, which an
 	getUserDeviceSecret(...args) {
 	  return postClient('getUserDeviceSecret', ...args);
 	},
-	ready() {
-	  postClient('ready', `${pkg.name} ${pkg.version} ${location.origin}`);
+	ready(label) {
+	  postClient('ready', label);
 	}
       },
 

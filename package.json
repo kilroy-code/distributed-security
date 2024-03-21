@@ -8,6 +8,7 @@
     "default": "./index.mjs"
   },
   "scripts": {
+    "build": "rollup -c",
     "test": "jasmine"
   },
   "repository": {
@@ -29,8 +30,14 @@
   },
   "homepage": "https://github.com/kilroy-code/distributed-security#readme",
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "jasmine": "^4.5.0",
+    "rollup": "^4.13.0"
+  },
+  "dependencies": {
     "@kilroy-code/jsonrpc": "^0.0.1",
-    "jose": "^5.2.2",
-    "jasmine": "^4.5.0"
+    "jose": "^5.2.3",
+    "level": "^8.0.1"
   }
 }

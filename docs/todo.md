@@ -2,9 +2,9 @@
 
 
 ### doc
+- [ ] A set of short re-useable use-case examples, each describing one thing in a paragraph, a picture (e.g., of the end state), code, and optionally see-also links.
+- [ ] Entry points for above, covering scenariossuch as the CFO example [in explainer](https://docs.google.com/document/d/1sN_6kgt__jSAJ4yy0pD6h7tuWQs8IZ6JCBXSllRt2g8/edit#heading=h.wbt6h9enb7ob), sharing tags between applications [in explainer](https://docs.google.com/document/d/1sN_6kgt__jSAJ4yy0pD6h7tuWQs8IZ6JCBXSllRt2g8/edit#heading=h.ei8eg8lhkadz), the use-cases email, and the various "benefits of cryptography sections of different docs.
 - [ ] Animation in explainer showing the core vault/cloud relationship
-- [ ] The CFO example [in explainer](https://docs.google.com/document/d/1sN_6kgt__jSAJ4yy0pD6h7tuWQs8IZ6JCBXSllRt2g8/edit#heading=h.wbt6h9enb7ob).  (Should this be a separate .md doc?)
-- [ ] Sharing tags between applications - either [in explainer](https://docs.google.com/document/d/1sN_6kgt__jSAJ4yy0pD6h7tuWQs8IZ6JCBXSllRt2g8/edit#heading=h.ei8eg8lhkadz) or separate.
 - [ ] Clean up "buzz's notes", etc. in explainer.
 - [ ] the term of art for multi is "multiparty encryption". Are there places where I should use that term? Similarly for "content encryption key" (CEK) or "direct encryption".
 

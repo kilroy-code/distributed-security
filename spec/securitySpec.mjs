@@ -24,14 +24,9 @@ function getSecret(tag, recoveryPrompt = '') {
 Security.getUserDeviceSecret = getSecret;
 
 // For testing internals.
-import Krypto from "../lib/krypto.mjs";
-import MultiKrypto from "../lib/multiKrypto.mjs";
-import InternalSecurity from "../lib/api.mjs";
-import dispatch from "../dependency/jsonrpc.mjs";
+import {Krypto, MultiKrypto, InternalSecurity, dispatch, KeySet, DeviceKeySet, TeamKeySet} from './support/internals.mjs';
 InternalSecurity.Storage = Storage;
 InternalSecurity.getUserDeviceSecret = getSecret;
-import {KeySet, DeviceKeySet, TeamKeySet} from "../lib/keySet.mjs";
-Object.assign(window, {Krypto, MultiKrypto, Security, Storage, InternalSecurity}); // export to browser console for development/debugging experiments.
 
 
 describe('Distributed Security', function () {

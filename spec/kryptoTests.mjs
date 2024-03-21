@@ -1,4 +1,4 @@
-import {makeMessage, isBase64URL} from "./support/messageText.mjs";
+import {makeMessage, isBase64URL, sameTypedArray} from "./support/messageText.mjs";
 
 export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 				    encryptableSize = 446) {
@@ -27,7 +27,7 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 	  signature = await krypto.sign(keypair.privateKey, message),
 	  verified = await krypto.verify(keypair.publicKey, signature);
       expect(verified.cty).toBeUndefined();
-      expect(verified.payload).toEqual(message);
+      sameTypedArray(verified, message);
     });
     it('handles text, setting cty as "text/plain", and verifies with that as the text property and an encoding of that for payload.', async function () {
       let signature = await krypto.sign(keypair.privateKey, message),
@@ -94,7 +94,7 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 	  decrypted = await krypto.decrypt(keypair.privateKey, encrypted),
 	  header = krypto.decodeProtectedHeader(encrypted);
       expect(header.cty).toBeUndefined();
-      expect(decrypted.payload).toEqual(message);
+      sameTypedArray(decrypted, message);
     });
     it('handles text, and decrypts as same.', async function () {
       let encrypted = await krypto.encrypt(keypair.publicKey, message),
@@ -131,7 +131,7 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
 	    message = makeMessage(encryptableSize),
 	    encrypted = await krypto.encrypt(encryptKey, message);
 	await expectAsync(krypto.decrypt(decryptKey, encrypted)).toBeRejected();
-      });
+      }, slowKeyCreation);
     }
     failsWithWrong('asymmetric key', async () => [
       (await krypto.generateEncryptingKey()).publicKey,
@@ -217,7 +217,7 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
     describe('of symmetric key', function () {
       const symmetricKeySize = 79; // raw 44
       it(`works as a ${symmetricKeySize} byte serialization.`, async function () {
-	let key = await await krypto.generateSymmetricKey(),
+	let key = await krypto.generateSymmetricKey(),
 	    serializedKey = await exportKey(key),
 	    importedKey = await importKey(serializedKey),
 	    encrypted = await krypto.encrypt(key, message),

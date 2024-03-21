@@ -5,7 +5,7 @@ import Security from "https://kilroy-code.github.io/distributed-security/index.m
 import testKrypto from "./kryptoTests.mjs";
 import testMultiKrypto from "./multiKryptoTests.mjs";
 import testModule from "./support/testModuleWithFoo.mjs";
-import {scale, makeMessage, isBase64URL} from "./support/messageText.mjs";
+import {scale, makeMessage, isBase64URL, sameTypedArray} from "./support/messageText.mjs";
 
 // Setup.
 //jasmine.getEnv().configure({random: false});
@@ -27,7 +27,6 @@ Security.getUserDeviceSecret = getSecret;
 import {Krypto, MultiKrypto, InternalSecurity, dispatch, KeySet, DeviceKeySet, TeamKeySet} from './support/internals.mjs';
 InternalSecurity.Storage = Storage;
 InternalSecurity.getUserDeviceSecret = getSecret;
-
 
 describe('Distributed Security', function () {
   let message = makeMessage();
@@ -136,6 +135,7 @@ describe('Distributed Security', function () {
 	});
       });
     });
+
     describe("API", function () {
       let tags;
       beforeAll(async function () {
@@ -308,7 +308,7 @@ describe('Distributed Security', function () {
 		    decrypted = await Security.decrypt(encrypted, tag),
 		    header = Krypto.decodeProtectedHeader(encrypted);
 		expect(header.cty).toBeUndefined();
-		expect(decrypted.payload).toEqual(message);
+		sameTypedArray(decrypted, message);
 	      });
 	      it('handles text, and decrypts as same.', async function () {
 		let encrypted = await Security.encrypt(message, tag),
@@ -376,7 +376,7 @@ describe('Distributed Security', function () {
 		    decrypted = await Security.decrypt(encrypted, tag),
 		    header = Krypto.decodeProtectedHeader(encrypted);
 		expect(header.cty).toBeUndefined();
-		expect(decrypted.payload).toEqual(message);
+		sameTypedArray(decrypted, message);
 	      });
 	      it('handles text, and decrypts as same.', async function () {
 		let encrypted = await Security.encrypt(message, tag, otherOwnedTag),
@@ -451,7 +451,7 @@ describe('Distributed Security', function () {
 	    expect(verification.text).toBe(message);
 	    expect(verification.protectedHeader.iss).toBeUndefined();
 	    expect(verification.protectedHeader.act).toBeUndefined();
-	  });
+	  }, 10e3);
 	  it('does not verify as a dual signature specifying team and member.', async function () {
 	    let signature = await Security.sign(message, {team: tags.team, member: nonMember}),
 		verification = await Security.verify(signature, tags.team, nonMember);
@@ -533,12 +533,10 @@ describe('Distributed Security', function () {
 	expect(await Security.verify(signed, user)).toBeTruthy();
 	await Security.destroy({tag: user, recursiveMembers: true});
       });
-      /*
-	TODO:
-	- Show that a member cannot sign or decrypt for a team that they have been removed from.
-	- Show that multiple simultaneous apps can use the same tags if they use Security from the same origin and have compatible getUserDeviceSecret.
-	- Show that multiple simultaneous apps cannot use the same tags if they use Security from the same origin and have incompatible getUserDeviceSecret.
-       */
+	// TODO:
+	// - Show that a member cannot sign or decrypt for a team that they have been removed from.
+	// - Show that multiple simultaneous apps can use the same tags if they use Security from the same origin and have compatible getUserDeviceSecret.
+	// - Show that multiple simultaneous apps cannot use the same tags if they use Security from the same origin and have incompatible getUserDeviceSecret.
     });
   });
 });

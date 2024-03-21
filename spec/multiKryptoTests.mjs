@@ -1,4 +1,4 @@
-import {scale, makeMessage} from "./support/messageText.mjs";
+import {scale, makeMessage, sameTypedArray} from "./support/messageText.mjs";
 import testKrypto from "./kryptoTests.mjs";
 
 export default function testMultiKrypto(multiKrypto) {
@@ -159,7 +159,7 @@ export default function testMultiKrypto(multiKrypto) {
 	    decrypted = await multiKrypto.decrypt(decryptingMulti, encrypted),
 	    header = multiKrypto.decodeProtectedHeader(encrypted);
 	expect(header.cty).toBeUndefined();
-	expect(decrypted.payload).toEqual(message);
+	sameTypedArray(decrypted, message);
       });
       it('handles text, and decrypts as same.', async function () {
 	let encrypted = await multiKrypto.encrypt(encryptingMulti, message),

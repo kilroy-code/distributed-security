@@ -1,7 +1,5 @@
 import Storage from "./support/storage.mjs";
-import Security from "../index.mjs";
-//import Security from "../lib/api.mjs";
-//import Security from "../lib/api-browser-bundle.mjs";
+import Security from "@kilroy-code/distributed-security";
 //import Security from "https://kilroy-code.github.io/distributed-security/index.mjs";
 
 import testKrypto from "./kryptoTests.mjs";
@@ -10,7 +8,7 @@ import testModule from "./support/testModuleWithFoo.mjs";
 import {scale, makeMessage, isBase64URL, sameTypedArray} from "./support/messageText.mjs";
 
 // Setup.
-jasmine.getEnv().configure({random: false});
+//jasmine.getEnv().configure({random: false});
 Storage.Security = Security;
 Security.Storage = Storage;
 let thisDeviceSecret = "secret",
@@ -26,8 +24,7 @@ function getSecret(tag, recoveryPrompt = '') {
 Security.getUserDeviceSecret = getSecret;
 
 // For testing internals.
-//import {Krypto, MultiKrypto, InternalSecurity, dispatch, KeySet, DeviceKeySet, TeamKeySet} from './support/internals.mjs';
-import {Krypto, MultiKrypto, InternalSecurity, dispatch, KeySet, DeviceKeySet, TeamKeySet} from './support/internal-browser-bundle.mjs';
+import {Krypto, MultiKrypto, InternalSecurity, dispatch, KeySet, DeviceKeySet, TeamKeySet} from '#internals';
 InternalSecurity.Storage = Storage;
 InternalSecurity.getUserDeviceSecret = getSecret;
 
@@ -117,26 +114,6 @@ describe('Distributed Security', function () {
       vaultTests('DeviceKeySet', 'device');
       vaultTests('RecoveryKeySet', 'recovery');
       vaultTests('TeamKeySet', 'user');
-      // describe('workers', function () {
-      // 	let isolatedWorker, request;
-      // 	beforeAll(function () {
-      // 	  isolatedWorker = new Worker("/@kilroy-code/distributed-security/spec/support/testWorkerWithModule.mjs", {type: 'module'});
-      // 	  request = dispatch({target: isolatedWorker});
-      // 	});
-      // 	afterAll(function () {
-      // 	  isolatedWorker.terminate();
-      // 	});
-      // 	it('do not share modules of the same name with applications.', async function () {
-      // 	  let workerInitialFoo = await request('getFoo'),
-      // 	      ourInitialFoo = testModule.foo,
-      // 	      ourNewFoo = 17;
-      // 	  expect(workerInitialFoo).toBe(ourInitialFoo);
-      // 	  expect(ourInitialFoo).not.toBe(ourNewFoo);
-      // 	  testModule.foo = ourNewFoo;
-      // 	  expect(testModule.foo).toBe(ourNewFoo);
-      // 	  expect(await request('getFoo')).toBe(workerInitialFoo);
-      // 	});
-      // });
     });
 
     describe("API", function () {

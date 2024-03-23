@@ -7,6 +7,20 @@
     "node": "./lib/api.mjs",
     "default": "./index.mjs"
   },
+  "imports": {
+    "#raw": {
+      "node": "./lib/raw-node.mjs",
+      "default": "./lib/raw-browser.mjs"
+    },
+    "#localStore": {
+      "node": "./lib/store-level.mjs",
+      "default": "./lib/store.mjs"
+    },
+    "#internals": {
+      "node": "./spec/support/internals.mjs",
+      "default": "./spec/support/internal-browser-bundle.mjs"
+    }
+  },
   "scripts": {
     "build": "rollup -c",
     "test": "jasmine"

@@ -52,7 +52,7 @@ const api = { // jsonrpc requests from the client are handled by these, which an
       }),
 
       // Sets up the jsonrpc connection to the worker.
-      vaultOrigin = new URL('./lib/worker.mjs', url),
+      vaultOrigin = new URL('./lib/worker-bundle.mjs', url),
       worker = new Worker(vaultOrigin, {type: 'module'}),
       postWorker = dispatch({
 	dispatcherLabel: url,

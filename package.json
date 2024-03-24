@@ -51,7 +51,6 @@
   },
   "dependencies": {
     "@kilroy-code/jsonrpc": "^0.0.1",
-    "jose": "^5.2.3",
-    "level": "^8.0.1"
+    "jose": "^5.2.3"
   }
 }

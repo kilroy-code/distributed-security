@@ -13,8 +13,8 @@
       "default": "./lib/raw-browser.mjs"
     },
     "#localStore": {
-      "node": "./lib/store-level.mjs",
-      "default": "./lib/store.mjs"
+      "node": "./lib/store-fs.mjs",
+      "default": "./lib/store-indexed.mjs"
     },
     "#internals": {
       "node": "./spec/support/internals.mjs",

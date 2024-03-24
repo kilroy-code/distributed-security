@@ -24,7 +24,7 @@ function getSecret(tag, recoveryPrompt = '') {
 Security.getUserDeviceSecret = getSecret;
 
 // For testing internals.
-import {Krypto, MultiKrypto, InternalSecurity, dispatch, KeySet, DeviceKeySet, TeamKeySet} from '#internals';
+import {Krypto, MultiKrypto, InternalSecurity, dispatch, KeySet, DeviceKeySet, TeamKeySet, LocalCollection} from '#internals';
 InternalSecurity.Storage = Storage;
 InternalSecurity.getUserDeviceSecret = getSecret;
 
@@ -114,6 +114,61 @@ describe('Distributed Security', function () {
       vaultTests('DeviceKeySet', 'device');
       vaultTests('RecoveryKeySet', 'recovery');
       vaultTests('TeamKeySet', 'user');
+      describe('local store', function () {
+	var store; 
+	beforeAll(async function () {
+	  store = new LocalCollection({dbName: 'testStore', collectionName: 'Foo'});
+	  await new Promise(resolve => setTimeout(resolve, 2e3)); // fixme remove
+	});
+	it('can remove without existing.', async function () {
+	  let tag = 'nonExistant';
+	  expect(await store.remove(tag)).toBe("");
+	});
+	it('can retrieve without existing.', async function () {
+	  let tag = 'nonExistant';
+	  expect(await store.retrieve(tag)).toBe("");
+	});
+	it('retrieves and can remove what is stored.', async function () {
+	  let tag = 'x', message = "hello";
+	  expect(await store.store(tag, message)).not.toBeUndefined();
+	  expect(await store.retrieve(tag)).toBe(message);
+	  expect(await store.remove(tag)).toBe("");
+	  expect(await store.retrieve(tag)).toBe("");
+	});
+	it('can write a lot without getting jumbled.', async function () {
+	  let count = 1000, prefix = "y", tags = [];
+	  for (let i = 0; i < count; i++) tags.push(prefix + i);
+	  let start, elapsed, per;
+
+	  start = Date.now();
+	  let stores = await Promise.all(tags.map((tag, index) => store.store(tag, index.toString())));
+	  elapsed = Date.now() - start; per = elapsed/count;
+	  //console.log({elapsed, per});
+	  expect(per).toBeLessThan(5);
+	  stores.forEach(storeResult => expect(storeResult).not.toBeUndefined());
+
+	  start = Date.now();
+	  let reads = await Promise.all(tags.map(tag => store.retrieve(tag)));
+	  elapsed = Date.now() - start; per = elapsed/count;
+	  //console.log({elapsed, per});
+	  expect(per).toBeLessThan(3);
+	  reads.forEach((readResult, index) => expect(readResult).toBe(index.toString()));
+
+	  start = Date.now();
+	  let removes = await Promise.all(tags.map(tag => store.remove(tag)));
+	  elapsed = Date.now() - start; per = elapsed/count;
+	  //console.log({elapsed, per});
+	  expect(per).toBeLessThan(5);
+	  removes.forEach(removeResult => expect(removeResult).toBe(""));
+
+	  start = Date.now();
+	  let rereads = await Promise.all(tags.map(tag => store.retrieve(tag)));
+	  elapsed = Date.now() - start; per = elapsed/count;
+	  //console.log({elapsed, per});
+	  expect(per).toBeLessThan(0.1);
+	  rereads.forEach(readResult => expect(readResult).toBe(""));
+	}, 10e5)
+      })
     });
 
     describe("API", function () {
@@ -512,7 +567,7 @@ describe('Distributed Security', function () {
 	expect(decrypted.text).toBe(message);
 	expect(await Security.verify(signed, user)).toBeTruthy();
 	await Security.destroy({tag: user, recursiveMembers: true});
-      });
+      }, 10e3);
 	// TODO:
 	// - Show that a member cannot sign or decrypt for a team that they have been removed from.
 	// - Show that multiple simultaneous apps can use the same tags if they use Security from the same origin and have compatible getUserDeviceSecret.

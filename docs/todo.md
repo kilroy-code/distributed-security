@@ -8,21 +8,10 @@
 - [ ] Clean up "buzz's notes", etc. in explainer.
 - [ ] the term of art for multi is "multiparty encryption". Are there places where I should use that term? Similarly for "content encryption key" (CEK) or "direct encryption".
 
-### demo
-- [ ] Show that encrypted text is usable only by team
-- [ ] Show that signature provides attribution
-- [ ] Include media (e.g., pictures)
-
-Proposed "game":
-
-- [ ] No signup or real names. Just assign a generated name/pic.
-- [ ] qr code to make it easy for a person to play with themselves or a demo-buddy on second device.
-- [ ] Show N most recent players and their "scores"
-- [ ] User picks M to post to. (creates team) Post will initially show as encrypted garbage, and then becomes clear post IFF you are a member of the team.
-- [ ] User picks who post purports to be from. Post shows claimed attribution, but any other user can challenge a post by clicking on the attribution. If it was a lie, the challenger gets a point. If it was really by the sender, the sender gets a point. 
-- [ ] Stretch: Old users can safely rejoin: As old users fall off the end of the N most recent, they are dropped from the data but their name/pic/score is signed by the system and saved locally. If they rejoin later, the data is verified and added to the live data.
-
 ### code
+- [ ] store-fs
+- [ ] get rid of separate isEmptyJWS / payload-utilities
+- [ ] can we reduce the number of files that need to be set up?
 - [ ] Use symbols/getters/internals for internals
 - [ ] Browsers that support dynamic state paritioning will not be able to share device tags across applications from different domains, even when they share the same module domain. (They will still be able to share team tags.) Formalize this as a requirement in the doc, and store referrer with the device tag to effectively implement our own dynamic state partitioning. How do we unit-test this?  
 - API - error handling

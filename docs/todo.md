@@ -9,9 +9,11 @@
 - [ ] the term of art for multi is "multiparty encryption". Are there places where I should use that term? Similarly for "content encryption key" (CEK) or "direct encryption".
 
 ### code
-- [ ] store-fs
-- [ ] get rid of separate isEmptyJWS / payload-utilities
-- [ ] can we reduce the number of files that need to be set up?
+- [x] store-fs
+- [x] import package.json
+- [x] get rid of separate isEmptyJWS / payload-utilities
+- [ ] construct LocalCollection so it can be awaited, and do so before reporting ready
+- [ ] can we reduce the number of files that need to be set up? Can they be package/identified more comprehensibly?
 - [ ] Use symbols/getters/internals for internals
 - [ ] Browsers that support dynamic state paritioning will not be able to share device tags across applications from different domains, even when they share the same module domain. (They will still be able to share team tags.) Formalize this as a requirement in the doc, and store referrer with the device tag to effectively implement our own dynamic state partitioning. How do we unit-test this?  
 - API - error handling

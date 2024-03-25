@@ -1,6 +1,6 @@
 {
   "name": "@kilroy-code/distributed-security",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "Signed and encrypted document infrastructure based on public key encryption and self-organizing users.",
   "type": "module",
   "exports": {

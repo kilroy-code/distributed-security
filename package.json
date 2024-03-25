@@ -51,6 +51,7 @@
   },
   "dependencies": {
     "@kilroy-code/jsonrpc": "^0.0.1",
+    "@rollup/plugin-json": "^6.1.0",
     "jose": "^5.2.3"
   }
 }

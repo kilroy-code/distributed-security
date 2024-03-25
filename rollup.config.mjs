@@ -1,5 +1,6 @@
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
+import json from '@rollup/plugin-json';
 const devMode = (process.env.NODE_ENV === 'development');
 
 // E.g., npx rollup -c --environment NODE_ENV:development
@@ -14,8 +15,9 @@ function target(input, output) { // roll up input to output
       sourcemap: devMode ? 'inline' : false
     },
     plugins: [
+      json(),
       nodeResolve({browser: true, preferBuiltins: false}),
-      commonjs({})
+      commonjs()
     ]
   };
 }

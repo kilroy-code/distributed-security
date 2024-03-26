@@ -16,6 +16,10 @@ module.exports = {
             "parserOptions": {
                 "sourceType": "script"
             }
+        }, {
+          "files": "*.json",
+          "parser": "jsonc-eslint-parser",
+          "rules": {}
         }
     ],
     "parserOptions": {

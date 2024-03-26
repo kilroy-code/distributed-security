@@ -17,7 +17,10 @@ function target(input, output) { // roll up input to output
     },
     plugins: [
       eslint({
-	exclude: "**/*bundle.mjs"
+	exclude: [
+	  "**/*bundle.mjs",
+	  "lib/package-loader.mjs"
+	  ]
       }),
       json(),
       nodeResolve({browser: true, preferBuiltins: false}),

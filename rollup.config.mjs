@@ -16,7 +16,9 @@ function target(input, output) { // roll up input to output
       sourcemap: devMode ? 'inline' : false
     },
     plugins: [
-      eslint({}),
+      eslint({
+	exclude: "**/*bundle.mjs"
+      }),
       json(),
       nodeResolve({browser: true, preferBuiltins: false}),
       commonjs()

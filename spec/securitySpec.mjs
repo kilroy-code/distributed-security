@@ -4,8 +4,7 @@ import Security from "@kilroy-code/distributed-security";
 
 import testKrypto from "./kryptoTests.mjs";
 import testMultiKrypto from "./multiKryptoTests.mjs";
-import testModule from "./support/testModuleWithFoo.mjs";
-import {scale, makeMessage, isBase64URL, sameTypedArray} from "./support/messageText.mjs";
+import { makeMessage, isBase64URL, sameTypedArray} from "./support/messageText.mjs";
 
 // Setup.
 //jasmine.getEnv().configure({random: false});
@@ -24,7 +23,7 @@ function getSecret(tag, recoveryPrompt = '') {
 Security.getUserDeviceSecret = getSecret;
 
 // For testing internals.
-import {Krypto, MultiKrypto, InternalSecurity, dispatch, KeySet, DeviceKeySet, TeamKeySet, LocalCollection} from '#internals';
+import {Krypto, MultiKrypto, InternalSecurity, KeySet, LocalCollection} from '#internals';
 InternalSecurity.Storage = Storage;
 InternalSecurity.getUserDeviceSecret = getSecret;
 
@@ -544,7 +543,7 @@ describe('Distributed Security', function () {
         expect(decrypted.text).toBe(message);
         // Destroy it all the way down.
         await Security.destroy({tag: t, recursiveMembers: true});
-        let errorMessage = await Security.decrypt(encrypted, t).then(_ => null, e => e.message);
+        let errorMessage = await Security.decrypt(encrypted, t).then(() => null, e => e.message);
         expect(errorMessage).toBeTruthy();
       }, slowKeyCreation);
       it('device is useable as soon as it resolves.', async function () {

@@ -152,7 +152,7 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
     async function exportKey(key) {
       return JSON.stringify(await krypto.exportJWK(key));
     }
-    function importKey(string, use) {
+    function importKey(string) {
       return krypto.importJWK(JSON.parse(string));
     }
 

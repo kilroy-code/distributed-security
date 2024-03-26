@@ -1,8 +1,9 @@
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
-const devMode = (process.env.NODE_ENV === 'development');
+import eslint from '@rollup/plugin-eslint';
 
+const devMode = (process.env.NODE_ENV === 'development');
 // E.g., npx rollup -c --environment NODE_ENV:development
 console.log(`${ devMode ? 'development' : 'production' } mode bundle`);
 
@@ -15,6 +16,7 @@ function target(input, output) { // roll up input to output
       sourcemap: devMode ? 'inline' : false
     },
     plugins: [
+      eslint({}),
       json(),
       nodeResolve({browser: true, preferBuiltins: false}),
       commonjs()

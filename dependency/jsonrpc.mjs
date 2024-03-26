@@ -5,15 +5,15 @@ function transferrableError(error) { // An error object that we receive on our s
 }
 
 function dispatch({target,
-		   receiver = target,
-		   namespace = receiver,
-		   origin = ((target !== receiver) && target.location.origin),
-		   targetLabel = origin || target.location?.href || target,
-		   dispatcherLabel = receiver.location?.href || receiver,
-		   log = () => null,
-		   warn:logwarn = console.warn.bind(console),
-		   error:logerror = console.error.bind(console)
-		  }) {
+                   receiver = target,
+                   namespace = receiver,
+                   origin = ((target !== receiver) && target.location.origin),
+                   targetLabel = origin || target.location?.href || target,
+                   dispatcherLabel = receiver.location?.href || receiver,
+                   log = () => null,
+                   warn:logwarn = console.warn.bind(console),
+                   error:logerror = console.error.bind(console)
+                  }) {
   let requests = {},
       messageId = 0,
       jsonrpc = '2.0',
@@ -32,15 +32,15 @@ function dispatch({target,
 
     if (method) { // Incoming request or notification from target.
       let error = null, result,
-	  args = Array.isArray(params) ? params : [params]; // Accept either form of params.
+          args = Array.isArray(params) ? params : [params]; // Accept either form of params.
       try { // method result might not be a promise, so we can't rely on .catch().
-	result = await namespace[method](...args);
+        result = await namespace[method](...args);
       } catch (e) {
-	error = transferrableError(e);
-	if (!namespace[method] && !error.message.includes(method))
-	  error.message = `${method} is not defined.`; // Be more helpful than some browsers.
-	else if (!error.message) // It happens. E.g., operational errors from crypto.
-	  error.message = `${error.name || error.toString()} in ${method}.`;
+        error = transferrableError(e);
+        if (!namespace[method] && !error.message.includes(method))
+          error.message = `${method} is not defined.`; // Be more helpful than some browsers.
+        else if (!error.message) // It happens. E.g., operational errors from crypto.
+          error.message = `${error.name || error.toString()} in ${method}.`;
       }
       let response = error ? {id, error, jsonrpc} : {id, result, jsonrpc};
       log(dispatcherLabel, 'answering', id, error || result, 'to', targetLabel);
@@ -57,7 +57,7 @@ function dispatch({target,
   // FIXME: Don't leak promises when there is no response. Timeout? Return both request and notify? special arg? Some combination?
   return function request(method, ...params) {
     let id = ++messageId,
-	request = requests[id] = {};
+        request = requests[id] = {};
     return new Promise((resolve, reject) => {
       Object.assign(request, {resolve, reject});
       log(dispatcherLabel, 'requesting', id, method, params, 'to', targetLabel);

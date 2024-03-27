@@ -2,6 +2,7 @@ import { nodeResolve } from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import eslint from '@rollup/plugin-eslint';
+import terser from '@rollup/plugin-terser';
 
 const devMode = (process.env.NODE_ENV === 'development');
 // E.g., npx rollup -c --environment NODE_ENV:development
@@ -24,7 +25,8 @@ function target(input, output) { // roll up input to output
       }),
       json(),
       nodeResolve({browser: true, preferBuiltins: false}),
-      commonjs()
+      commonjs(),
+      !devMode && terser()
     ]
   };
 }
@@ -47,7 +49,7 @@ export default [
   target('lib/api.mjs',                'lib/api-browser-bundle.mjs'),
   target('spec/support/internals.mjs', 'spec/support/internal-browser-bundle.mjs'),
 
-  // The last of the those, and the only one that is of any substantial size.
+  // The last of the required files, and the only one that is of any substantial size.
   target('lib/worker.mjs',             'lib/worker-bundle.mjs'),
 
   // This "application" (the unit tests) incorporate index.mjs, and also internals, below.

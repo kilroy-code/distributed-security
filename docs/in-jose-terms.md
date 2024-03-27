@@ -1,6 +1,6 @@
 # Distributed-Security in JOSE Technical Terms
 
-> This document is intended for people who are already deeply familiar with JOSE technical terms.
+> This document is intended for people who are already deeply familiar with JOSE technical terms. It precisely defines *what* the library does, but not why.
 
 1. [Distributed-Security](https://kilroy-code.github.io/distributed-security/) applications generate and decrypt [`JWE`](https://www.rfc-editor.org/rfc/rfc7516) using [`RSA-OAEP-256`](https://datatracker.ietf.org/doc/html/rfc7518#section-4.3) and they generate and verify [`JWS`](https://datatracker.ietf.org/doc/html/rfc7515) using [`ES384`](https://datatracker.ietf.org/doc/html/rfc7518#section-3.4). Except as specified below, these are in compact form.
 2. Distributed-Security is an [open-source Javascript library](https://github.com/kilroy-code/distributed-security) that implements (1) using the [panva JOSE library](https://www.npmjs.com/package/jose), which in turn uses [`subtle.crypto`](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto) API in browsers and the [`crypto`](https://nodejs.org/docs/latest/api/crypto.html) API in [NodeJS](https://nodejs.org/).

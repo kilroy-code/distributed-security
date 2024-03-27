@@ -1,7 +1,7 @@
 import dispatch from './dependency/jsonrpc.mjs';
 
 const url = import.meta.url,
-      vaultUrl = new URL('vault.html', url),
+      vaultUrl = new URL('vault-bundle.mjs', url),
       iframe = document.createElement('iframe'),
       resourcesForIframe = { // What the vault can postMessage to us.
         log(...args) { console.log(...args); }
@@ -24,14 +24,10 @@ const url = import.meta.url,
 
         // Ready doesn't resolve until the vault posts to us that it is ready.
         ready: new Promise(resolve => {
-
-          // TODO: Make these css rules that the application can override.
-          iframe.setAttribute('width', '100%'); // When using a free reverse proxy service like ngrok, there may be a click through. Give enough space to read it.
-          iframe.style.display = 'none'; // TODO: make an overridable css rule, so that developers can show it if they want.
-
-          document.body.append(iframe); // Before referencing its contentWindow.
           resourcesForIframe.ready = resolve;
-          iframe.setAttribute('src', vaultUrl);
+          iframe.style.display = 'none';
+          document.body.append(iframe); // Before referencing its contentWindow.
+          iframe.setAttribute('srcdoc', `<!DOCTYPE html><html><body><script type="module" src="${vaultUrl.href}"></script></body></html>`);
         })
       },
 

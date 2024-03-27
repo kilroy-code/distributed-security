@@ -49,8 +49,11 @@ export default [
   target('lib/api.mjs',                'lib/api-browser-bundle.mjs'),
   target('spec/support/internals.mjs', 'spec/support/internal-browser-bundle.mjs'),
 
-  // The last of the required files, and the only one that is of any substantial size.
+  // The last of the required files listed above, and the only one that is of any substantial size.
   target('lib/worker.mjs',             'lib/worker-bundle.mjs'),
+
+  // fixme
+  target('vault.mjs',                  'vault-bundle.mjs'),
 
   // This "application" (the unit tests) incorporate index.mjs, and also internals, below.
   // Note that even though this bundle includes index.mjs, it does not include

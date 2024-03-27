@@ -1,7 +1,7 @@
 import dispatch from './dependency/jsonrpc.mjs';
 
 const url = import.meta.url,
-      vaultUrl = new URL('vault-bundle.mjs', url),
+      vaultUrl = new URL('lib/vault-bundle.mjs', url),
       iframe = document.createElement('iframe'),
       resourcesForIframe = { // What the vault can postMessage to us.
         log(...args) { console.log(...args); }

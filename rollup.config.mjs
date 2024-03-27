@@ -53,7 +53,7 @@ export default [
   target('lib/worker.mjs',             'lib/worker-bundle.mjs'),
 
   // fixme
-  target('vault.mjs',                  'vault-bundle.mjs'),
+  target('lib/vault.mjs',              'lib/vault-bundle.mjs'),
 
   // This "application" (the unit tests) incorporate index.mjs, and also internals, below.
   // Note that even though this bundle includes index.mjs, it does not include

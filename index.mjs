@@ -1,4 +1,4 @@
-import dispatch from './dependency/jsonrpc.mjs';
+import dispatch from '@kilroy-code/jsonrpc';
 
 const url = import.meta.url,
       vaultUrl = new URL('lib/vault-bundle.mjs', url),

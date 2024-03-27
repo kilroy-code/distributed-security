@@ -32,13 +32,12 @@ function target(input, output) { // roll up input to output
 }
 
 export default [
-  // Browsers need four files:
+  // Browsers need three files:
   // index.mjs, and the following files relative to it:
-  // ./vault.html
-  // ./dependency/jsonrpc.mjs
+  // ./lib/vault-bundle.mjs
   // ./lib/worker-bundle.mjs
 
-  // These two are not necessary for any of the above, but it can be convenient for
+  // The following two are not necessary for any of the above, but it can be convenient for
   // development/debugging to edit securitySpec.mjs to appear directly in a jasmine test.html.
   // However, securitySpec.mjs references @kilroy-code/distributed-security
   // and #internals, and these won't work in a browser. Internally, they use further

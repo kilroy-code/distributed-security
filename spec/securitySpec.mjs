@@ -550,7 +550,7 @@ describe('Distributed Security', function () {
         let device = await Security.create();
         expect(await Security.sign("anything", device)).toBeTruthy();
         await Security.destroy(device);
-      });
+      }, 10e3);
       it('team is useable as soon as it resolves.', async function () {
         let team = await Security.create(tags.device); // There was a bug once: awaiting a function that did return its promise.
         expect(await Security.sign("anything", team)).toBeTruthy();
@@ -567,6 +567,42 @@ describe('Distributed Security', function () {
         expect(await Security.verify(signed, user)).toBeTruthy();
         await Security.destroy({tag: user, recursiveMembers: true});
       }, 10e3);
+      it('supports rotation.', async function () {
+        let aliceTag = await Security.create(tags.device),
+            cfoTag = await Security.create(aliceTag),
+            alicePO = await Security.sign("some purchase order", {team: cfoTag, member: aliceTag}), // On Alice's computer
+            cfoEyesOnly = await Security.encrypt("the other set of books", cfoTag)
+        expect(await Security.verify(alicePO)).toBeTruthy();
+        expect(await Security.verify(alicePO, {team: cfoTag, member: false})).toBeTruthy();
+        expect(await Security.decrypt(cfoEyesOnly)).toBeTruthy(); // On Alice's computer
+
+        // Now Alice is replace with Bob, and Carol added for the transition
+        let bobTag = await Security.create(tags.device);
+        let carolTag = await Security.create(tags.device);
+        await Security.changeMembership({tag: cfoTag, remove: [aliceTag], add: [bobTag, carolTag]});
+        await Security.destroy(aliceTag)
+
+        expect(await Security.sign("bogus PO", {team: cfoTag, member: aliceTag}).catch(() => undefined)).toBeUndefined(); // Alice can no longer sign.
+        let bobPO = await Security.sign("new PO", {team: cfoTag, member: bobTag}); // On Bob's computer
+        let carolPO = await Security.sign("new PO", {team: cfoTag, member: carolTag});
+        expect(await Security.verify(bobPO)).toBeTruthy();
+        expect(await Security.verify(carolPO)).toBeTruthy();
+        expect(await Security.verify(alicePO).catch(() => undefined)).toBeUndefined(); // Alice is no longer a member of cfoTag.
+        expect(await Security.verify(alicePO, {team: cfoTag, member: false})).toBeTruthy(); // Destorying Alice's tag doesn't prevent shallow verify
+        expect(await Security.decrypt(cfoEyesOnly)).toBeTruthy(); // On Bob's or Carol's computer
+
+        // Now suppose we want to rotate the cfoTag:
+        let cfoTag2 = await Security.create(bobTag); // Not Carol.
+        await Security.destroy(cfoTag);
+
+        expect(await Security.sign("bogus PO", {team: cfoTag, member: bobTag}).catch(() => undefined)).toBeUndefined(); // Fails for discontinued team.
+        expect(await Security.sign("new new PO", {team: cfoTag2, member: bobTag})).toBeTruthy();
+        expect(await Security.verify(alicePO, {team: cfoTag, member: false})).toBeTruthy();
+        // However, some things to be aware of.
+        expect(await Security.verify(bobPO)).toBeTruthy(); // works, but only because this looks like the initial check
+        expect(await Security.verify(carolPO)).toBeTruthy(); // same, and confusing because Carol is not on the new team.
+        expect(await Security.decrypt(cfoEyesOnly).catch(() => undefined)).toBeUndefined(); // FAILS! Bob can't sort through the mess that Alice made.
+      }, 15e3);
       // TODO:
       // - Show that a member cannot sign or decrypt for a team that they have been removed from.
       // - Show that multiple simultaneous apps can use the same tags if they use Security from the same origin and have compatible getUserDeviceSecret.

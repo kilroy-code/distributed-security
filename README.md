@@ -5,7 +5,7 @@ This is Javascript browser code that makes it easy for developers to correctly a
 1. ... use the four standard cryptographic operations: **encrypt, decrypt, sign, and verify**.
 2. ... provide simple and secure **key management** directly to users.
 
-We take advantage of a number of separate APIs that **all modern browsers now support**, combined with a **new approach to key management**. The result is that any Web applications can finally offer the long-promised [benefits of cryptography](lib/whycryptography.md):
+We take advantage of a number of separate APIs that **all modern browsers now support**, combined with a **new approach to key management**. The result is that any Web applications can finally offer the long-promised [benefits of cryptography](lib/whycryptography.md), such as:
 
 - No passwords.
 - No tracking by login or viewing of content, including private content.
@@ -39,6 +39,21 @@ We call it "distributed security" because:
 - Arbitrary teams of individuals can have their own keypairs, managed by their members in accordance with the rules of whatever app they are for, with the encrypted keypairs stored in the cloud rather than by any one member of the team.  (In the blockchain community, teams are called [DAO](https://en.wikipedia.org/wiki/Decentralized_autonomous_organization)s.)
 
 Other documents describe [the implementation](docs/implementation.md) and identifies [risks](docs/risks.md), the [use of JOSE](docs/in-jose-terms.md), and [remaining work](docs/todo.md).
+
+## Overview
+
+As with most cryptographic systems, distributed-security provides an API to encrypt & decrypt messages, and to sign & verify messages. Internally, this is done with the widely-used [panva library](https://www.npmjs.com/package/jose) to produce results in standard JOSE [JWE](https://www.rfc-editor.org/rfc/rfc7516) and [JWS](https://www.rfc-editor.org/rfc/rfc7515) formats.
+
+Most cryptography libraries (including panva) expect applications to manage key creation, storage, and safety. By contrast, an application using the distributed-security library works with ordinary *tag* strings that each represent a person or a team of people in the application. For example, an application calls `encrypt(message, tag)` -- the library takes care of getting the right key for the *tag* and applying it. All this happens within a separate sandbox in the browser that is isolated from the application -- the application never gets to handle the keys at all. At the same time, though, no server gets to handle the raw keys either. The keys are generated in the sandbox, encrypted there, and the *encrypted* keys are stored in the cloud so that they are available on all the users' devices:
+
+1. A tag can represent a team of people or other teams, like the nodes in an org-chart. The private keys of the team are encrypted so as to be decryptable only by the members of the team.
+2. A tag can represent an individual human. The private keys of the individual are encrypted so as to be decryptable only by the different browsers (on different devices) that individual uses, or by a recovery key
+3. A tag can represent a browser or a recovery key. The private keys of these are encrypted by a secret supplied by the application:
+   - The application secret for a browser is typicaly an application-specific hash of the tag, or a browser credential. The encrypted browser key is stored within the sandbox on that browser. They are never put in the cloud, and are only available on that one browser.
+   - The application secret for a recovery key is typically derived from a password or from the concatenated answer to a set of security questions, and then salted by an application-specific hash of the tag. The encrypted recovery key is then stored in the cloud and used only when no applicable browser key is available for the current browser.
+
+Note that *application requests* to encrypt for a tag are simple, compact, encryptions that are decrypted only by that tag. It is the private key of tag that is *internally* encrypted for each member tag. However, an application can ask that a message be encrypted or signed for multiple tags. In particular, a message can be signed for a tag *and* for the tag of the specific member that is signing. When verifying such member-signed tag, by default the system will check that the member is still a member at the time of verification.
+
 
 ## Operations and Tags
 
@@ -75,7 +90,7 @@ There are more complications. SubtleCrypto provides a number of different kinds 
 
 #### Distributed-Security Basics
 
-**In distributed security, all the various kinds of keys are represented by a single string of characters called a tag.**  The distributed security operators work directly on tags and ordinary Javascript text strings, binary data or objects:
+**In distributed-security, all the various kinds of keys are represented by a single string of characters called a tag.**  The distributed-security operators work directly on tags and ordinary Javascript text strings, binary data or objects:
 
 ```
 encrypt(originalTextOrBinaryOrObject, tag) -> encryptedData
@@ -90,7 +105,7 @@ verify(signature, tag) -> {payload: originalBinary, text: originalTextOrJSON, js
 // json is undefined if original data was binary or a string
 ```
 
-All distributed security operations are asynchronous - the call immediately returns a Javascript [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises) that resolves to the specified value.
+All distributed-security operations are asynchronous - the call immediately returns a Javascript [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises) that resolves to the specified value.
 
 That's it. The only other operations are for creating, changing, and destroying tags.
 
@@ -153,14 +168,14 @@ You can also specify options: `sign(message, {tags, contentType, time, team, mem
 
 ### Library Installation and Declaration
 
-The distributed security code is available as a Javascript module:
+The distributed-security code is available as a Javascript module:
 
 ```
 # Installation in terminal:
 npm install @kilroy-code/distributed-security
 ```
 
-For development and local experiments, this module can be imported directly into application Javascript code served at an `https` or `locahost` domain. However, for production use, distributed security prevents keys from being copied or exported by keeping them in a "software vault" that prevents access from [phishing or XSS attacks](docs/risks.md). 
+For development and local experiments, this module can be imported directly into application Javascript code served at an `https` or `locahost` domain. However, for production use, distributed-security prevents keys from being copied or exported by keeping them in a "software vault" that prevents access from [phishing or XSS attacks](docs/risks.md). 
 
 To do this, it is necessary to host the module via `https` at a *different origin* than the rest of the application. (This creates a distinct ["browsing context"](https://developer.mozilla.org/en-US/docs/Glossary/Browsing_context) that isolates the code and data.) For example, an application could be at `store.example.com`, and the distributed-security code could be hosted at `vault.example.com`:
 
@@ -177,10 +192,10 @@ Even when several applications opt-in to use the same URL of the distributed-sys
 
 Individuals and teams automatically work across devices because the individual or team's key is stored in the cloud by the application, and made available to everyone. However, the key is encrypted in such a way that it can be [decrypted by any member](docs/implementation.md#3-encrypting-for-members) (and only the members).
 
-**This is the "secret sauce" of distributed security:** Instead of expecting individuals to manage copies of keys or giving unencrypted keys to centralized or third-party "custodians", we arrange things so that:
+**This is the "secret sauce" of distributed-security:** Instead of expecting individuals to manage copies of keys or giving unencrypted keys to centralized or third-party "custodians", we arrange things so that:
 
-- Device keys are stored only on the device that created them, in a way that no one can read: not the application (nor by compromised application code), not the authors of distributed security, and not even by the by the users (who might otherwise get phished).
-- An individual's keys are stored in the cloud, but the vault encrypts it through a technique that allows it to be decrypted only by one of the member devices, not by the authors of distributed security, not by the application (nor by compromised application code), and not by the cloud.
+- Device keys are stored only on the device that created them, in a way that no one can read: not the application (nor by compromised application code), not the authors of distributed-security, and not even by the by the users (who might otherwise get phished).
+- An individual's keys are stored in the cloud, but the vault encrypts it through a technique that allows it to be decrypted only by one of the member devices, not by the authors of distributed-security, not by the application (nor by compromised application code), and not by the cloud.
 - Team keys are encrypted to be read only by their members, etc.
 
 There are no custodial copies of device keys, and none are needed. If a device is lost, an individual can still access his individual key in the cloud using his other devices, or by a virtual device made up of security-question answers.
@@ -194,10 +209,10 @@ store(collectionName, tag, signature)
 
 Applications must supply their own implementation of this storage API, meeting their own application-specific needs. For example, the application could limit storage to paying users. The only requirements imposed by Distributed-Security are:
 
-1. The strings `'Team'` `'KeyRecovery'` and `'EncryptionKey'` must be allowed as the `collectionName` parameters. These are the only cloud storage collectionNames used by distributed security. (The cloud storage may recognize other collection names, but this is not required for distributed security to work.)
+1. The strings `'Team'` `'KeyRecovery'` and `'EncryptionKey'` must be allowed as the `collectionName` parameters. These are the only cloud storage collectionNames used by distributed-security. (The cloud storage may recognize other collection names, but this is not required for distributed-security to work.)
 2. The `tag` parameter must support arbitrary case-sensitive strings of at least 132 ASCII characters. The tag strings are url-safe base64-encoded.
-3. Arbitrarily long text and jsonable payloads must be supported. Teams with N members are less than (N + 5) kbytes. (The cloud storage may support much longer payloads, and unicode text, but this this is not required for distributed security to work.
-4. `store(collectionName, tag, signature)` should verify that `Security.verify(signature, {team: tag, notBefore: "team"})` resolves to truthy. (To allow for storage to be P2P within the application, the distributed security module is designed for such mutual co-dependency to not be an infinite loop.) store() can return anything except `undefined`. There is no security need for additional checks, such as access-control-lists or API keys. However, an application is free to make additional checks. For example, using just the minimal requirements, any member could change the composition of their team, and an application might want to either create an audit trail of which member did so, or might want to restrict such changes to a designated "administrator" member. That's up to to the application.(*)
+3. Arbitrarily long text and jsonable payloads must be supported. Teams with N members are less than (N + 5) kbytes. (The cloud storage may support much longer payloads, and unicode text, but this this is not required for distributed-security to work.
+4. `store(collectionName, tag, signature)` should verify that `Security.verify(signature, {team: tag, notBefore: "team"})` resolves to truthy. (To allow for storage to be P2P within the application, the distributed-security module is designed for such mutual co-dependency to not be an infinite loop.) store() can return anything except `undefined`. There is no security need for additional checks, such as access-control-lists or API keys. However, an application is free to make additional checks. For example, using just the minimal requirements, any member could change the composition of their team, and an application might want to either create an audit trail of which member did so, or might want to restrict such changes to a designated "administrator" member. That's up to to the application.(*)
 5. Because of the way that payload text is encrypted, there is no security requirement to restrict access for the `retrieve` operation. However, applications are free to impose additional restrictions.
 
 

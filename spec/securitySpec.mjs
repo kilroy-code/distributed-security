@@ -27,6 +27,9 @@ import {Krypto, MultiKrypto, InternalSecurity, KeySet, LocalCollection} from '#i
 InternalSecurity.Storage = Storage;
 InternalSecurity.getUserDeviceSecret = getSecret;
 
+// Define some globals in a browser for debugging.
+if (typeof(window) !== 'undefined') Object.assign(window, {Security, Krypto, MultiKrypto});
+
 describe('Distributed Security', function () {
   let message = makeMessage();
   describe('Krypto', function () {
@@ -240,12 +243,25 @@ describe('Distributed Security', function () {
             });
             describe('of multiple tags', function () {
               it('can sign and be verified.', async function () {
-                let signature = await Security.sign(message, tag, otherOwnedTag);
-                expect(await Security.verify(signature, otherOwnedTag, tag)).toBeTruthy(); // order does not matter
+                let signature = await Security.sign(message, tag, otherOwnedTag),
+                    verification = await Security.verify(signature, otherOwnedTag, tag);
+                expect(verification).toBeTruthy(); // order does not matter
+                expect(verification.signers[0].payload).toBeTruthy(); // All recipients listed in verify
+                expect(verification.signers[1].payload).toBeTruthy();
+              });
+              it('does not attempt to verify unenumerated tags if any are explicit', async function () {
+                let signature = await Security.sign(message, tag, otherOwnedTag),
+                    verification = await Security.verify(signature, otherOwnedTag);
+                expect(verification).toBeTruthy(); // order does not matter
+                expect(verification.signers[0].payload).toBeFalsy(); // Because we explicitly verified with 1, not 0.
+                expect(verification.signers[1].payload).toBeTruthy();
               });
               it('can be verified with the tag included in the signature.', async function () {
-                let signature = await Security.sign(message, tag, otherOwnedTag);
-                expect(await Security.verify(signature)).toBeTruthy();
+                let signature = await Security.sign(message, tag, otherOwnedTag),
+                    verification = await Security.verify(signature);
+                expect(verification).toBeTruthy();
+                expect(verification.signers[0].payload).toBeTruthy(); // All are checked, and in this case, pass.
+                expect(verification.signers[1].payload).toBeTruthy();
               });
               describe('bad verification', function () {
                 let oneMore;

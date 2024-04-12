@@ -23,40 +23,50 @@ function target(input, output) { // roll up input to output
 	  "lib/package-loader.mjs"
 	  ]
       }),
-      json(),
+      // api.mjs => package-loader.mjs pulls in the package.json to report the name and version.
+      // Some system's implementations of 'import' do not yet support that, so unroll it here.
+      json(), 
       nodeResolve({browser: true, preferBuiltins: false}),
       commonjs(),
-      !devMode && terser()
+      !devMode && terser() // minify for production.
     ]
   };
 }
 
-export default [
-  // Browsers need three files:
-  // index.mjs, and the following files relative to it:
-  // ./lib/vault-bundle.mjs
-  // ./lib/worker-bundle.mjs
-
-  // The following two are not necessary for any of the above, but it can be convenient for
-  // development/debugging to edit securitySpec.mjs to appear directly in a jasmine test.html.
-  // However, securitySpec.mjs references @kilroy-code/distributed-security
-  // and #internals, and these won't work in a browser. Internally, they use further
-  // imports from the package.json that need to be resolved to work in a browser.
-  // One way to do that is to replace these first two references with one of the
-  // following pre-processed bundles.
-  // Indeed, the standard checked-in version of securitySpec DOES depend on #internals.
-  target('lib/api.mjs',                'lib/api-browser-bundle.mjs'),
-  target('spec/support/internals.mjs', 'spec/support/internal-browser-bundle.mjs'),
-
-  // The last of the required files listed above, and the only one that is of any substantial size.
+// Browsers need three files: index.mjs, and the following bundles relative to it.
+// SEE NEXT COMMENT!
+const productionBundles = [
   target('lib/worker.mjs',             'lib/worker-bundle.mjs'),
+  target('lib/vault.mjs',              'lib/vault-bundle.mjs')
+];
 
-  // fixme
-  target('lib/vault.mjs',              'lib/vault-bundle.mjs'),
-
-  // This "application" (the unit tests) incorporate index.mjs, and also internals, below.
-  // Note that even though this bundle includes index.mjs, it does not include
-  // the three files enumerated above that index.mjs references, and so they must have
-  // the same relative placement as this bundle.
+// `npm run test` will run jasmine on spec/securitySpec.mjs directly in node, which resolves
+// any subpath imports (e.g., #localStore) using package.json.
+//
+// However, browsers don't look at package.json, so we need to pre-process securitySpec.mjs.
+// This "application" (the unit tests) references the package by name, which resolves by
+// the exports in package.json to reference index.mjs in browser.
+//
+// Note that even though this bundle includes index.mjs, it does not bundle the two bundles
+// enumerated above, which are referenced by bundle name in the code. (They are bypassed
+// completely in node.) So the above bundles  must have the same relative placement as this bundle.
+//
+// In our case, securitySpec.mjs also references #internals, which package.json resolves to an
+// .mjs file that gets included directly in the "application" bundle (securitySpec-bundle.mjs).
+const unitTestBundles = [
   target('spec/securitySpec.mjs',      'securitySpec-bundle.mjs')
 ];
+
+// When developing the distributed-security module itself, it is sometimes convenient to
+// edit securitySpec to refer directly to these bundles:
+const additionalModuleDevelopmentBundles = [
+  target('lib/api.mjs',                'lib/api-browser-bundle.mjs'),
+  target('spec/support/internals.mjs', 'spec/support/internal-browser-bundle.mjs')
+];
+
+export default [
+  ...productionBundles,
+  ...unitTestBundles,
+  ...(devMode ? additionalModuleDevelopmentBundles : [])
+];
+

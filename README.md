@@ -1,6 +1,6 @@
 # Distributed Security
 
-This is Javascript browser code that makes it easy for developers to correctly and safely...
+This is Javascript code for browser and Node that makes it easy for developers to correctly and safely...
 
 1. ... use the four standard cryptographic operations: **encrypt, decrypt, sign, and verify**.
 2. ... provide simple and secure **key management** directly to users.
@@ -17,14 +17,15 @@ We take advantage of a number of separate APIs that **all modern browsers now su
 
 While these benefits have been available in some installable apps, desktop browser extensions, and in blockchain, they are now available in ordinary **desktop and mobile web pages** with **zero operating or transaction costs and no browser extensions**.
 
+We accomplish this by inverting the typical key-management usage where keys are used to *authenticate* an individual user, and then the user's *authority* is looked up in a database. Instead, Distributed-Security allows applications to directl define hierarchies of keys for different groups, roles, and authorities, which are proven through cryptography of enumerated members.
+
 This README covers:
 
-- [Operations and Tags](#operations-and-tags) 
-  - [Crypto Basics](#crypto-basics) - A quick review of the underlying tech, built into browsers and NodeJS.
-  - [Distributed-Security Basics](#distributed-security-basics) - The much simpler API for the four basic cryptography operations.
-- [Creating Tags and Changing Membership](#creating-tags-and-changing-membership) - Practical key management.
-- [Encryption with Multiple Tags and Other Encryption Options](#encryption-with-multiple-tags-and-other-encryption-options)
-- [Signatures with Multiple Tags and Other Signature Options](#signatures-with-multiple-tags-and-other-signature-options)
+- [Architectural Overview](#architectural-overview)
+- [Operations](#operations) 
+  - [Basic Encryption](#basic-encryption) 
+  - [Basic Signatures](#basic-signatures)
+  - [Creating Tags and Changing Membership](#creating-tags-and-changing-membership) 
 - [Application Use](#application-use)
   - [Library Installation and Declaration](#library-installation-and-declaration)
   - [Storing Keys using the Cloud Storage API](#storing-keys-using-the-cloud-storage-api)
@@ -38,132 +39,111 @@ We call it "distributed security" because:
 - Individuals are not represented by a single keypair that can be lost, but are rather distributed over different keypairs for each device used by that individual.
 - Arbitrary teams of individuals can have their own keypairs, managed by their members in accordance with the rules of whatever app they are for, with the encrypted keypairs stored in the cloud rather than by any one member of the team.  (In the blockchain community, teams are called [DAO](https://en.wikipedia.org/wiki/Decentralized_autonomous_organization)s.)
 
-Other documents describe [the implementation](docs/implementation.md) and identifies [risks](docs/risks.md), the [use of JOSE](docs/in-jose-terms.md), and [remaining work](docs/todo.md).
+Other documents describe [advanced application usage](docs/advanced.md) and [the implementation](docs/implementation.md), and identifies [risks](docs/risks.md), the [use of JOSE](docs/in-jose-terms.md), and [remaining work](docs/todo.md).
 
-## Overview
+## Architectural Overview
 
-As with most cryptographic systems, distributed-security provides an API to encrypt & decrypt messages, and to sign & verify messages. Internally, this is done with the widely-used [panva library](https://www.npmjs.com/package/jose) to produce results in standard JOSE [JWE](https://www.rfc-editor.org/rfc/rfc7516) and [JWS](https://www.rfc-editor.org/rfc/rfc7515) formats.
+As with most cryptographic systems, distributed-security provides an API to encrypt & decrypt messages, and to sign & verify messages. Internally, this is done with the widely-used [panva library](https://www.npmjs.com/package/jose) to produce results in standard JOSE [JWE](https://www.rfc-editor.org/rfc/rfc7516) and [JWS](https://www.rfc-editor.org/rfc/rfc7515) formats, using the standard algorithms recommended for long-term key sets.
 
-Most cryptography libraries (including panva) expect applications to manage key creation, storage, and safety. By contrast, an application using the distributed-security library works with ordinary *tag* strings that each represent a person or a team of people in the application. For example, an application calls `encrypt(message, tag)` -- the library takes care of getting the right key for the *tag* and applying it. All this happens within a separate sandbox in the browser that is isolated from the application -- the application never gets to handle the keys at all. At the same time, though, no server gets to handle the raw keys either. The keys are generated in the sandbox, encrypted there, and the *encrypted* keys are stored in the cloud so that they are available on all the users' devices:
+Most cryptography libraries (including panva) expect applications to manage key creation, storage, and safety. By contrast, an application using the distributed-security library works with ordinary *tag* strings that each represent a person or a team of people in the application. For example, an application calls `encrypt(message, tag)` and the library takes care of getting the right key for the *tag* and applying it. All this happens within a separate sandbox in the browser that is isolated from the application - the application never gets to handle the keys at all. At the same time, though, no server gets to handle the raw keys either. The keys are generated in the sandbox, encrypted there, and the *encrypted* keys are stored in the cloud so that they are available on all the users' devices:
 
-1. A tag can represent a team of people or other teams, like the nodes in an org-chart. The private keys of the team are encrypted so as to be decryptable only by the members of the team.
-2. A tag can represent an individual human. The private keys of the individual are encrypted so as to be decryptable only by the different browsers (on different devices) that individual uses, or by a recovery key
+1. A tag can represent a team of people or other teams, like the nodes in an org-chart. The private keys of the team are encrypted so as to be decryptable only by the members of the team. Teams can represent a role or authority, or family, workgroup or company.
+2. A tag can represent an individual human. The private keys of the individual are encrypted so as to be decryptable only by the different browsers (on different devices) that the individual uses, or by a recovery key.
 3. A tag can represent a browser or a recovery key. The private keys of these are encrypted by a secret supplied by the application:
-   - The application secret for a browser is typicaly an application-specific hash of the tag, or a browser credential. The encrypted browser key is stored within the sandbox on that browser. They are never put in the cloud, and are only available on that one browser.
-   - The application secret for a recovery key is typically derived from a password or from the concatenated answer to a set of security questions, and then salted by an application-specific hash of the tag. The encrypted recovery key is then stored in the cloud and used only when no applicable browser key is available for the current browser.
+   - The application secret for a browser is typicaly an application-specific hash of the tag, or a browser credential. The encrypted private browser key is stored within the sandbox on that browser. They are never put in the cloud, and are only available on that one browser.
+   - The application secret for a recovery key is typically derived from a password or from the concatenated answer to a set of security questions, and then salted by an application-specific hash of the tag. The encrypted private recovery key is then stored in the cloud and used only when no applicable browser key is available for the current browser.
 
 Note that *application requests* to encrypt for a tag are simple, compact, encryptions that are decrypted only by that tag. It is the private key of tag that is *internally* encrypted for each member tag. However, an application can ask that a message be encrypted or signed for multiple tags. In particular, a message can be signed for a tag *and* for the tag of the specific member that is signing. When verifying such member-signed tag, by default the system will check that the member is still a member at the time of verification.
 
+The library takes care of creating the separate sandbox within browsers, and communications with the application. It takes care of the cloud safely handling keys and messages of different types, and of security storing browser keys. The application plugs in its own cloud storage, following requirements defined here.
 
-## Operations and Tags
+## Operations
 
-#### Crypto Basics
-
-[Public-key cryptography](https://en.wikipedia.org/wiki/Public-key_cryptography) uses a related pair of numbers called the publicKey and the privateKey. The privateKey is kept secret by the owner, but the publicKey is made available to everyone.
-
-This allows anyone to encrypt a message so that it can _only_ be read by the holder of the privateKey:
+### Basic Encryption
 
 ```
-mathEncrypt(publicKey, originalData) -> encryptedData
-mathDecrypt(privateKey, encryptedData) -> originalData
-```
-![Encryption](docs/encryption.png)
+let messageString = "I♥U";
+let encryption = await encrypt(messageString, tag); 
+let decryption = await decrypt(encryption);
 
-And it allows the holder of a privateKey to sign a message so that anyone can verify that the message they see is unaltered from what was definitely sent by the holder of the privateKey (and absolutely not by anyone else):
-
-```
-mathSign(privateKey, data) => signature
-mathVerify(publicKey, data, signature) => true if signature was from the exact same data, else false
-```
-![Signing](docs/signing.png)
-
-Implementing this requires some pretty amazing math. Browsers now implement these operations, through an API called "SubtleCrypto", so called [because](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto):
-
-> This API provides a number of low-level cryptographic primitives. It's very easy to misuse them, and the pitfalls involved can be very subtle.
-> Even assuming you use the basic cryptographic functions correctly, secure key management and overall security system design are extremely hard to get right, and are generally the domain of specialist security experts.
-> Errors in security system design and implementation can make the security of the system completely ineffective.
-
-For example, Bob in these pictures has to generate a matching keypair and somehow transfer the public key to Alice.
-![Public Key Transfer](docs/publicKeyTransfer.png)
-
-There are more complications. SubtleCrypto provides a number of different kinds of keys, and of algorithms for performing each of the four operations. The keypair for encrypt/decrypt must be a different keypair than for sign/verify. Text must be converted to particular forms of binary data before it can be operated on.
-
-#### Distributed-Security Basics
-
-**In distributed-security, all the various kinds of keys are represented by a single string of characters called a tag.**  The distributed-security operators work directly on tags and ordinary Javascript text strings, binary data or objects:
-
-```
-encrypt(originalTextOrBinaryOrObject, tag) -> encryptedData
-decrypt(encryptedData, tag) -> {payload: originalBinary, text: originalTextOrJSON, json: originalObject}  
-
-
-sign(originalTextOrBinaryOrObject, tag) -> signature
-verify(signature, tag) -> {payload: originalBinary, text: originalTextOrJSON, json: originalObject} 
-  
-// signature/decryption return undfined if invalid
-// text is undefined if original data was binary
-// json is undefined if original data was binary or a string
+console.log(decryption.text); // I♥U
 ```
 
-All distributed-security operations are asynchronous - the call immediately returns a Javascript [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises) that resolves to the specified value.
+The message can also be any object serializable as JSON:
 
-That's it. The only other operations are for creating, changing, and destroying tags.
+```
+let messageObject = {foo: 1, bar: ["x", 2.3, true], baz: "hello"};
+let encryption = await encrypt(messageObject, tag);
+let decryption = await decrypt(encryption);
 
-## Creating Tags and Changing Membership
+// As is customary in, e.g., browser fetch responses, accessing the "json" of something
+// gives the serializable object itself:
+console.log(decryption.json); // {foo: 1, bar: ['x', 2.3, true], baz: 'hello'}
+// And the serialized string is avaiable as text:
+console.log(decryption.text); // {"foo":1,"bar":["x",2.3,true],"baz":"hello"}
+```
 
-To create a new set of keypairs, an application calls `create()`, which returns a promise for a tag.  An application will typically create just one tag for each browser used by an individual, although there is nothing preventing an application from creating more.  When no longer needed (e.g., in respect of the EU [Right to be Forgotten](https://gdpr.eu/right-to-be-forgotten/)), an application can permanently and globally destroy a tag with `destroy(tag)`.
+The message can also be binary:
 
-Tags are public, and can be safely shared anywhere. Text can be *encrypted* and *verified* by anyone who has the tag string. For tags made with `create()` (with no arguments), text can only be *decrypted* or *signed* on the browser and device on which the tag was created. The private keys associated with such a tag live only in secure storage on that device, and never leave it.
+```
+let encryption = await encrypt(aUint8Array, tag);
+let decryption = await decrypt(encryption);
+```
 
-To use the same identity across all of a user's devices, an application typically creates a tag that is made from all of the browser-specific tags: `create(tag1, tag2, ...)`. We call this kind of tag a "team", whose "members" are the specified tag1, tag2, etc. This team tag is what the application then uses for operations by or for this individual human. The application can add or remove member tags with:
+In all three cases, `decryption.payload` returns the Uint8Array of the underlying original message.
+
+(See also  [Encryption with Multiple Tags and Other Encryption Options](lib/advanced.md#encryption-with-multiple-tags-and-other-encryption-options).)
+
+
+### Basic Signatures
+
+```
+let signature = await sign(messageString, tag);
+// or
+let signature = await sign(messageObject, tag);
+// or 
+let signature = await sign(aUint8Array, tag);
+
+let verification = await verify(signature);
+```
+and then `verification.payload`, `verification.text`, and `verifcation.json` are as above for encryption of the various types of messages. However, if the signature is not valid, `verification` holds `undefined`.
+
+(See also [Signatures with Multiple Tags and Other Signature Options](lib/advanced.md#signatures-with-multiple-tags-and-other-signature-options).)
+
+### Creating Tags and Changing Membership
+
+For each new user, an application creates a tag whose "members" are the tags for the browsers or devices used by this person, and a recovery tag based on security questions:
+
+```
+let myDeviceTag = await create();
+let myRecoveryTag = await create({prompt: "What is the air-speed velocity of an unladen swallow?"});
+let myIndividualTag = await create(myeviceTag, myRecoveryTag);
+```
+
+`myIndividualTag` is what the application uses to encrypt or sign for this user. (E.g., `tag` in the examples of the previous sections.) An individual human may have many tags, e.g., for each "alt" or persona, for rotation over time, or even a new tag for each transaction. The public keys are available to everyone in the application (e.g., to encrypt for this user), and the private keys are encrypted for storage in the cloud, so that they can only be decrypted by the listed member tags (`myDeviceTag` and `myRecoveryTag` in this example).
+
+The private keys for `myDeviceTag` are only stored directly in the browser or device on which they were created. When the library is asked to sign or decrypt for `myIndividualTag` in a new session, the library automatically uses the previously stored `myDeviceTag` to decrypt the private keys of the`myIndividualTag`. Any attempt to do this will fail on a device that does not already have the correct `myDeviceTag`. In this case, the library will attempt to use the `myRecoveryTag` as desicribed in [Initialization](#initialization), below.
+
+The various tags returned to the application are public, and can safely be shared anywhere. For example, an application can share aliceTag with Bob, who can then send Alice a secret message using `encrypt(message, aliceTag)`.
+
+A team composed of individuals and other teams can be created in the same way as for individuals:
+
+```
+let myTeam = await create(myIndividualTag, aliceTag, anotherTeamTag);
+```
+
+The application can add or remove member tags (individuals, devices, etc.) with:
 
 ```
 changeMembership({
-   tag: teamTag,
+   tag: tag,
    add: [tag1, ...], 
    remove: [tag2, ...]
 });
 ```
 
-There can also be teams of individuals (or even of other teams). A team's tag can be used to decrypt, sign, or changeMembership on any computer on which any member was created (or member of a member, etc.). There is no difference between a signature or encrypted ciphertext made from a team of individuals vs a team of browsers. 
+When no longer needed (e.g., in respect of the EU [Right to be Forgotten](https://gdpr.eu/right-to-be-forgotten/)), an application can permanently and globally destroy a tag with `destroy(tag)`.
 
-An application can create any number of tags. For example, it can create a new tag for each persona or alt of a human, or for each transaction to be signed. Teams can represent a role or authority, or family, workgroup or company.
-
-What happens if you loose access to all your devices at once? No problem! One or more of the member tags of your individual tag can be a "recovery" tag, which is encrypted using the answer to one or more security questions. By calling `createTag({prompt: "some security question"})`, an application can create one or more recovery tags that consist of answers that only you would know (or the concatenation of several answers). The recovery tags are stored (encrypted) in the cloud and are generally not used. But if you attempt to use your individual tag on a device that is not a member of that individual tag, the system will ask the application to ask you your security question(s). The answers will unlock your individual tag only if the answers match what was previously encrypted, allowing you to add new devices and remove the old ones.
-
-## Encryption with Multiple Tags and Other Encryption Options
-
-When something is encrypted with `encrypt(message, tag)`, the only thing that will decrypt it is the private key associated with `tag`. The encryption is made with the public part of a single keypair. The encryption is a string in a standard format called "JOSE [JWE compact serialization](https://datatracker.ietf.org/doc/html/rfc7516#section-7.1)". The tag appears as the JWE *key identifier* ("kid") header, and the *content type* ("cty") header may be defined as described below. The result of a succcessful `decrypt()` is an object that includes a "payload" property containing binary data. If `text` or `json` can be produced based on content type, these are defined as additional properties. If the encryption does not decrypt, the result is falsey (undefined). 
-
-We can also encrypt a message with multiple tags, so that any *one* of the listed tags can decrypt it. The encryption is in a standard format called "JOSE [JWE general serialization](https://datatracker.ietf.org/doc/html/rfc7516#section-7.2.1)" and includes encryptions made with each of the specified keypairs: `encrypt(message, tag1, tag2, tag3)` can be decrypted with just `decrypt(JWE, tag2)` (or tag1, or tag3). 
-
-You can also specify options for the encryption: `encrypt(message, {tags, contentType, time})`, and for decryption: `decrypt(ciphertext, {tag, contentType}`. The `contentType` and `time` appear as "headers" within the JWE (as "cty" and "iat", respectively), which may be useful when interacting with other JOSE systems.
-
-- A contentType that contains the substring "text" will treat the message as a string during encryption, and will produce that same string during decryption.
-- A contentType that contains the substring "json" will automatically call `JSON.stringify(message)` and treat that result as a string when encrypting, and call `JSON.parse` on that same string when decrypting.
-- The contentType defaults to "text/plain" during encryption if message is of type "string", and to "application/json" if message is of type "object" but not binary (an ArrayBuffer view). (We follow the JOSE standard of identifying "application/json" as just "json" in the "cty" header.) For decryption, the "contentType" defaults to whatever is specified in the JWE as the "cty" header.
-
-> Distributed-Security uses this itself: the way that your tag's keys are available on all your devices is that Distributed-Security encrypts your keys for each member browser that you work on, and stores the encrypted keys in the cloud. Any of your browsers can then decrypt the keys, but not ayone one else who isn't a member of that team. When a Web page that uses Distributed-Security tries to sign or decrypt for your team tag, it pulls your encrypted keys' JWE, and decrypts the keys with the member key that you happen to already have in that browser (and only in that browser). The same happens recursively for more complex teams that you are a member of. 
-
-> (There is a subtle difference between data encrypted by a team tag and a team tag's own private keys. Data encrypted by a team tag is encrypted only by the one or more tags that are explicitly given in the call to encrypt. It is NOT encrypted by the members of those tags. The team's own keys are not encrypted by the team tag -- that would be circular -- but are *instead* encrypted by the list of member tags.)
-
-## Signatures with Multiple Tags and Other Signature Options
-
-When something is signed with `sign(message, tag)`, the only things that will verify it is the public key assocaited with `tag`. The signature is made with the private part of a single keypair. The signature is in a standard format called "JOSE [JWS compact serialization](https://datatracker.ietf.org/doc/html/rfc7515#section-7.1)". The tag appears as the JWE *key identifier* ("kid") header. The JWS may include "cty" and "iat" headers, as defined below. The result of a succcessful `verify()` is an object that includes a "payload" property containing binary data. If `text` or `json` can be produced based on content type, these are defined as additional properties. If the signature does not verify, the result is falsey (undefined). 
-
-We can also sign a message with multiple tags, so that any *one* of the listed tags can verify it. The signature is in a standard formated called "JOSE [JWS General serialization](https://datatracker.ietf.org/doc/html/rfc7515#section-7.2.1)" and includes signatures made with each of the specified keypairs: `sign(message, tag1, tag2, tag3)` can be verified with just `verify(JWS, tag2)` (or tag1, or tag3).  When this JWS is successfully verified, the result additionally contains a "signers" property that has an element for each signature in the JWS. Each signer element is an object that defines "payload" if and only if the corresponding original signature was verfied, and "protectedHeader" that contains the headers attested by the signer, including the individual "kid". 
-
-Additionally, verify can be called with multiple tags (e.g., `verify(JWS, tag1, tag2, tag3)`), and the result is falsey (undefined) if *any* of the specified tags are incorrect in the signature. When multiple tags are given to `verify()`, a successful result includes a `signers` property (in addition to the `payload`, `text` and `json` properties described earlier.) Each element of `signers` corresponds to the signatures of the JWS in order, and may include `protectedHeader`, `header`, and `payload` as appropriate for that particular signer, where `payload` is undefined if that signature was not verified by the tags given to `verify()`. This can be used in an application-specific way to see if the JWS is what was expected.
-
-You can also specify options: `sign(message, {tags, contentType, time, team, member})`, and `verify(ciphertext, {tags, contentType, notBefore, team, member})`. 
-
-- The contentType and time are as for Other Encryption Options, above. 
-- If a signature is made with a "team" option that has a tag as value, the JWS contains an issuer header ("iss"), and the specified tag will appear as the first of tags if not already among them. The "tags" option can be omitted.
-- If a signature is made with a "member" option that has a tag as value, the JWS contains an actor header ("act"), and the specified tag will be added to the tags if not already among them. The "tags" option can be omitted. If "team" is specified as an option, "member" defaults to a member of that team that belongs to the current user in the current browser.
-- If a verification is made with a "member" option that has a value of the string "team", verification will fail if the JWS does not contain "iss" and "act" headers, and if there exists a current version of the issuing team in the cloud that does not list the specfied "act" as a member. (Verification *passes* if "iss" and "act" are specified, but the "iss" team does not yet exist.) "member" defaults to "team" if the JWS contains an "act" header.
-- If a verification is made with a truthy "notBefore", verification will fail if the JWS does not contain "iat", or if "iat" is earlier than the specfied "notBefore". If "notBefore" has the value "team", the "iat" cannot be earlier than the "iat" of the issuing team, if the team exists.
-
-> This is used by Distributed-Security itself in protecting the cloud storage that holds encrypted keys. The (encrypted) keys are signed as `sign(key, {team: tag, time})` so that "iss", "act", and "iat" headers are specified. The cloud `store()` operation verifies this by `verify(JWS, {team: tag, notBefore: "team"})`. See below.
 ## Application Use
 
 ### Library Installation and Declaration
@@ -183,16 +163,14 @@ To do this, it is necessary to host the module via `https` at a *different origi
 import Security from "https://vault.example.com/distributed-security/index.mjs";
 ```
 
-One can have a set of cooperating applications that all share the same tags, even if the applications themselves are in different domains. For example, different sites named land.metaverse.org, NFTs-R-us.com, and store.com, could all use the same tags by cooperating on a joint source named NFT-keys.org that hosts the distributed-security module for each to share. 
-
-Even when several applications opt-in to use the same URL of the distributed-system module, no such application can copy or export keys, nor can they do any operations on a key that the user is not recursively a member of. However, any application can *use* a key (e.g., have the user sign, decrypt, or change membership of a key) that was created by any of the other applications using the same module URL. Whether this is desirable depends on the application. If you want to prevent this, you can host the distributed system module yourself, _or_ make application-specific keys through `getUserDeviceSecret` (see [Initialization](#initialization), below).
+The `index.mjs` is very small. Wherever it is hosted, it must have 
 
 
 ### Storing Keys using the Cloud Storage API
 
 Individuals and teams automatically work across devices because the individual or team's key is stored in the cloud by the application, and made available to everyone. However, the key is encrypted in such a way that it can be [decrypted by any member](docs/implementation.md#3-encrypting-for-members) (and only the members).
 
-**This is the "secret sauce" of distributed-security:** Instead of expecting individuals to manage copies of keys or giving unencrypted keys to centralized or third-party "custodians", we arrange things so that:
+**This is the "special sauce" of distributed-security:** Instead of expecting individuals to manage copies of keys or giving unencrypted keys to centralized or third-party "custodians", we arrange things so that:
 
 - Device keys are stored only on the device that created them, in a way that no one can read: not the application (nor by compromised application code), not the authors of distributed-security, and not even by the by the users (who might otherwise get phished).
 - An individual's keys are stored in the cloud, but the vault encrypts it through a technique that allows it to be decrypted only by one of the member devices, not by the authors of distributed-security, not by the application (nor by compromised application code), and not by the cloud.
@@ -203,8 +181,8 @@ There are no custodial copies of device keys, and none are needed. If a device i
 The application must supply a storage object with two methods: 
 
 ```
-retrieve(collectionName, tag) -> signature
-store(collectionName, tag, signature)
+await store(collectionName, tag, signature)
+let signature = await retrieve(collectionName, tag);
 ```
 
 Applications must supply their own implementation of this storage API, meeting their own application-specific needs. For example, the application could limit storage to paying users. The only requirements imposed by Distributed-Security are:
@@ -212,47 +190,8 @@ Applications must supply their own implementation of this storage API, meeting t
 1. The strings `'Team'` `'KeyRecovery'` and `'EncryptionKey'` must be allowed as the `collectionName` parameters. These are the only cloud storage collectionNames used by distributed-security. (The cloud storage may recognize other collection names, but this is not required for distributed-security to work.)
 2. The `tag` parameter must support arbitrary case-sensitive strings of at least 132 ASCII characters. The tag strings are url-safe base64-encoded.
 3. Arbitrarily long text and jsonable payloads must be supported. Teams with N members are less than (N + 5) kbytes. (The cloud storage may support much longer payloads, and unicode text, but this this is not required for distributed-security to work.
-4. `store(collectionName, tag, signature)` should verify that `Security.verify(signature, {team: tag, notBefore: "team"})` resolves to truthy. (To allow for storage to be P2P within the application, the distributed-security module is designed for such mutual co-dependency to not be an infinite loop.) store() can return anything except `undefined`. There is no security need for additional checks, such as access-control-lists or API keys. However, an application is free to make additional checks. For example, using just the minimal requirements, any member could change the composition of their team, and an application might want to either create an audit trail of which member did so, or might want to restrict such changes to a designated "administrator" member. That's up to to the application.(*)
+4. `store(collectionName, tag, signature)` should verify that `Security.verify(signature, {team: tag, notBefore: "team"})` resolves to truthy. (To allow for storage to be P2P within the application, the distributed-security module is designed for such mutual co-dependency to not be an infinite loop.) store() can return anything except `undefined`. There is no security need for additional checks, such as access-control-lists or API keys. However, an application is free to make additional checks. For example, using just the minimal requirements, any member could change the composition of their team, and an application might want to either create an audit trail of which member did so, or might want to restrict such changes to a designated "administrator" member. That's up to to the application.
 5. Because of the way that payload text is encrypted, there is no security requirement to restrict access for the `retrieve` operation. However, applications are free to impose additional restrictions.
-
-
-Here is how things play out for an application using the module to sign someText.  
-
-1. The application `sign` request goes to the vault. 
-2. The vault then calls the `retrieve` method of the cloud storage API. 
-3. The implementation of `retrieve` was supplied by the application to retrieve the opaque key, typically from a cloud-based key-value store.
-4. The vault on the user's browser is the only place anywhere that has the device key D1. The vault uses this to decrypt the retrieved key I1. 
-5. The vault then uses the decrypted I1 keys to sign `someText` and return it to the application.
-
-```
-     computing device D1 belonging to individual I1                        cloud
-+----------------------------------------------------+             +-------------------------+
-|    app/page                            vault       |             |                         |                      
-| store.example.com                vault.example.com |             |   key(I1, {D1, D7))     |
-| +-----------+                       +------------+ |             |    is key(I1) encrypted |
-| |           |                       | key(D1)    | |             |    for only D1 or D7 to |
-| |           |                       |            | |             |    read                 |
-| |           |   sign(I1, someText)  |            | |             |                         |
-| |   1.START |--------------------->>|            | |             |                         |
-| |           |                       |            | |             |                         |
-| |           |                       |          2.| retrieve('key', I1)                     |
-| |           |                       |            |------------->>|                         |
-| |           |                       |            |               |                         |       
-| |           |                       |            | key(I1, {D1, D7})  3.                   |
-| |           |                       |            |<<-------------|                         |
-| |           |                      4. use key(D1)| |             |                         |
-| |           |                       |  to decrypt| |             |                         |
-| |           |                     key(I1, {D1, D7})|             |   there are other keys  |
-| |           |                       |            | |             |  here in the cloud, too |
-| |           |                    5. sign someText| |             |                         |
-| |           |                       |  w/ key(I1)| |             |                         |
-| |           |                       |            | |             |                         |
-| |     END   |signature(I1, someText)|            | |             |                         |
-| |           |<<---------------------|            | |             |                         |
-| +-----------+                       +------------+ |             |                         |
-+----------------------------------------------------+             +-------------------------+
-```
-
 
 ### Initialization
 
@@ -261,7 +200,7 @@ The secruity module must be initialized as follows:
 ```
 Security.Storage = aCloudStorageImplmentationThatImplementsStoreAndRetrieve;
 Security.getUserDeviceSecret = aFunctionOf(tag, optionalPrompt); // See below
-await Security.ready; // Resolves to the module name and version when ready to use.
+await Security.ready; // Resolves to the {name, versIon} of the package when ready to use.
 ```
 The `getUserDeviceSecret` is used as an additional layer of defense in case an attacker is able to gain access to the device vault storage (perhaps through an [application or browser bug](docs/risks.md)). The string returned by this function is used as a secret to encrypt device keys within the vault. At minumum, it must return the same string when given the same tag, for the same user on the same device. It is best if the string that is always returned is different for different devices, and different for different users on the same device (e.g., if  the same device is used by multiple human users). For example, it could be the hash of the concatenation of tag, username, and device tracking cookie if the cookie is reliable enough. `getUserDeviceSecret` can be gated on any facial recognition, MFA, or the Web Credential Management API to make use of hardware keys, authenticators, etc.
 

@@ -23,7 +23,13 @@ function getSecret(tag, recoveryPrompt = '') {
 Security.getUserDeviceSecret = getSecret;
 
 // For testing internals.
-import {Krypto, MultiKrypto, InternalSecurity, KeySet, LocalCollection} from '#internals';
+
+// If THIS file is bundled, it can resolve a direct reference to the internals:
+import {Krypto, MultiKrypto, InternalSecurity, KeySet, LocalCollection} from './support/internals.mjs';
+// If this file is referenced directly, as is, in a test.html, then we'll need to have a bundle prepared,
+// that gets resolved through package.json:
+//import {Krypto, MultiKrypto, InternalSecurity, KeySet, LocalCollection} from '#internals';
+
 InternalSecurity.Storage = Storage;
 InternalSecurity.getUserDeviceSecret = getSecret;
 

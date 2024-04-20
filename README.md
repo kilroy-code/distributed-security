@@ -1,11 +1,11 @@
 # Distributed Security
 
-This is Javascript code for browser and Node that makes it easy for developers to correctly and safely...
+This is Javascript code for browsers and Node that makes it easy for developers to correctly and safely...
 
 1. ... use the four standard cryptographic operations: **encrypt, decrypt, sign, and verify**.
 2. ... provide simple and secure **key management** directly to users.
 
-We take advantage of a number of separate APIs that **all modern browsers now support**, combined with a **new approach to key management**. The result is that any Web applications can finally offer the long-promised [benefits of cryptography](lib/whycryptography.md), such as:
+We take advantage of a number of separate APIs that **all modern browsers now support**, combined with a **new approach to key management**. The result is that any Web applications can finally offer the long-promised [benefits of cryptography](docs/whycryptography.md), such as:
 
 - No passwords.
 - No tracking by login or viewing of content, including private content.
@@ -15,9 +15,9 @@ We take advantage of a number of separate APIs that **all modern browsers now su
 - No theft of private content, nor risk to cloud providers that they will be forced to turn over content by threat of violence or legal action.
 - All without dependendence on any centralized authority.
 
-While these benefits have been available in some installable apps, desktop browser extensions, and in blockchain, they are now available in ordinary **desktop and mobile web pages** with **zero operating or transaction costs and no browser extensions**.
+While these benefits have been available in some installable apps, desktop browser extensions, and in blockchain, they are now available in ordinary **desktop and mobile web pages** with **zero operating or transaction costs**, **no browser extensions**, and **no custodial wallets**.
 
-We accomplish this by inverting the typical key-management usage where keys are used to *authenticate* an individual user, and then the user's *authority* is looked up in a database. Instead, Distributed-Security allows applications to directl define hierarchies of keys for different groups, roles, and authorities, which are proven through cryptography of enumerated members.
+We accomplish this by inverting the typical key-management usage where keys are used to *authenticate* an individual user, and then the user's *authority* is looked up in a database. Instead, Distributed-Security allows applications to directly define hierarchies of keys for different groups, roles, and authorities, which are proven through cryptography of enumerated members.
 
 This README covers:
 
@@ -47,7 +47,7 @@ As with most cryptographic systems, distributed-security provides an API to encr
 
 Most cryptography libraries (including panva) expect applications to manage key creation, storage, and safety. By contrast, an application using the distributed-security library works with ordinary *tag* strings that each represent a person or a team of people in the application. For example, an application calls `encrypt(message, tag)` and the library takes care of getting the right key for the *tag* and applying it. All this happens within a separate sandbox in the browser that is isolated from the application - the application never gets to handle the keys at all. At the same time, though, no server gets to handle the raw keys either. The keys are generated in the sandbox, encrypted there, and the *encrypted* keys are stored in the cloud so that they are available on all the users' devices:
 
-1. A tag can represent a team of people or other teams, like the nodes in an org-chart. The private keys of the team are encrypted so as to be decryptable only by the members of the team. Teams can represent a role or authority, or family, workgroup or company.
+1. A tag can represent a team of people or other teams, like the nodes in an org-chart. The private keys of the team are encrypted so as to be decryptable only by the members of the team. Teams can represent a role or authority, or family, club, care team, workgroup, company, etc.
 2. A tag can represent an individual human. The private keys of the individual are encrypted so as to be decryptable only by the different browsers (on different devices) that the individual uses, or by a recovery key.
 3. A tag can represent a browser or a recovery key. The private keys of these are encrypted by a secret supplied by the application:
    - The application secret for a browser is typicaly an application-specific hash of the tag, or a browser credential. The encrypted private browser key is stored within the sandbox on that browser. They are never put in the cloud, and are only available on that one browser.

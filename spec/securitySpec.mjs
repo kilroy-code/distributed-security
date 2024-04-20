@@ -34,7 +34,7 @@ InternalSecurity.Storage = Storage;
 InternalSecurity.getUserDeviceSecret = getSecret;
 
 // Define some globals in a browser for debugging.
-if (typeof(window) !== 'undefined') Object.assign(window, {Security, Krypto, MultiKrypto});
+if (typeof(window) !== 'undefined') Object.assign(window, {Security, Krypto, MultiKrypto, Storage});
 
 describe('Distributed Security', function () {
   let message = makeMessage();
@@ -468,6 +468,59 @@ describe('Distributed Security', function () {
       test('RecoveryKeySet', 'recovery', 'otherRecovery', 'otherDevice');
       test('User TeamKeySet', 'user', 'device', 'otherUser'); // We ownd device, but it isn't the same as user.
       test('Team TeamKeySet', 'team', 'otherTeam', 'otherUser');
+      describe('storage', function () {
+        it('will only let a current member write new keys.', async function () {
+          let testMember = await Security.create(),
+              team = tags.team,
+              currentEncryptedSignature = await Storage.retrieve('Team', team),
+              currentEncryptedKey = (await Security.verify(currentEncryptedSignature)).json;
+          function signIt() {
+            return Security.sign(currentEncryptedKey, {team, member: testMember, time: Date.now()})
+          }
+          await Security.changeMembership({tag: team, add: [testMember]});
+          let signatureWhileMember = await signIt();
+          expect(await Storage.store('Team', tags.team, signatureWhileMember)).toBeDefined(); // That's fine
+          await Security.changeMembership({tag: team, remove: [testMember]});
+          let signatureWhileNotAMember = await signIt();
+          expect(await Storage.store('Team', team, signatureWhileNotAMember).catch(() => 'failed')).toBe('failed'); // Valid signature by an improper tag.
+          expect(await Storage.store('Team', team, signatureWhileMember).catch(() => 'failed')).toBe('failed'); // Can't replay sig while member.
+          expect(await Storage.store('Team', team, currentEncryptedSignature).catch(() => 'failed')).toBe('failed'); // Can't replay exact previous sig either.
+        });
+        it('will only let a current member write new public encryption key.', async function () {
+          let testMember = await Security.create(),
+              team = tags.team,
+              currentSignature = await Storage.retrieve('EncryptionKey', team),
+              currentKey = (await Security.verify(currentSignature)).json;
+          function signIt() {
+            return Security.sign(currentKey, {team, member: testMember, time: Date.now()})
+          }
+          await Security.changeMembership({tag: team, add: [testMember]});
+          let signatureWhileMember = await signIt();
+          expect(await Storage.store('EncryptionKey', tags.team, signatureWhileMember)).toBeDefined(); // That's fine
+          await Security.changeMembership({tag: team, remove: [testMember]});
+          let signatureWhileNotAMember = await signIt();
+          expect(await Storage.store('EncryptionKey', team, signatureWhileNotAMember).catch(() => 'failed')).toBe('failed'); // Valid signature by an improper tag.
+          expect(await Storage.store('EncryptionKey', team, signatureWhileMember).catch(() => 'failed')).toBe('failed'); // Can't replay sig while member.
+          expect(await Storage.store('EncryptionKey', team, currentSignature).catch(() => 'failed')).toBe('failed'); // Can't replay exact previous sig either.
+        });
+        it('will only let owner of a device write new public device encryption key.', async function () {
+          let testDevice = await Security.create(),
+              currentSignature = await Storage.retrieve('EncryptionKey', testDevice),
+              currentKey = (await Security.verify(currentSignature)).json;
+          function signIt(tag) {
+            return Security.sign(currentKey, {tags: [tag], time: Date.now()})
+          }
+          let signatureOfOwner = await signIt(testDevice);
+          expect(await Storage.store('EncryptionKey', testDevice, signatureOfOwner)).toBeDefined(); // That's fine
+          let signatureOfAnother = await signIt(await Security.create());
+          expect(await Storage.store('EncryptionKey', testDevice, signatureOfAnother).catch(() => 'failed')).toBe('failed'); // Valid signature by an improper tag.
+          // Device owner can restore.  This is subtle:
+          // There is no team key in the cloud to compare the time with. We do compare against the current value (as shown below),
+          // but we do not prohibit the same timestamp from being reused.
+          expect(await Storage.store('EncryptionKey', testDevice, signatureOfOwner)).toBeDefined;
+          expect(await Storage.store('EncryptionKey', testDevice, currentSignature).catch(() => 'failed')).toBe('failed'); // Can't replay exact previous sig.
+        });
+      });
       describe('auditable signatures', function () {
         describe('by an explicit member', function () {
           let signature, verification;

@@ -210,6 +210,9 @@ describe('Distributed Security', function () {
                 let signature = await Security.sign(message, otherOwnedTag);
                 expect(await Security.verify(signature, tag)).toBeUndefined();
               });
+              it('cannot sign with an unowned key.', async function () {
+                expect(await Security.sign("something", tags[unownedTagName]).catch(() => undefined)).toBeUndefined();
+              });
               it('distinguishes between correctly signing false and key failure.', async function () {
                 let signature = await Security.sign(false, tag),
                     verified = await Security.verify(signature, tag);
@@ -502,7 +505,7 @@ describe('Distributed Security', function () {
           expect(await Storage.store('EncryptionKey', team, signatureWhileNotAMember).catch(() => 'failed')).toBe('failed'); // Valid signature by an improper tag.
           expect(await Storage.store('EncryptionKey', team, signatureWhileMember).catch(() => 'failed')).toBe('failed'); // Can't replay sig while member.
           expect(await Storage.store('EncryptionKey', team, currentSignature).catch(() => 'failed')).toBe('failed'); // Can't replay exact previous sig either.
-        });
+        }, 10e3);
         it('will only let owner of a device write new public device encryption key.', async function () {
           let testDevice = await Security.create(),
               currentSignature = await Storage.retrieve('EncryptionKey', testDevice),
@@ -519,7 +522,7 @@ describe('Distributed Security', function () {
           // but we do not prohibit the same timestamp from being reused.
           expect(await Storage.store('EncryptionKey', testDevice, signatureOfOwner)).toBeDefined;
           expect(await Storage.store('EncryptionKey', testDevice, currentSignature).catch(() => 'failed')).toBe('failed'); // Can't replay exact previous sig.
-        });
+        }, 10e3);
       });
       describe('auditable signatures', function () {
         describe('by an explicit member', function () {

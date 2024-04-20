@@ -488,6 +488,7 @@ describe('Distributed Security', function () {
           expect(await Storage.store('Team', team, signatureWhileNotAMember).catch(() => 'failed')).toBe('failed'); // Valid signature by an improper tag.
           expect(await Storage.store('Team', team, signatureWhileMember).catch(() => 'failed')).toBe('failed'); // Can't replay sig while member.
           expect(await Storage.store('Team', team, currentEncryptedSignature).catch(() => 'failed')).toBe('failed'); // Can't replay exact previous sig either.
+          await Security.destroy(testMember);
         });
         it('will only let a current member write new public encryption key.', async function () {
           let testMember = await Security.create(),
@@ -505,9 +506,11 @@ describe('Distributed Security', function () {
           expect(await Storage.store('EncryptionKey', team, signatureWhileNotAMember).catch(() => 'failed')).toBe('failed'); // Valid signature by an improper tag.
           expect(await Storage.store('EncryptionKey', team, signatureWhileMember).catch(() => 'failed')).toBe('failed'); // Can't replay sig while member.
           expect(await Storage.store('EncryptionKey', team, currentSignature).catch(() => 'failed')).toBe('failed'); // Can't replay exact previous sig either.
+          await Security.destroy(testMember);
         }, 10e3);
         it('will only let owner of a device write new public device encryption key.', async function () {
           let testDevice = await Security.create(),
+              anotherDevice = await Security.create(),
               currentSignature = await Storage.retrieve('EncryptionKey', testDevice),
               currentKey = (await Security.verify(currentSignature)).json;
           function signIt(tag) {
@@ -515,13 +518,15 @@ describe('Distributed Security', function () {
           }
           let signatureOfOwner = await signIt(testDevice);
           expect(await Storage.store('EncryptionKey', testDevice, signatureOfOwner)).toBeDefined(); // That's fine
-          let signatureOfAnother = await signIt(await Security.create());
+          let signatureOfAnother = await signIt(anotherDevice);
           expect(await Storage.store('EncryptionKey', testDevice, signatureOfAnother).catch(() => 'failed')).toBe('failed'); // Valid signature by an improper tag.
           // Device owner can restore.  This is subtle:
           // There is no team key in the cloud to compare the time with. We do compare against the current value (as shown below),
           // but we do not prohibit the same timestamp from being reused.
           expect(await Storage.store('EncryptionKey', testDevice, signatureOfOwner)).toBeDefined;
           expect(await Storage.store('EncryptionKey', testDevice, currentSignature).catch(() => 'failed')).toBe('failed'); // Can't replay exact previous sig.
+          await Security.destroy(testDevice);
+          await Security.destroy(anotherDevice);
         }, 10e3);
       });
       describe('auditable signatures', function () {
@@ -599,92 +604,94 @@ describe('Distributed Security', function () {
           });
         });
       });
-      it('can safely be used when a device is removed, but not after being entirely destroyed.', async function () {
-        let [d1, d2] = await Promise.all([Security.create(), Security.create()]),
-            u = await Security.create(d1, d2),
-            t = await Security.create(u);
+      describe('miscellaneous', function () {
+        it('can safely be used when a device is removed, but not after being entirely destroyed.', async function () {
+          let [d1, d2] = await Promise.all([Security.create(), Security.create()]),
+              u = await Security.create(d1, d2),
+              t = await Security.create(u);
 
-        let encrypted = await Security.encrypt(message, t),
-            decrypted = await Security.decrypt(encrypted, t);
-        expect(decrypted.text).toBe(message);
-        // Remove the first deep member
-        decrypted = await Security.decrypt(encrypted, t);
-        await Security.changeMembership({tag: u, remove: [d1]});
-        expect(decrypted.text).toBe(message);
-        // Put it back.
-        await Security.changeMembership({tag: u, add: [d1]});
-        decrypted = await Security.decrypt(encrypted, t)
-        expect(decrypted.text).toBe(message);
-        // Make the other unavailable
-        await Security.destroy(d2);
-        decrypted = await Security.decrypt(encrypted, t);
-        expect(decrypted.text).toBe(message);
-        // Destroy it all the way down.
-        await Security.destroy({tag: t, recursiveMembers: true});
-        let errorMessage = await Security.decrypt(encrypted, t).then(() => null, e => e.message);
-        expect(errorMessage).toBeTruthy();
-      }, slowKeyCreation);
-      it('device is useable as soon as it resolves.', async function () {
-        let device = await Security.create();
-        expect(await Security.sign("anything", device)).toBeTruthy();
-        await Security.destroy(device);
-      }, 10e3);
-      it('team is useable as soon as it resolves.', async function () {
-        let team = await Security.create(tags.device); // There was a bug once: awaiting a function that did return its promise.
-        expect(await Security.sign("anything", team)).toBeTruthy();
-        await Security.destroy(team);
+          let encrypted = await Security.encrypt(message, t),
+              decrypted = await Security.decrypt(encrypted, t);
+          expect(decrypted.text).toBe(message);
+          // Remove the first deep member
+          decrypted = await Security.decrypt(encrypted, t);
+          await Security.changeMembership({tag: u, remove: [d1]});
+          expect(decrypted.text).toBe(message);
+          // Put it back.
+          await Security.changeMembership({tag: u, add: [d1]});
+          decrypted = await Security.decrypt(encrypted, t)
+          expect(decrypted.text).toBe(message);
+          // Make the other unavailable
+          await Security.destroy(d2);
+          decrypted = await Security.decrypt(encrypted, t);
+          expect(decrypted.text).toBe(message);
+          // Destroy it all the way down.
+          await Security.destroy({tag: t, recursiveMembers: true});
+          let errorMessage = await Security.decrypt(encrypted, t).then(() => null, e => e.message);
+          expect(errorMessage).toBeTruthy();
+        }, slowKeyCreation);
+        it('device is useable as soon as it resolves.', async function () {
+          let device = await Security.create();
+          expect(await Security.sign("anything", device)).toBeTruthy();
+          await Security.destroy(device);
+        }, 10e3);
+        it('team is useable as soon as it resolves.', async function () {
+          let team = await Security.create(tags.device); // There was a bug once: awaiting a function that did return its promise.
+          expect(await Security.sign("anything", team)).toBeTruthy();
+          await Security.destroy(team);
+        });
+        it('allows recovery prompts that contain dot.', async function () {
+          let recovery = await Security.create({prompt: "foo.bar"}),
+              user = await Security.create(recovery),
+              message = "red.white",
+              encrypted = await Security.encrypt(message, user),
+              decrypted = await Security.decrypt(encrypted, user),
+              signed = await Security.sign(message, user);
+          expect(decrypted.text).toBe(message);
+          expect(await Security.verify(signed, user)).toBeTruthy();
+          await Security.destroy({tag: user, recursiveMembers: true});
+        }, 10e3);
+        it('supports rotation.', async function () {
+          let aliceTag = await Security.create(tags.device),
+              cfoTag = await Security.create(aliceTag),
+              alicePO = await Security.sign("some purchase order", {team: cfoTag, member: aliceTag}), // On Alice's computer
+              cfoEyesOnly = await Security.encrypt("the other set of books", cfoTag)
+          expect(await Security.verify(alicePO)).toBeTruthy();
+          expect(await Security.verify(alicePO, {team: cfoTag, member: false})).toBeTruthy();
+          expect(await Security.decrypt(cfoEyesOnly)).toBeTruthy(); // On Alice's computer
+
+          // Now Alice is replace with Bob, and Carol added for the transition
+          let bobTag = await Security.create(tags.device);
+          let carolTag = await Security.create(tags.device);
+          await Security.changeMembership({tag: cfoTag, remove: [aliceTag], add: [bobTag, carolTag]});
+          await Security.destroy(aliceTag)
+
+          expect(await Security.sign("bogus PO", {team: cfoTag, member: aliceTag}).catch(() => undefined)).toBeUndefined(); // Alice can no longer sign.
+          let bobPO = await Security.sign("new PO", {team: cfoTag, member: bobTag}); // On Bob's computer
+          let carolPO = await Security.sign("new PO", {team: cfoTag, member: carolTag});
+          expect(await Security.verify(bobPO)).toBeTruthy();
+          expect(await Security.verify(carolPO)).toBeTruthy();
+          expect(await Security.verify(alicePO).catch(() => undefined)).toBeUndefined(); // Alice is no longer a member of cfoTag.
+          expect(await Security.verify(alicePO, {team: cfoTag, member: false})).toBeTruthy(); // Destorying Alice's tag doesn't prevent shallow verify
+          expect(await Security.decrypt(cfoEyesOnly)).toBeTruthy(); // On Bob's or Carol's computer
+
+          // Now suppose we want to rotate the cfoTag:
+          let cfoTag2 = await Security.create(bobTag); // Not Carol.
+          await Security.destroy(cfoTag);
+
+          expect(await Security.sign("bogus PO", {team: cfoTag, member: bobTag}).catch(() => undefined)).toBeUndefined(); // Fails for discontinued team.
+          expect(await Security.sign("new new PO", {team: cfoTag2, member: bobTag})).toBeTruthy();
+          expect(await Security.verify(alicePO, {team: cfoTag, member: false})).toBeTruthy();
+          // However, some things to be aware of.
+          expect(await Security.verify(bobPO)).toBeTruthy(); // works, but only because this looks like the initial check
+          expect(await Security.verify(carolPO)).toBeTruthy(); // same, and confusing because Carol is not on the new team.
+          expect(await Security.decrypt(cfoEyesOnly).catch(() => undefined)).toBeUndefined(); // FAILS! Bob can't sort through the mess that Alice made.
+        }, 15e3);
+        // TODO:
+        // - Show that a member cannot sign or decrypt for a team that they have been removed from.
+        // - Show that multiple simultaneous apps can use the same tags if they use Security from the same origin and have compatible getUserDeviceSecret.
+        // - Show that multiple simultaneous apps cannot use the same tags if they use Security from the same origin and have incompatible getUserDeviceSecret.
       });
-      it('allows recovery prompts that contain dot.', async function () {
-        let recovery = await Security.create({prompt: "foo.bar"}),
-            user = await Security.create(recovery),
-            message = "red.white",
-            encrypted = await Security.encrypt(message, user),
-            decrypted = await Security.decrypt(encrypted, user),
-            signed = await Security.sign(message, user);
-        expect(decrypted.text).toBe(message);
-        expect(await Security.verify(signed, user)).toBeTruthy();
-        await Security.destroy({tag: user, recursiveMembers: true});
-      }, 10e3);
-      it('supports rotation.', async function () {
-        let aliceTag = await Security.create(tags.device),
-            cfoTag = await Security.create(aliceTag),
-            alicePO = await Security.sign("some purchase order", {team: cfoTag, member: aliceTag}), // On Alice's computer
-            cfoEyesOnly = await Security.encrypt("the other set of books", cfoTag)
-        expect(await Security.verify(alicePO)).toBeTruthy();
-        expect(await Security.verify(alicePO, {team: cfoTag, member: false})).toBeTruthy();
-        expect(await Security.decrypt(cfoEyesOnly)).toBeTruthy(); // On Alice's computer
-
-        // Now Alice is replace with Bob, and Carol added for the transition
-        let bobTag = await Security.create(tags.device);
-        let carolTag = await Security.create(tags.device);
-        await Security.changeMembership({tag: cfoTag, remove: [aliceTag], add: [bobTag, carolTag]});
-        await Security.destroy(aliceTag)
-
-        expect(await Security.sign("bogus PO", {team: cfoTag, member: aliceTag}).catch(() => undefined)).toBeUndefined(); // Alice can no longer sign.
-        let bobPO = await Security.sign("new PO", {team: cfoTag, member: bobTag}); // On Bob's computer
-        let carolPO = await Security.sign("new PO", {team: cfoTag, member: carolTag});
-        expect(await Security.verify(bobPO)).toBeTruthy();
-        expect(await Security.verify(carolPO)).toBeTruthy();
-        expect(await Security.verify(alicePO).catch(() => undefined)).toBeUndefined(); // Alice is no longer a member of cfoTag.
-        expect(await Security.verify(alicePO, {team: cfoTag, member: false})).toBeTruthy(); // Destorying Alice's tag doesn't prevent shallow verify
-        expect(await Security.decrypt(cfoEyesOnly)).toBeTruthy(); // On Bob's or Carol's computer
-
-        // Now suppose we want to rotate the cfoTag:
-        let cfoTag2 = await Security.create(bobTag); // Not Carol.
-        await Security.destroy(cfoTag);
-
-        expect(await Security.sign("bogus PO", {team: cfoTag, member: bobTag}).catch(() => undefined)).toBeUndefined(); // Fails for discontinued team.
-        expect(await Security.sign("new new PO", {team: cfoTag2, member: bobTag})).toBeTruthy();
-        expect(await Security.verify(alicePO, {team: cfoTag, member: false})).toBeTruthy();
-        // However, some things to be aware of.
-        expect(await Security.verify(bobPO)).toBeTruthy(); // works, but only because this looks like the initial check
-        expect(await Security.verify(carolPO)).toBeTruthy(); // same, and confusing because Carol is not on the new team.
-        expect(await Security.decrypt(cfoEyesOnly).catch(() => undefined)).toBeUndefined(); // FAILS! Bob can't sort through the mess that Alice made.
-      }, 15e3);
-      // TODO:
-      // - Show that a member cannot sign or decrypt for a team that they have been removed from.
-      // - Show that multiple simultaneous apps can use the same tags if they use Security from the same origin and have compatible getUserDeviceSecret.
-      // - Show that multiple simultaneous apps cannot use the same tags if they use Security from the same origin and have incompatible getUserDeviceSecret.
     });
   });
 });

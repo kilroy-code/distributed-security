@@ -34,8 +34,9 @@ function target(input, output) { // roll up input to output
 // Browsers need three files: index.mjs, and the following bundles relative to it.
 // SEE NEXT COMMENT!
 const productionBundles = [
-  target('lib/worker.mjs',             'lib/worker-bundle.mjs'),
-  target('lib/vault.mjs',              'lib/vault-bundle.mjs')
+  target('index.mjs',                  'dist/index-bundle.mjs'),
+  target('lib/worker.mjs',             'dist/worker-bundle.mjs'),
+  target('lib/vault.mjs',              'dist/vault-bundle.mjs')
 ];
 
 // `npm run test` will run jasmine on spec/securitySpec.mjs directly in node, which resolves
@@ -52,14 +53,14 @@ const productionBundles = [
 // In our case, securitySpec.mjs also references #internals, which package.json resolves to an
 // .mjs file that gets included directly in the "application" bundle (securitySpec-bundle.mjs).
 const unitTestBundles = [
-  target('spec/securitySpec.mjs',      'securitySpec-bundle.mjs')
+  target('spec/securitySpec.mjs',      'dist/securitySpec-bundle.mjs')
 ];
 
 // When developing the distributed-security module itself, it is sometimes convenient to
 // edit securitySpec to refer directly to these bundles:
 const additionalModuleDevelopmentBundles = [
-  target('lib/api.mjs',                'lib/api-browser-bundle.mjs'),
-  target('spec/support/internals.mjs', 'spec/support/internal-browser-bundle.mjs')
+  target('lib/api.mjs',                'dist/api-browser-bundle.mjs'),
+  target('spec/support/internals.mjs', 'dist/internal-browser-bundle.mjs')
 ];
 
 export default [

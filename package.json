@@ -1,6 +1,6 @@
 {
   "name": "@kilroy-code/distributed-security",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Signed and encrypted document infrastructure based on public key encryption and self-organizing users.",
   "type": "module",
   "exports": {
@@ -15,6 +15,10 @@
     "#localStore": {
       "node": "./lib/store-fs.mjs",
       "default": "./lib/store-indexed.mjs"
+    },
+    "#origin": {
+      "node": "./lib/origin-node.mjs",
+      "default": "./lib/origin-browser.mjs"
     },
     "#internals": {
       "node": "./spec/support/internals.mjs",
@@ -46,9 +50,9 @@
   "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.7",
     "@rollup/plugin-eslint": "^9.0.5",
+    "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
-    "@rollup/plugin-json": "^6.1.0",
     "eslint": "^8.57.0",
     "jasmine": "^4.5.0",
     "jsonc-eslint-parser": "^2.4.0",

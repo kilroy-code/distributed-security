@@ -1,5 +1,4 @@
 import { nodeResolve } from '@rollup/plugin-node-resolve';
-import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import eslint from '@rollup/plugin-eslint';
 import terser from '@rollup/plugin-terser';
@@ -23,11 +22,10 @@ function target(input, output) { // roll up input to output
 	  "lib/package-loader.mjs"
 	  ]
       }),
+      nodeResolve({browser: true, preferBuiltins: false}), // Resolve package.json imports.
       // api.mjs => package-loader.mjs pulls in the package.json to report the name and version.
       // Some system's implementations of 'import' do not yet support that, so unroll it here.
       json(), 
-      nodeResolve({browser: true, preferBuiltins: false}),
-      commonjs(),
       !devMode && terser() // minify for production.
     ]
   };

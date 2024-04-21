@@ -1,4 +1,5 @@
 import dispatch from '@kilroy-code/jsonrpc';
+import Storage from './lib/storage.mjs';
 import {getUserDeviceSecret} from './lib/secret.mjs';
 
 const url = import.meta.url,
@@ -8,7 +9,6 @@ const url = import.meta.url,
         log(...args) { console.log(...args); },
         // Will also get store & retrieve, and getUserDeviceSecret, provided by the application,
         // and a promise resolver set by us that the vault will use to indicate that it is ready.
-        getUserDeviceSecret: getUserDeviceSecret
       },
       api = {
         sign(message, ...tags) { return postIframe('sign', message, ...tags); },
@@ -42,4 +42,6 @@ const url = import.meta.url,
         origin: vaultUrl.origin,
         namespace: resourcesForIframe});
 
+api.Storage = Storage;
+api.getUserDeviceSecret = getUserDeviceSecret;
 export default api;

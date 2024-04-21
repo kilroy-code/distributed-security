@@ -12,6 +12,7 @@
 - [x] store-fs
 - [x] import package.json
 - [x] get rid of separate isEmptyJWS / payload-utilities
+- [ ] relocate -bundle.mjs to a separate directory (for search and hygiene)
 - [ ] construct LocalCollection so it can be awaited, and do so before reporting ready
 - [ ] can we reduce the number of files that need to be set up? Can they be package/identified more comprehensibly?
 - [ ] Use symbols/getters/internals for internals

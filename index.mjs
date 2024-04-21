@@ -1,12 +1,14 @@
 import dispatch from '@kilroy-code/jsonrpc';
+import {getUserDeviceSecret} from './lib/secret.mjs';
 
 const url = import.meta.url,
       vaultUrl = new URL('lib/vault-bundle.mjs', url),
       iframe = document.createElement('iframe'),
       resourcesForIframe = { // What the vault can postMessage to us.
-        log(...args) { console.log(...args); }
+        log(...args) { console.log(...args); },
         // Will also get store & retrieve, and getUserDeviceSecret, provided by the application,
         // and a promise resolver set by us that the vault will use to indicate that it is ready.
+        getUserDeviceSecret: getUserDeviceSecret
       },
       api = {
         sign(message, ...tags) { return postIframe('sign', message, ...tags); },

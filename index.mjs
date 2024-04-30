@@ -22,7 +22,8 @@ const url = import.meta.url,
 
         // Application assigns these so that they can be used by the vault.
         set Storage(storage) { Object.assign(resourcesForIframe, storage); },
-        set getUserDeviceSecret(thunk) { resourcesForIframe.getUserDeviceSecret = thunk; },
+        get Storage() { return resourcesForIframe; },
+        set getUserDeviceSecret(functionOfTagAndPrompt) { resourcesForIframe.getUserDeviceSecret = functionOfTagAndPrompt; },
 
         // Ready doesn't resolve until the vault posts to us that it is ready.
         ready: new Promise(resolve => {

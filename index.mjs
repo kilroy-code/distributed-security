@@ -8,35 +8,39 @@ if (entryUrl.origin !== vaultUrl.origin) alert(`The vault iframe at ${vaultUrl.h
 
 // Outer layer of the vault is an iframe that establishes a browsing context separate from the app that imports us.
 const iframe = document.createElement('iframe'),
-      //channel = new MessageChannel(),
+      channel = new MessageChannel(),
       resourcesForIframe = Object.assign({ // What the vault can postMessage to us.
         log(...args) { console.log(...args); },
         getUserDeviceSecret
       }, Storage),
       // Set up a promise that doesn't resolve until the vault posts to us that it is ready (which in turn, won't happen until it's worker is ready).
       ready = new Promise(resolve => {
-        resourcesForIframe.ready = (data) => { console.log('conveying ready'); resolve(data); },
+        resourcesForIframe.ready = (data) => {
+          console.log('conveying ready');
+          //channel.port1.start();
+          console.log('started port1');
+          resolve(data);
+        },
         iframe.style.display = 'none';
         document.body.append(iframe); // Before referencing its contentWindow.
         iframe.setAttribute('srcdoc', `<!DOCTYPE html><html><body><script type="module" src="${vaultUrl.href}"></script></body></html>`);
         iframe.contentWindow.name = 'vault@' + entryUrl.href // Helps debugging.
         // Hand a private communication port to the frame.
-        //iframe.onload = () => iframe.contentWindow.postMessage('initializePort', vaultUrl.origin, [channel.port2]);
+        iframe.onload = () => {channel.port1.start(); iframe.contentWindow.postMessage('initializePort', vaultUrl.origin, [channel.port2]); };
       }),
       postIframe = dispatch({  // postMessage to the vault, promising the response.
         dispatcherLabel: 'entry@' + entryUrl.href,
-        // An application (or malicious code inserted through an application's dependency) could learn of ANSWERS that the
-        // vault posts back to the application window, but it cannot SEND anything to the vault except through the API below.
-        // TODO: Could it still do that if entryUrl is at a different origin than the app? Should we use a message channel?
         namespace: resourcesForIframe,
-        
+        /*
         origin: vaultUrl.origin,
         target: iframe.contentWindow,
         receiver: self // I.e., the parent of the iframe, on which we listen for 'message'.
-        /*
-        target: channel.port1,
-        targetLabel: iframe.contentWindow.name
         */
+        target: channel.port1,
+        //receiver: channel.port1,
+        targetLabel: iframe.contentWindow.name
+        //log: console.log.bind(console)
+        //*/
       }),
 
       api = { // Exported for use by the application.

@@ -48,7 +48,6 @@
   },
   "homepage": "https://github.com/kilroy-code/distributed-security#readme",
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^25.0.7",
     "@rollup/plugin-eslint": "^9.0.5",
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^15.2.3",

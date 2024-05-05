@@ -12,9 +12,9 @@
 - [x] store-fs
 - [x] import package.json
 - [x] get rid of separate isEmptyJWS / payload-utilities
-- [ ] relocate -bundle.mjs to a separate directory (for search and hygiene)
-- [ ] construct LocalCollection so it can be awaited, and do so before reporting ready
-- [ ] can we reduce the number of files that need to be set up? Can they be package/identified more comprehensibly?
+- [x] relocate -bundle.mjs to a separate directory (for search and hygiene)
+- [x] can we reduce the number of files that need to be set up? Can they be package/identified more comprehensibly?
+- [ ] 	how do we guard against rewrite of device EncryptionKey? (since devices have no members, so signature is compact)
 - [ ] Use symbols/getters/internals for internals
 - [ ] Browsers that support dynamic state paritioning will not be able to share device tags across applications from different domains, even when they share the same module domain. (They will still be able to share team tags.) Formalize this as a requirement in the doc, and store referrer with the device tag to effectively implement our own dynamic state partitioning. How do we unit-test this?  
 - API - error handling
@@ -35,10 +35,13 @@
 ### dependencies
 - [jsonrpc](https://github.com/kilroy-code/jsonrpc)
   - [ ] unit tests
+- [signed-cloud-server](https://github.com/kilroy-code/signed-cloud-server)
+  - test cache-control in browsers
+  - content-security-policy ?
   
 ### internal infrastructure
-- [ ] NodeJS implementation, for use on servers and for running unit tests. (e.g., 1. When loading index.mjs outside the browser, load api.mjs directly instead of through index => vault.html. 2. lib/store and spec/support/storage to use something else under node.)
-- [ ] GitHub Action to run test suite, like other parts of ki1r0y. 
+- [x] NodeJS implementation, for use on servers and for running unit tests. (e.g., 1. When loading index.mjs outside the browser, load api.mjs directly instead of through index => vault.html. 2. lib/store and spec/support/storage to use something else under node.)
+- [x GitHub Action to run test suite, like other parts of ki1r0y. 
 - [ ] version 0.1 package release
 - [ ] replace older ki1r0y storage scaffolding
 - [ ] integrate into toplevel ki1r0y test suites

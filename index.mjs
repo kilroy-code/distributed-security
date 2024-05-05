@@ -4,7 +4,6 @@ import {getUserDeviceSecret} from './lib/secret.mjs';
 
 const entryUrl = new URL(import.meta.url),
       vaultUrl = new URL('vault-bundle.mjs', entryUrl);
-if (entryUrl.origin !== vaultUrl.origin) alert(`The vault iframe at ${vaultUrl.href} must be hosted at the same origin as the distributed-security entry point ${entryUrl.href}.`);
 
 // Outer layer of the vault is an iframe that establishes a browsing context separate from the app that imports us.
 const iframe = document.createElement('iframe'),
@@ -15,32 +14,20 @@ const iframe = document.createElement('iframe'),
       }, Storage),
       // Set up a promise that doesn't resolve until the vault posts to us that it is ready (which in turn, won't happen until it's worker is ready).
       ready = new Promise(resolve => {
-        resourcesForIframe.ready = (data) => {
-          console.log('conveying ready');
-          //channel.port1.start();
-          console.log('started port1');
-          resolve(data);
-        },
+        resourcesForIframe.ready = resolve,
         iframe.style.display = 'none';
         document.body.append(iframe); // Before referencing its contentWindow.
         iframe.setAttribute('srcdoc', `<!DOCTYPE html><html><body><script type="module" src="${vaultUrl.href}"></script></body></html>`);
         iframe.contentWindow.name = 'vault@' + entryUrl.href // Helps debugging.
         // Hand a private communication port to the frame.
-        iframe.onload = () => {channel.port1.start(); iframe.contentWindow.postMessage('initializePort', vaultUrl.origin, [channel.port2]); };
+        channel.port1.start();
+        iframe.onload = () => iframe.contentWindow.postMessage('initializePort', vaultUrl.origin, [channel.port2]);
       }),
       postIframe = dispatch({  // postMessage to the vault, promising the response.
         dispatcherLabel: 'entry@' + entryUrl.href,
         namespace: resourcesForIframe,
-        /*
-        origin: vaultUrl.origin,
-        target: iframe.contentWindow,
-        receiver: self // I.e., the parent of the iframe, on which we listen for 'message'.
-        */
         target: channel.port1,
-        //receiver: channel.port1,
         targetLabel: iframe.contentWindow.name
-        //log: console.log.bind(console)
-        //*/
       }),
 
       api = { // Exported for use by the application.

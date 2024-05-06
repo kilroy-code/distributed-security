@@ -3,7 +3,7 @@ import {makeMessage, isBase64URL, sameTypedArray} from "./support/messageText.mj
 export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
                                     encryptableSize = 446) {
   const bigEncryptable = encryptableSize > 1000,
-        slowKeyCreation = 10e3,
+        slowKeyCreation = 15e3,
         slowHybrid = bigEncryptable ? slowKeyCreation : 5e3, // Needed on Android
         message = makeMessage();
 

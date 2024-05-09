@@ -18,13 +18,13 @@ const iframe = document.createElement('iframe'),
         iframe.style.display = 'none';
         document.body.append(iframe); // Before referencing its contentWindow.
         iframe.setAttribute('srcdoc', `<!DOCTYPE html><html><body><script type="module" src="${vaultUrl.href}"></script></body></html>`);
-        iframe.contentWindow.name = 'vault@' + entryUrl.href // Helps debugging.
+        iframe.contentWindow.name = 'vault!' + entryUrl.href // Helps debugging.
         // Hand a private communication port to the frame.
         channel.port1.start();
         iframe.onload = () => iframe.contentWindow.postMessage('initializePort', vaultUrl.origin, [channel.port2]);
       }),
       postIframe = dispatch({  // postMessage to the vault, promising the response.
-        dispatcherLabel: 'entry@' + entryUrl.href,
+        dispatcherLabel: 'entry!' + entryUrl.href,
         namespace: resourcesForIframe,
         target: channel.port1,
         targetLabel: iframe.contentWindow.name

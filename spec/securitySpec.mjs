@@ -1,7 +1,5 @@
 import Storage from "./support/storage.mjs";
 import Security from "@kilroy-code/distributed-security";
-//import Security from "@kilroy-code/distributed-security/dist/index-bundle.mjs";
-//import Security from "https://kilroy-code.github.io/distributed-security/index.mjs";
 
 import testKrypto from "./kryptoTests.mjs";
 import testMultiKrypto from "./multiKryptoTests.mjs";

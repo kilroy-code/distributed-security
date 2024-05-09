@@ -1,6 +1,6 @@
 {
   "name": "@kilroy-code/distributed-security",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Signed and encrypted document infrastructure based on public key encryption and self-organizing users.",
   "type": "module",
   "exports": {
@@ -61,7 +61,7 @@
     "rollup": "^4.13.0"
   },
   "dependencies": {
-    "@kilroy-code/jsonrpc": "^0.0.1",
+    "@kilroy-code/jsonrpc": "^0.0.3",
     "jose": "^5.2.3"
   }
 }

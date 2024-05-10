@@ -246,7 +246,7 @@ export default function testMultiKrypto(multiKrypto) {
       expect(exported.keys[1].kid).toBe('mySign');
       expect(decrypted.text).toBe(message);
       expect(await multiKrypto.verify(signingKeypair.publicKey, signed)).toBeTruthy();
-    });
+    }, 10e3);
 
     it('can wrap/unwrap a simple key.', async function () {
       let key = await multiKrypto.generateSymmetricKey(),

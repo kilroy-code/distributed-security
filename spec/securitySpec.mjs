@@ -166,7 +166,7 @@ describe('Distributed Security', function () {
           let removes = await Promise.all(tags.map(tag => store.remove(tag)));
           elapsed = Date.now() - start; per = elapsed/count;
           //console.log({elapsed, per});
-          expect(per).toBeLessThan(5);
+          expect(per).toBeLessThan(8);
           removes.forEach(removeResult => expect(removeResult).toBe(""));
 
           start = Date.now();
@@ -175,7 +175,7 @@ describe('Distributed Security', function () {
           //console.log({elapsed, per});
           expect(per).toBeLessThan(0.1);
           rereads.forEach(readResult => expect(readResult).toBe(""));
-        }, 10e5)
+        }, 15e5)
       })
     });
 

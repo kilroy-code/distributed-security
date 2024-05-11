@@ -41,7 +41,7 @@
   
 ### internal infrastructure
 - [x] NodeJS implementation, for use on servers and for running unit tests. (e.g., 1. When loading index.mjs outside the browser, load api.mjs directly instead of through index => vault.html. 2. lib/store and spec/support/storage to use something else under node.)
-- [x GitHub Action to run test suite, like other parts of ki1r0y. 
+- [x] GitHub Action to run test suite, like other parts of ki1r0y. 
 - [ ] version 0.1 package release
 - [ ] replace older ki1r0y storage scaffolding
 - [ ] integrate into toplevel ki1r0y test suites
@@ -67,3 +67,4 @@
 - Use Web credentials for secret, particularly public-key. (This can be done by an app now, but it would be nice to ship with "batteries included".)
 - Hidden rosters - can we make it so each tag key in the roster dictionary can only be read by the members? But what about storage system checking that the submitter is a member of the team? (Maybe instead of kid, label each member by hash(tag + iat)?)
 - Is there a way to derive a public encryption key from a public verification key (i.e., from a tag), so that we don't need to store public encryption keys in the cloud? This would allow device keys to self-contained on the device, without leaving any garbage in the cloud when the device is abandoned.
+- An application-provider can be sure of the code that it provides as the vault implementation, but the end-user is trusting that the application-provider is sure. It would be nice if the vault could sign its own code in memory, and make that signature available to users. (The code to securely get the live source of the module code would itself have to be signed by a trusted source.)  Such a secure execution context would be generally useful for mobile code. For example, a user-customized or even user-written search algorithm running on a server or p2p cloud could sign its results, so that the user can be sure of the recommendations.

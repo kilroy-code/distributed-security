@@ -45,6 +45,7 @@
 - [ ] version 0.1 package release
 - [ ] replace older ki1r0y storage scaffolding
 - [ ] integrate into toplevel ki1r0y test suites
+- [ ] provide option to not cache keys (e.g, in server)
 
 ### release
 - https://en.wikipedia.org/wiki/Security.txt and the like
@@ -64,6 +65,7 @@
 - [ ] version 1.0 release
 
 ### future
+- Allow other apps to use cloud.ki1r0y.com, either allowing reguest origin in Access-Control-Allow-Origin, or through a registration
 - Use Web credentials for secret, particularly public-key. (This can be done by an app now, but it would be nice to ship with "batteries included".)
 - Hidden rosters - can we make it so each tag key in the roster dictionary can only be read by the members? But what about storage system checking that the submitter is a member of the team? (Maybe instead of kid, label each member by hash(tag + iat)?)
 - Is there a way to derive a public encryption key from a public verification key (i.e., from a tag), so that we don't need to store public encryption keys in the cloud? This would allow device keys to self-contained on the device, without leaving any garbage in the cloud when the device is abandoned.

@@ -1,6 +1,6 @@
 {
   "name": "@kilroy-code/distributed-security",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Signed and encrypted document infrastructure based on public key encryption and self-organizing users.",
   "type": "module",
   "exports": {
@@ -27,6 +27,7 @@
   },
   "scripts": {
     "build": "rollup -c",
+    "build-dev": "npx rollup -c --environment NODE_ENV:development",
     "test": "jasmine"
   },
   "repository": {

@@ -3050,7 +3050,7 @@ class TeamKeySet extends KeySet { // A KeySet corresponding to a team of which t
 }
 
 var name$1 = "@kilroy-code/distributed-security";
-var version$1 = "0.0.7";
+var version$1 = "0.0.9";
 var description = "Signed and encrypted document infrastructure based on public key encryption and self-organizing users.";
 var type = "module";
 var exports = {

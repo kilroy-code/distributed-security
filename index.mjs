@@ -3,7 +3,7 @@ import Storage from './lib/storage.mjs';
 import {getUserDeviceSecret} from './lib/secret.mjs';
 
 const entryUrl = new URL(import.meta.url),
-      vaultUrl = new URL('vault-bundle.mjs', entryUrl);
+      vaultUrl = new URL('vault.html', entryUrl);
 
 // Outer layer of the vault is an iframe that establishes a browsing context separate from the app that imports us.
 const iframe = document.createElement('iframe'),
@@ -17,7 +17,7 @@ const iframe = document.createElement('iframe'),
         resourcesForIframe.ready = resolve,
         iframe.style.display = 'none';
         document.body.append(iframe); // Before referencing its contentWindow.
-        iframe.setAttribute('srcdoc', `<!DOCTYPE html><html><body><script type="module" src="${vaultUrl.href}"></script></body></html>`);
+        iframe.setAttribute('src', vaultUrl);
         iframe.contentWindow.name = 'vault!' + entryUrl.href // Helps debugging.
         // Hand a private communication port to the frame.
         channel.port1.start();

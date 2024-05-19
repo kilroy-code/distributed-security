@@ -1,6 +1,6 @@
 # Advanced Use
 
-This document describes *application use* of multiple tags of multiplarty encryption and signatures, and how to set up *multiple applications that share tag*s.
+This document describes *application use* of multiple tags for multiplarty encryption and signatures, and how to set up *multiple applications that share tag*s.
 
 For technical information on how the library is implemented, see a guide to the [implementation](docs/implementation.md), and a description of Distributed-security [In JOSE terms](docs/in-jose-terms.md).
 
@@ -38,7 +38,7 @@ You can also specify options: `sign(message, {tags, contentType, time, team, mem
 
 ## Sharing Tags Across Applications
 
-A typical application loads its application code and the distributed-security library from two different [origins](https://developer.mozilla.org/en-US/docs/Glossary/Origin), both distinct from those used by other applications. For example, the application code might come from `https:/app.example.com`, and the distributed-security library from `https:/security.example.com`. When organized this way, the keys are in a distinct ["browsing context"](https://developer.mozilla.org/en-US/docs/Glossary/Browsing_context) (at security.example.com) that is isolated both from the application code (running in app.example.com) and from other applications (running at, say, competitor.com). The app at app.example.com can use the tag strings returned to the app from calls to `create()`, but not any app at competitor.com.
+A typical application loads its application code and the distributed-security library from two different [origins](https://developer.mozilla.org/en-US/docs/Glossary/Origin), both distinct from those used by other applications. For example, the application code might come from `https:/app.example.com`, and the distributed-security library from `https:/security.example.com`. When organized this way, the keys are in a distinct [browsing context](https://developer.mozilla.org/en-US/docs/Glossary/Browsing_context) (at security.example.com) that is isolated both from the application code (running in app.example.com) and from other applications (running at, say, competitor.com). The app at app.example.com can use the tag strings returned to the app from calls to `create()`, but not any app at competitor.com.
 
 
 One can have a set of cooperating applications that all share the same tags, even if the applications themselves are in different domains. For example, app.example.com and store.com could use the same tags by cooperating on a joint source named nft.org from which both applicqations load the distributes-security code. 

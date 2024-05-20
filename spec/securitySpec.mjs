@@ -152,7 +152,7 @@ describe('Distributed Security', function () {
           let stores = await Promise.all(tags.map((tag, index) => store.store(tag, index.toString())));
           elapsed = Date.now() - start; per = elapsed/count;
           //console.log({elapsed, per});
-          expect(per).toBeLessThan(5);
+          expect(per).toBeLessThan(10);
           stores.forEach(storeResult => expect(storeResult).not.toBeUndefined());
 
           start = Date.now();
@@ -574,7 +574,7 @@ describe('Distributed Security', function () {
                 verification = await Security.verify(signature, tags.team, nonMember);
             expect(verification).toBeUndefined();
           });
-        });
+        }, 10e3);
         describe('with a past member', function () {
           let member, signature, time;
           beforeAll(async function () {

@@ -16,6 +16,10 @@
       "node": "./lib/store-fs.mjs",
       "default": "./lib/store-indexed.mjs"
     },
+    "#mkdir": {
+      "node": "./lib/mkdir-node.mjs",
+      "default": "./lib/mkdir-browser.mjs"
+    },
     "#origin": {
       "node": "./lib/origin-node.mjs",
       "default": "./lib/origin-browser.mjs"

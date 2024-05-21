@@ -161,13 +161,13 @@ The distributed-security code is available as a Javascript module:
 
 ```
 # Installation in terminal:
-npm install @kilroy-code/distributed-security
+npm install @ki1r0y/distributed-security
 ```
 
-This creates a directory for the module, e.g., `node_modules/@kilroy-code/distributed-security/`. A NodeJS application can just:
+This creates a directory for the module, e.g., `node_modules/@ki1r0y/distributed-security/`. A NodeJS application can just:
 
 ```
-import Security from "@kilroy-code/distributed-security";
+import Security from "@ki1r0y/distributed-security";
 ```
 and the right files will be pulled in (e.g., starting with `lib/api.mjs`).
 
@@ -175,7 +175,7 @@ For browsers, four important files have been provided in the `dist/` subdirector
 
 For development and local experiments, the browser files can be served by a `locahost` or `https` domain, and it can be the same domain as the rest of the application. (Browsers require either `localhost` or `https` to enable cryptography.) The application can import `index-bundle.mjs` directly by pathname, and it will automatically pull in the other three files from the same directory on the same origin. The persisted encrypted device keys will be stored in an indexDB object store that is also accessible to the application.
 
-For production use, it is important to keep the storage and cryptographic operations in a separate [browsing context](https://developer.mozilla.org/en-US/docs/Glossary/Browsing_context) from the rest of the application. This is accomplished by serving `index-bundle.mjs` from a separate https origin. The easiest way to do this is to use the [@kilroy-code/signed-cloud-server package](https://github.com/kilroy-code/signed-cloud-server), which also provides cloud storage. (See the next section.) In any case, the package can then be imported by URL.
+For production use, it is important to keep the storage and cryptographic operations in a separate [browsing context](https://developer.mozilla.org/en-US/docs/Glossary/Browsing_context) from the rest of the application. This is accomplished by serving `index-bundle.mjs` from a separate https origin. The easiest way to do this is to use the [@ki1r0y/signed-cloud-server package](https://github.com/kilroy-code/signed-cloud-server), which also provides cloud storage. (See the next section.) In any case, the package can then be imported by URL.
 
 
 ### Storing Keys using the Cloud Storage API
@@ -197,7 +197,7 @@ await store(collectionName, tag, signature)
 await retrieve(collectionName, tag); // Resolves to the signature given to store.
 ```
 
-The default implementation of these methods stores and retrieves on the same origin that the bundled files are servered from.  The easiest way to implement that is to run [@kilroy-code/signed-cloud-server package](https://github.com/kilroy-code/signed-cloud-server) - either as a stand-alone server or as middleware routes added to another server.
+The default implementation of these methods stores and retrieves on the same origin that the bundled files are servered from.  The easiest way to implement that is to run [@ki1r0y/signed-cloud-server package](https://github.com/kilroy-code/signed-cloud-server) - either as a stand-alone server or as middleware routes added to another server.
 
 Alternatively, applications can supply their own implementation of the Storage API, meeting their own application-specific needs. For example, the application could limit storage to paying users. The only requirements imposed by Distributed-Security are:
 

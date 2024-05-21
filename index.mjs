@@ -1,4 +1,4 @@
-import dispatch from '@kilroy-code/jsonrpc';
+import dispatch from '@ki1r0y/jsonrpc';
 import Storage from './lib/storage.mjs';
 import {getUserDeviceSecret} from './lib/secret.mjs';
 

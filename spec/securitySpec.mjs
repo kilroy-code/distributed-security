@@ -1,5 +1,5 @@
 import Storage from "./support/storage.mjs";
-import Security from "@kilroy-code/distributed-security";
+import Security from "@ki1r0y/distributed-security";
 
 import testKrypto from "./kryptoTests.mjs";
 import testMultiKrypto from "./multiKryptoTests.mjs";
@@ -25,7 +25,7 @@ Security.getUserDeviceSecret = getSecret;
 
 // If THIS file is bundled, it can resolve a direct reference to the internals:
 import {Krypto, MultiKrypto, InternalSecurity, KeySet, LocalCollection} from './support/internals.mjs';
-//import {Krypto, MultiKrypto, InternalSecurity, KeySet, LocalCollection} from '@kilroy-code/distributed-security/dist/internal-browser-bundle.mjs';
+//import {Krypto, MultiKrypto, InternalSecurity, KeySet, LocalCollection} from '@ki1r0y/distributed-security/dist/internal-browser-bundle.mjs';
 // If this file is referenced directly, as is, in a test.html, then we'll need to have a bundle prepared,
 // that gets resolved through package.json:
 //import {Krypto, MultiKrypto, InternalSecurity, KeySet, LocalCollection} from '#internals';

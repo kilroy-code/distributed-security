@@ -3078,8 +3078,8 @@ class TeamKeySet extends KeySet { // A KeySet corresponding to a team of which t
   }
 }
 
-var name$1 = "@kilroy-code/distributed-security";
-var version$1 = "0.0.12";
+var name$1 = "@ki1r0y/distributed-security";
+var version$1 = "1.0.0";
 var description = "Signed and encrypted document infrastructure based on public key encryption and self-organizing users.";
 var type = "module";
 var exports = {
@@ -3118,7 +3118,7 @@ var repository = {
 	url: "git+https://github.com/kilroy-code/distributed-security.git"
 };
 var publishConfig = {
-	registry: "https://npm.pkg.github.com"
+	registry: "https://registry.npmjs.org"
 };
 var keywords = [
 	"encryption",
@@ -3145,7 +3145,7 @@ var devDependencies = {
 	rollup: "^4.13.0"
 };
 var dependencies = {
-	"@kilroy-code/jsonrpc": "^0.0.3",
+	"@ki1r0y/jsonrpc": "^1.0.0",
 	jose: "^5.2.3"
 };
 var _package = {

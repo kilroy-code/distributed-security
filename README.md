@@ -9,6 +9,8 @@ We take advantage of a number of separate APIs that **all modern browsers now su
 
 We accomplish this by inverting the typical key-management usage where keys are used to *authenticate* an individual user, and then the user's *authority* is looked up in a database. Instead, Distributed-Security allows applications to directly define hierarchies of keys for different groups, roles, and authorities, which are proven through cryptography of enumerated members.
 
+**For a quick "hello, world", see [@ki1r0y/signed-cloud-server](https://github.com/kilroy-code/signed-cloud-server).**
+
 This README covers:
 
 - [Problem Solved](#problem-solved)

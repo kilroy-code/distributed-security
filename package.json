@@ -1,6 +1,6 @@
 {
   "name": "@ki1r0y/distributed-security",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Signed and encrypted document infrastructure based on public key encryption and self-organizing users.",
   "type": "module",
   "exports": {
@@ -33,6 +33,9 @@
     "build": "rollup -c",
     "build-dev": "npx rollup -c --environment NODE_ENV:development",
     "test": "jasmine"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   },
   "repository": {
     "type": "git",

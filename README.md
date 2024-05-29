@@ -157,7 +157,7 @@ When no longer needed (e.g., in respect of the EU [Right to be Forgotten](https:
 
 ### Library Installation and Declaration
 
-The distributed-security code is available as a Javascript module:
+The distributed-security code is available as a Javascript module, which requires NodeJS version 20 or higher:
 
 ```
 # Installation in terminal:

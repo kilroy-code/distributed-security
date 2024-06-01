@@ -1,0 +1,59 @@
+<html>
+  <head>
+    <style>
+      pre { text-wrap: wrap; }
+      .bad { color: red; }
+    </style>
+  </head>
+  <body>
+    <label>message <i>(you can click in text to change it)</i><pre contenteditable id="message">hello, world!</pre></label>
+    <br/>
+    <label>encryption <pre contenteditable id="encryption"></pre></label>
+    <label>decryption <pre id="decryption"></pre></label>
+    <br/>
+    <label>multi-tag <input id="auditable" type="checkbox"/></label>
+    <label>signature <pre contenteditable id="signature"></pre></label>
+    <label>verification <pre id="verification"></pre></label>
+    <script type="module">
+      // There are several different ways to get the @kilr0y/distributed-security module...
+      // URL to files, when running a local appserver such as @kilroy/signed-cloud-server:
+      import Security from "http://localhost:59693/@ki1r0y/distributed-security/dist/index-bundle.mjs";
+      // A secure trusted host at another origin. See https://github.com/kilroy-code/distributed-security/blob/main/docs/advanced.md#sharing-tags-across-applications
+      // import Security from "https://cloud.ki1r0y.com/@ki1r0y/distributed-security/dist/index-bundle.mjs"; // You're welcome to use for quick dev. Gets cleaned out periodically!
+      // Bare scoped package name, when using https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap or a Javascript bundler.
+      // import Security from "@ki1r0y/distributed-security";
+
+      let device = await Security.create();
+      let tag = await Security.create(device);
+
+      function show(promise, element) { // Fill element with the resolution or rejection of promise, and decorate.
+        return promise.then(good => {
+          element.textContent = JSON.stringify(good, (key, value) => (ArrayBuffer.isView(value) ? "<binary not shown>" : value), 2);
+          element.classList.remove('bad');
+        }, bad => {
+          element.textContent = bad.message;
+          element.classList.add('bad');
+        });
+      }
+      // The auditable checkbox, and message, encryption, decryption, signature, and verification pres are all defined in html above.
+      auditable.onchange = async function () {
+        await show(Security.sign(message.textContent, auditable.checked ? {team: tag} : tag), signature);
+        signature.oninput();
+      };
+      message.oninput = async function () {
+        await show(Security.encrypt(message.textContent, tag), encryption);
+        encryption.oninput();
+        auditable.onchange()
+      };
+      encryption.oninput = async function () {
+        await show(Security.decrypt(JSON.parse(encryption.textContent)), decryption);
+      };
+      signature.oninput = async function () {
+        await show(Security.verify(JSON.parse(signature.textContent)), verification);
+      };
+      message.oninput();
+
+      window.Security = Security; window.tag = tag; // So that dev's can play with stuff in console.
+    </script>
+  </body>
+</html>

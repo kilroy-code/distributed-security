@@ -1,6 +1,6 @@
 {
   "name": "@ki1r0y/distributed-security",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Signed and encrypted document infrastructure based on public key encryption and self-organizing users.",
   "type": "module",
   "exports": {

@@ -1,5 +1,6 @@
 <html>
   <head>
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, viewport-fit=cover">
     <style>
       pre { text-wrap: wrap; }
       .bad { color: red; }
@@ -23,6 +24,7 @@
       // Bare scoped package name, when using https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap or a Javascript bundler.
       // import Security from "@ki1r0y/distributed-security";
 
+      console.log(await Security.ready);
       let device = await Security.create();
       let tag = await Security.create(device);
 

@@ -4,7 +4,7 @@ import {getUserDeviceSecret} from './lib/secret.mjs';
 
 const entryUrl = new URL(import.meta.url),
       vaultUrl = new URL('vault.html', entryUrl),
-      vaultName = 'vault!' + entryUrl.href // Helps debugging.
+      cloudName = entryUrl.href;
 
 // Outer layer of the vault is an iframe that establishes a browsing context separate from the app that imports us.
 const iframe = document.createElement('iframe'),
@@ -19,16 +19,15 @@ const iframe = document.createElement('iframe'),
         iframe.style.display = 'none';
         document.body.append(iframe); // Before referencing its contentWindow.
         iframe.setAttribute('src', vaultUrl);
-        iframe.contentWindow.name = vaultName;
         // Hand a private communication port to the frame.
         channel.port1.start();
-        iframe.onload = () => iframe.contentWindow.postMessage(vaultName, vaultUrl.origin, [channel.port2]);
+        iframe.onload = () => iframe.contentWindow.postMessage(cloudName, vaultUrl.origin, [channel.port2]);
       }),
       postIframe = dispatch({  // postMessage to the vault, promising the response.
-        dispatcherLabel: 'entry!' + entryUrl.href,
+        dispatcherLabel: 'entry!' + cloudName,
         namespace: resourcesForIframe,
         target: channel.port1,
-        targetLabel: vaultName
+        targetLabel: 'vault!' + cloudName
       }),
 
       api = { // Exported for use by the application.

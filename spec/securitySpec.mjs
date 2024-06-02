@@ -7,8 +7,6 @@ import { makeMessage, isBase64URL, sameTypedArray} from "./support/messageText.m
 
 // Setup.
 //jasmine.getEnv().configure({random: false});
-Storage.Security = Security;
-Security.Storage = Storage;
 let thisDeviceSecret = "secret",
     secret = thisDeviceSecret;
 async function withSecret(thunk) {
@@ -19,7 +17,6 @@ async function withSecret(thunk) {
 function getSecret(tag, recoveryPrompt = '') {
   return recoveryPrompt + secret;
 }
-Security.getUserDeviceSecret = getSecret;
 
 // For testing internals.
 
@@ -30,14 +27,24 @@ import {Krypto, MultiKrypto, InternalSecurity, KeySet, LocalCollection} from './
 // that gets resolved through package.json:
 //import {Krypto, MultiKrypto, InternalSecurity, KeySet, LocalCollection} from '#internals';
 
-InternalSecurity.Storage = Storage;
-InternalSecurity.getUserDeviceSecret = getSecret;
-
 // Define some globals in a browser for debugging.
 if (typeof(window) !== 'undefined') Object.assign(window, {Security, Krypto, MultiKrypto, Storage});
 
 describe('Distributed Security', function () {
-  let message = makeMessage();
+  let message = makeMessage(),
+      originalStorage = Security.Storage,
+      originalSecret = Security.getUserDeviceSecret;
+  beforeAll(function () {
+    Storage.Security = Security;
+    Security.Storage = Storage;
+    Security.getUserDeviceSecret = getSecret;
+    InternalSecurity.Storage = Storage;
+    InternalSecurity.getUserDeviceSecret = getSecret;
+  });
+  afterAll(function () {
+    Security.Storage = originalStorage;
+    Security.getUserDeviceSecret = originalSecret;
+  });
   describe('Krypto', function () {
     testKrypto(Krypto);
   });

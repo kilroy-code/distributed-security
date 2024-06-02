@@ -1,6 +1,6 @@
 {
   "name": "@ki1r0y/distributed-security",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Signed and encrypted document infrastructure based on public key encryption and self-organizing users.",
   "type": "module",
   "exports": {
@@ -69,7 +69,7 @@
     "rollup": "^4.13.0"
   },
   "dependencies": {
-    "@ki1r0y/jsonrpc": "^1.0.0",
+    "@ki1r0y/jsonrpc": "^1.0.1",
     "jose": "^5.2.3"
   }
 }

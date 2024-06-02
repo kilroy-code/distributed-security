@@ -3,7 +3,8 @@ import Storage from './lib/storage.mjs';
 import {getUserDeviceSecret} from './lib/secret.mjs';
 
 const entryUrl = new URL(import.meta.url),
-      vaultUrl = new URL('vault.html', entryUrl);
+      vaultUrl = new URL('vault.html', entryUrl),
+      vaultName = 'vault!' + entryUrl.href // Helps debugging.
 
 // Outer layer of the vault is an iframe that establishes a browsing context separate from the app that imports us.
 const iframe = document.createElement('iframe'),
@@ -18,16 +19,16 @@ const iframe = document.createElement('iframe'),
         iframe.style.display = 'none';
         document.body.append(iframe); // Before referencing its contentWindow.
         iframe.setAttribute('src', vaultUrl);
-        iframe.contentWindow.name = 'vault!' + entryUrl.href // Helps debugging.
+        iframe.contentWindow.name = vaultName;
         // Hand a private communication port to the frame.
         channel.port1.start();
-        iframe.onload = () => iframe.contentWindow.postMessage('initializePort', vaultUrl.origin, [channel.port2]);
+        iframe.onload = () => iframe.contentWindow.postMessage(vaultName, vaultUrl.origin, [channel.port2]);
       }),
       postIframe = dispatch({  // postMessage to the vault, promising the response.
         dispatcherLabel: 'entry!' + entryUrl.href,
         namespace: resourcesForIframe,
         target: channel.port1,
-        targetLabel: iframe.contentWindow.name
+        targetLabel: vaultName
       }),
 
       api = { // Exported for use by the application.
@@ -44,6 +45,7 @@ const iframe = document.createElement('iframe'),
         // Application assigns these so that they can be used by the vault.
         get Storage() { return resourcesForIframe; },
         set Storage(storage) { Object.assign(resourcesForIframe, storage); },
+        get getUserDeviceSecret() { return resourcesForIframe.getUserDeviceSecret; },
         set getUserDeviceSecret(functionOfTagAndPrompt) { resourcesForIframe.getUserDeviceSecret = functionOfTagAndPrompt; }
       };
 

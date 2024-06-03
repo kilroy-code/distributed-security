@@ -51,7 +51,7 @@ is exported by MultiKrypto as, effectively:
 
 Cryptographic systems regularly use the same keypair to directly represent an _identity_ such as a user or a role within an organization, regardless of what machine was used or who in that role used it. This requires the unencrypted key to be stored in multiple places for use and to guard against loss, which then of course presents opportunities for the keys to be co-opted. 
 
-Distributed-Security takes a different approach, in which a key set is only ever externally seen _encrypted_. It is encrypted in such a way that it can be read by any of the entity's constituent members, _proven by their own keypairs_. This is done in MultiCrypto by extending the above hybrid encryption with sets of member keys.
+Distributed-Security takes a different approach, in which a key set is only ever externally seen _encrypted_. It is encrypted in such a way that it can be read by any of the entity's constituent members, _proven by their own keypairs_. This is done in MultiKrypto by extending the above [hybrid encryption](#hybrid-encryption) with sets of member keys.
 
 In cryptography generally, a key is "wrapped" by exporting it and then encrypting the result. Conceptually, we wrap a team key by encrypting N copies of it in the same wrapped result -- one copy for each team member. (Recall that every key set is represented by a tag string, and that the public encrypting key from each set is available to all.) Conceptually, this looks like:
 

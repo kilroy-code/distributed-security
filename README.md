@@ -101,7 +101,7 @@ let decryption = await Security.decrypt(encryption);
 
 In all three cases, `decryption.payload` returns the Uint8Array of the underlying original message.
 
-You can also explicitly specify the content type and timestamp, and can [**encrypt for multiple specific tags**](lib/advanced.md#encryption-with-multiple-tags-and-other-encryption-options).
+You can also explicitly specify the content type and timestamp, and can [**encrypt for multiple specific tags**](docs/advanced.md#encryption-with-multiple-tags-and-other-encryption-options).
 
 
 ### Basic Signatures
@@ -117,7 +117,7 @@ let verification = await Security.verify(signature);
 ```
 and then `verification.payload`, `verification.text`, and `verifcation.json` are as above for encryption of the various types of messages. However, if the signature is not valid, `verification` holds `undefined`.
 
-As with encryption, you can explicitly specify the content type and timestamp, and can [**sign with multiple specific tags**](lib/advanced.md#signatures-with-multiple-tags-and-other-signature-options). The latter is particularly powerful, because verification can confirm not only that a particular team member signed, but which member, and that the signing member is still on the team at the time of verification.
+As with encryption, you can explicitly specify the content type and timestamp, and can [**sign with multiple specific tags**](docs/advanced.md#signatures-with-multiple-tags-and-other-signature-options). The latter is particularly powerful, because verification can confirm not only that a particular team member signed, but which member, and that the signing member is still on the team at the time of verification.
 
 ### Creating Tags and Changing Membership
 

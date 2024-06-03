@@ -180,7 +180,7 @@ For production use, it is important to keep the storage and cryptographic operat
 
 ### Storing Keys using the Cloud Storage API
 
-Individuals and teams automatically work across devices because the individual or team's key is stored in the cloud by the application, and made available to everyone. However, the key is encrypted in such a way that it can be [decrypted by any member](docs/implementation.md#3-encrypting-for-members) (and only the members).
+Individuals and teams automatically work across devices because the individual or team's key is stored in the cloud by the application, and made available to everyone. However, the key is encrypted in such a way that it can be [decrypted by any member](docs/implementation.md#encrypting-for-members) (and only the members).
 
 **This is the "special sauce" of distributed-security:** Instead of expecting individuals to manage copies of keys or giving unencrypted keys to centralized or third-party "custodians", we arrange things so that:
 

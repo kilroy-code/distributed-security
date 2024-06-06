@@ -26,6 +26,9 @@ const email = {
 };
 await companyDbWrite(email.To + ".json", email); // Simulate the email with the file system.
 
+//  Add Employee E2 at Company A to the Group.  Obviously, this (and its
+//  reciprocal, remove) happen far more often than Group creation.  The whole
+//  point of the Group is that it remains relatively static.
 //
 //  The underlying private keys are protected by a secret provided by the application:
 //  - When such keys are kept at the user's device for end-to-end encryption, this hook function

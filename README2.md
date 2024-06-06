@@ -1,10 +1,10 @@
 # Distributed Security
 
 This is a Javascript SDK for **browsers and Node** that makes it easy for developers to correctly and safely use the four standard cryptographic operations (**encrypt, decrypt, sign, and verify**).  It uses only battle-tested, industry standard cryptoalgorithms
-(e.g. ECDSA) and key representations (e.g. JOSE/JWT) but layers in 
+(e.g., ES384, RSA-OAEP-256) and key representations (e.g. JOSE/JWS/JWE) but layers in
 additional important and valuable features:
 
- *  Individual keys can be members of any number of groups, the latter which in turn
+ *  Individual keys can be members of any number of groups, which in turn
     can be nested members of other groups.  Groups themselves have keys associated
     with them and this enables a very valuable use case:
     
@@ -14,10 +14,10 @@ additional important and valuable features:
     verification for operational robustness and ease of key management
 
     In this use case, parties A and B using encryption and signatures are no
-    longer are exposed to the internal key/personnel management of the counterparty.
+    longer exposed to the internal key/personnel management of the counterparty.
     Individual key holders at party A or B can be added or removed locally without
     forcing key exchange between A and B.  Each party internally, however, can associate
-    signing and decryption with a specific actor; there are no shared keys.
+    signing and decryption with a specific actor; individuals do not share personal keys.
 
 
  *  Creating key pairs in traditional PKI environments is "easy"; securing and
@@ -31,7 +31,7 @@ additional important and valuable features:
      *  It is secure because the materials stored there are encrypted and do
      	not create a data leak vulnerability
 
-     *  By addressable we mean there is well-known location and communications protocol
+     *  By addressable we mean there is a well-known location and communications protocol
         to access the materials
 
      *  By reliable we mean that the media at the location offers very high
@@ -40,30 +40,15 @@ additional important and valuable features:
 	
     The SAR facility clearly has a natural implementation using basic bucket resources
     of any of the cloud providers.  For testing and experimentation, a local filesystem
-    based SAR also exists, acknowledging that although this needs no collateral
-    information (e.g. access credentials, billing, etc.), it is
-    not addressable outside the local environment nor is it particular reliable in the
-    face of local media failure.
+    based SAR also exists.
 
     Note that sensitive key materials are
-    securely and performantly stored locally in a construct called the Vault;
-    the SAR defends against loss of local media and/or damage to the Vault.
+    securely and performantly stored locally (in Node and in browsers);
+    the SAR provides access across clients and defends against loss of local media and/or damage to the local storage.
     
-
- *  The key model also is granular to the **device**.  The obvious example of a device
-    is a mobile phone but device, as a concept, can also be associated with a
-    web page running in the browser.  Even more broadly, a device can be a server-side
-    Linux server acting as a web API host.  The value of this design is
-    	  (need the "killer" explain on this that clearly makes device-granularity
-	  a good thing, not a more complex thing.  For example, naively if I have 2
-	  phones and web app, I want to have one key that works on all of them -- think
-	  of passphrase management, etc.  But if DistSec has different keys for these
-	  things, how do I gain the benefit of reduced (more like compartmentalized/
-	  segmented) loss vs. the headache?)
-	  
+ * Every invididual or group key is available for end-to-end encryption and signatures on whatever device it has been authorized - and only on those devices. E.g., once authorized on each of a person's devices (including back-end systems if desired), that person can use their tag from any of them. And yet a device can be remotely de-authorized when needed.
  
- *  The actual physical strings used in the app-facing SDK API are not actual RSA or
-    ECDSA keys but instead string proxies called **tags.**  Tags have a number of
+ *  The actual physical strings used in the app-facing SDK API are not actual key objects but instead string proxies called **tags.**  Tags have a number of
     benefits over the low-level cryptosystem keys:
 
      *  Tags insulate the application from the actual technical implementation of the

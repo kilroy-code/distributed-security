@@ -27,7 +27,7 @@ The asymmetric algorithm used by Krypto can only encrypt messages up to 446 byte
 ```
 (Encryption in Distributed-Security is base64 encoded, which does not include the separator character.)
 
-The maximum memory size is not limited by the algorithm this way, but only by available memory. We unit-test with 10 MB messages.
+The maximum result size is not limited by the algorithm this way, but only by available memory. We unit-test with 10 MB messages.
 
 ## Combining Keys
 
@@ -49,7 +49,7 @@ is exported by MultiKrypto as, effectively:
 
 ### Encrypting for Members
 
-Cryptographic systems regularly use the same keypair to directly represent an _identity_ such as a user or a role within an organization, regardless of what machine was used or who in that role used it. This requires the unencrypted key to be stored in multiple places for use and to guard against loss, which then of course presents opportunities for the keys to be co-opted. 
+Cryptographic systems regularly use the same keypair to directly represent an _identity_ such as a user or a role within an organization, regardless of what machine was used or who in that role used it. This requires the unencrypted key to be stored in multiple places for end-to-end encryption use at those machines, and to guard against loss, which if simply copied would then of course would present opportunities for the keys to be co-opted. 
 
 Distributed-Security takes a different approach, in which a key set is only ever externally seen _encrypted_. It is encrypted in such a way that it can be read by any of the entity's constituent members, _proven by their own keypairs_. This is done in MultiKrypto by extending the above [hybrid encryption](#hybrid-encryption) with sets of member keys.
 
@@ -89,15 +89,15 @@ In [keySet.mjs](../lib/keySet.mjs), we define objects that manage each individua
 
 The KeySet keeps the private signing key and the private encrypting key.
 
-The KeySet's public *encrypting* key is exported and stored in clear text in the public storage provided by the application. This allows users of the application to encrypt a message that can only be read by the corresponding vault. (This is subtle: to change the membership of a team, the team will be re-encrypted in the vault running on the machine of the user making the change. That vault will need the public encrypting key of each member -- it's a good thing that they are public and that other member's private keys are not necessary to do the encryption!)
+The KeySet's public *encrypting* key is exported and stored in clear text in the public storage provided by the application. This allows users of the application to encrypt a message that can only be read by the corresponding KeySet. (This is subtle: to change the membership of a team, the team will be re-encrypted in the vault running on the machine of the user making the change. That vault will need the public encrypting key of each member -- it's a good thing that they are public and that other member's private keys are not necessary to do the encryption!)
 
-The KeySet's public *signing* key is exported and used as the tag. For example, if you have a tag and a signature, any software has everything it needs to verify the message, without needing to access any application resources or anything else. Our signatures include the tag within the signature. (This is subtle, too: when the vault pulls down data from the cloud, the data is wrapped in a signature which the vault verifies before it uses it. Fortunately, the public verification key is not itself in the cloud, and is derived directly from the tag.)
+The KeySet's public *signing* key is exported and used as the tag. For example, if you have a tag and a signature, any software has everything it needs to verify the message, without needing to access any application resources or anything else. Our signatures include the tag within the signature. (This is subtle, too: when the vault pulls down data from the cloud, the data is wrapped in a signature which the vault verifies before it uses it. Fortunately, the public verification key is not itself in the cloud, and is derived directly from the tag, so there's no additional cloud message involved.)
 
 Thus copies of messages can be verified forever, even if the application is no longer providing access to storage, but new message can only be encrypted for application tags as long as the application is still providing storage. Of course, storage may be third-party storage or a p2p file sharing network.
 
-Of the seven operations provided by [api.mjs](../lib/api.mjs), `create`, `encrypt`, and `verify` can all be done without needing to create a KeySet. However, `destroy`, `changeMembership`, `decrypt`, and `sign` all need to `ensure` a KeySet corresponding to the given tag. To do so, `ensure` either has one cached for the given key or creates one. It then verifies that the vault is still good:
+Of the seven operations provided by [api.mjs](../lib/api.mjs), `create`, `encrypt`, and `verify` can all be done without needing to create a KeySet. However, `destroy`, `changeMembership`, `decrypt`, and `sign` all need to `ensure` a KeySet corresponding to the given tag. To do so, `ensure` either has one cached for the given key or creates one. It then verifies that the KeySet is still good:
 
-- If the tag corresponds to the device the software is running on, there will be a locally stored multKey that never leaves the device. (There is no reason to export it elsewhere.) The stored multiKey is then used directly, and the vault is ready.
+- If the tag corresponds to the device the software is running on, there will be a locally stored multiKey that never leaves the device. (There is no reason to export it elsewhere.) The stored multiKey is then used directly, and the KeySet is ready.
 - Otherwise, if there is an encrypted team multiKey in public storage for this tag, it is retrieved and Security will attempt to unwrap it by checking to see if this computer has access to any of the specified members, recursively applying this whole search down to finding either this device or failing.
 - Finally, a team may specify a "recovery member". The question (or an indicator of the question) is stored (unencrypted) with the (encrypted) multiKey in the cloud, and the symmetric encrypt/decrypt key is dervied from the _answer_ to the question.  As with any other team key data, neither the application nor the authors of Distributed-Security can decrypt a recovery key. 
 
@@ -111,7 +111,7 @@ Everyone has access to the encrypted team keys, but no one can decrypt it other 
 
 This is implemented by [worker.mjs](../lib/worker.mjs).
 
-But all of this is only safe to the extent that device keys are safe. These use the browser's persistent storage, and are therefore accessible to an application running at the same origin as the worker. Browsers require workers to be in the same domain as their page, so we run the worker from a new page in an iframe. This iframe (in [vault.hml](vault.html)) should be in a different domain from the application, so that the application cannot read the data that the worker stores.
+But all of this is only safe to the extent that device keys are safe. These use the browser's persistent storage, and are therefore accessible to an application running at the same origin as the worker. Browsers require workers to be in the same origin as their page, so we run the worker from a new page in an iframe. This iframe (in [vault.hml](vault.html)) should be in a different orogin from the application, so that the application cannot read the data that the worker stores.
 
 The iframe is dynamically created by [index.mjs](../lib/index.mjs).
 

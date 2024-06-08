@@ -115,7 +115,7 @@ But all of this is only safe to the extent that device keys are safe. These use 
 
 The iframe is dynamically created by [index.mjs](../lib/index.mjs).
 
-The communication between index.mjs and the vault.html iframe, and between vault.html and worker.mjs, are provided by postMessage carrying jsonrpc, using [@kilroy/jsonrpc](../../jsonrpc).
+The communication between index.mjs and the vault.html iframe, and between vault.html and worker.mjs, are provided by postMessage carrying jsonrpc, using [@kilroy/jsonrpc](../../../jsonrpc).
 
 ## Building and the Runtime Environment.
 

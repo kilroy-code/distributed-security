@@ -56,7 +56,16 @@ However, even in applications that do much of their work on powerful servers, th
 
 As with most cryptographic systems, distributed-security provides an API to encrypt & decrypt messages, and to sign & verify messages. Internally to this package, the cryptography is done with the widely-used [panva library](https://www.npmjs.com/package/jose) to produce results in standard JOSE [JWE](https://www.rfc-editor.org/rfc/rfc7516) and [JWS](https://www.rfc-editor.org/rfc/rfc7515) formats, using the standard algorithms recommended for long-term key sets.
 
-Most cryptography libraries (including panva/JOSE) expect applications to manage key creation, storage, and safety. By contrast, an application using the distributed-security library works with ordinary *tag* strings that each represent a person or a team of people in the application. For example, an application calls `encrypt(message, tag)` and the library takes care of getting the right key for the *tag* and applying it. All this happens within a separate sandbox in the browser that is isolated from the application: the application never gets to handle the keys at all. At the same time, though, no server gets to handle the raw keys either. The keys are generated in the sandbox, *encrypted* there, and the *encrypted* keys are stored in the cloud so that they are available on all the users' devices:
+Most cryptography libraries (including panva/JOSE) expect applications to manage key creation, storage, and safety. By contrast, an application using the distributed-security library works with ordinary *tag* strings that each represent a person or a team of people in the application. 
+
+### Key Insights
+
+1. Encrypted keys are stored in the cloud, or on-device. No unenecrypted private key ever leaves the sandbox in which it is created and used. So there's nothing to steal and nothing to lose, and no unencrypted copies.
+2. The keys are encrypted using a standardized technique that lets them be decrypted only by an enumerated set of member keys, which also follow inisight 1. So instead of "giving out" keys for particular identiies, roles, or authorities and later revoking them, the key itself is stable while an encoding member key is added or removed.
+
+### Result
+
+For example, an application calls `encrypt(message, tag)` and the library takes care of getting the right key for the *tag* and applying it. All this happens within a separate sandbox in the browser that is isolated from the application: the application never gets to handle the keys at all. At the same time, though, no server gets to handle the raw keys either. The keys are generated in the sandbox, *encrypted* there, and the *encrypted* keys are stored in the cloud so that they are available on all the users' devices:
 
 1. A tag can represent a team of people or other teams, like the nodes in an org-chart. The private keys of the team are *encrypted so as to be decryptable only by the members of the team*. Teams can represent a role or authority, or family, club, care team, workgroup, company, etc.
 2. A tag can represent an individual human. The private keys of the individual are *encrypted so as to be decryptable only by the different browsers (on different devices) that the individual uses, or by a recovery key*.

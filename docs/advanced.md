@@ -36,6 +36,8 @@ You can also specify options: `sign(message, {tags, contentType, time, team, mem
 
 > This is used by Distributed-Security itself in protecting the cloud storage that holds encrypted keys. The (encrypted) keys are signed as `sign(key, {team: tag, time})` so that "iss", "act", and "iat" headers are included in the signature. The cloud `store()` operation verifies this by `verify(JWS, {team: tag, notBefore: "team"})`. See [Storing Keys using the Cloud Storage API](../README.md#storing-keys-using-the-coud-storage-api).
 
+The base64url sha-256 hash of the payload appears as the "sub" header. This can controlled by supplying a value for the "subject" property of the options to sign. A falsy value prevents the header from appearing in the signature at all.
+
 ## Sharing Tags Across Applications
 
 A typical application loads its application code and the distributed-security library from two different [origins](https://developer.mozilla.org/en-US/docs/Glossary/Origin), both distinct from those used by other applications. For example, the application code might come from `https:/app.example.com`, and the distributed-security library from `https:/security.example.com`. When organized this way, the keys are in a distinct [browsing context](https://developer.mozilla.org/en-US/docs/Glossary/Browsing_context) (at security.example.com) that is isolated both from the application code (running in app.example.com) and from other applications (running at, say, competitor.com). The app at app.example.com can use the tag strings returned to the app from calls to `create()`, but not any app at competitor.com.

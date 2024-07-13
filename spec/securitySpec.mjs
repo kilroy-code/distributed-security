@@ -29,6 +29,18 @@ import {Krypto, MultiKrypto, InternalSecurity, KeySet, LocalCollection} from './
 
 // Define some globals in a browser for debugging.
 if (typeof(window) !== 'undefined') Object.assign(window, {Security, Krypto, MultiKrypto, Storage});
+// For testing sub hash.
+const subtle = (typeof(window) === 'undefined') ? (await import('node:crypto')).default.subtle : window.crypto.subtle;
+async function getHash(message) { // string to base64url, without using our own security code.
+  // https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest
+  // https://developer.mozilla.org/en-US/docs/Glossary/Base64
+  const messageBuffer = new TextEncoder().encode(message),
+        digest = await subtle.digest("SHA-256", messageBuffer),
+        hash = new Uint8Array(digest),
+        asStringData = Array.from(hash, byte => String.fromCodePoint(byte)).join(''),
+        base64 = btoa(asStringData);
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
 
 describe('Distributed Security', function () {
   let message = makeMessage(),
@@ -256,6 +268,22 @@ describe('Distributed Security', function () {
                 expect(verified.protectedHeader.cty).toBe(contentType);
                 expect(verified.protectedHeader.iat).toBe(time);
               });
+              describe('includes payload hash as "sub" header', function () {
+                it('by default.', async function () {
+                  let message = "foo",
+                      signature = await Security.sign(message, {tags: [tag], ...options}),
+                      verified = await Security.verify(signature);
+                  expect(verified.protectedHeader.sub).toBe(await getHash(message));
+                });
+                it('unless specified otherwise.', async function () {
+                  let signature1 = await Security.sign('foo', {subject: "bar", tags: [tag], ...options}),
+                      verified1 = await Security.verify(signature1),
+                      signature2 = await Security.sign('foo', {subject: false, tags: [tag], ...options}),
+                      verified2 = await Security.verify(signature2);
+                  expect(verified1.protectedHeader.sub).toBe("bar");
+                  expect(verified2.protectedHeader.sub).toBeUndefined();
+                });
+              });
             });
             describe('of multiple tags', function () {
               it('can sign and be verified.', async function () {
@@ -336,6 +364,22 @@ describe('Distributed Security', function () {
                 expect(verified.text).toEqual(message);
                 expect(verified.protectedHeader.cty).toBe(contentType);
                 expect(verified.protectedHeader.iat).toBe(time);
+              });
+              describe('includes payload hash as "sub" header', function () {
+                it('by default.', async function () {
+                  let message = "foo",
+                      signature = await Security.sign(message, {tags: [tag, otherOwnedTag], ...options}),
+                      verified = await Security.verify(signature);
+                  expect(verified.protectedHeader.sub).toBe(await getHash(message));
+                });
+                it('unless specified otherwise.', async function () {
+                  let signature1 = await Security.sign('foo', {tags: [tag, otherOwnedTag], subject: "bar", ...options}),
+                      verified1 = await Security.verify(signature1),
+                      signature2 = await Security.sign('foo', {tags: [tag, otherOwnedTag], subject: false, ...options}),
+                      verified2 = await Security.verify(signature2);
+                  expect(verified1.protectedHeader.sub).toBe("bar");
+                  expect(verified2.protectedHeader.sub).toBeUndefined();
+                });
               });
             });
           });

@@ -23,6 +23,7 @@ This README covers:
   - [Library Installation and Declaration](#library-installation-and-declaration)
   - [Storing Keys using the Cloud Storage API](#storing-keys-using-the-cloud-storage-api)
   - [Initialization](#initialization)
+  - [Utilities](#utilities)
 
 
 We call it "*distributed security*" because:
@@ -232,5 +233,20 @@ When the user creates a recovery tag, the application's `getUserDeviceSecret` is
 It is recommended that the size of the string producted by getUserDeviceSecret should be between 16 and 128 characters.
 
 `getUserDeviceSecret` can be used as a mechanism for additional distinctions. For example, suppose a group of cooperating applications want to be able to encrypt and verify a common set of tags among all uses of a shared module URL. (See [Library](#library), above.) But suppose further that, for whatever reason, they wanted each application to create a different application-specific device tag, such that no application could ask the user to sign or decrypt ultimately based solely on a different application's member device tag. In this case, an application could request an application-specific (and possibly user-specific) api-key from its own application-server, and use that api-key within the secret returned by `getUserDeviceSecret`. This would keep device keys from being used by other applications that shared the same cloud. (However, it would not by itself prevent a user that has access to _both_ application's device keys from making a single "individual" key that has both application-specific keys as members. Preventing that would require additional mechanisms within the application-provided Storage API.)
+
+### Utilities
+
+The package also exports a few convenience utilities:
+
+`hashBuffer(uint8Array)` - Promise a Uint8Array sha-256 digest of the uint8Array.
+
+`hashText(text)` - Promise a Uint8Array sha-256 digest of text string.
+
+`encodeBase64url(uint8Array)` - Answer the base64url encoded string of the uint8Array.
+
+`decodeBase64url(string)` - Answer the decoded Uint8Array of the base64url string.
+
+`decodeClaims(jwSomething, index = 0)` - Answer an object whose keys are the decoded protected header of the JWS or JWE (using signatures[index] of a general-form JWS).
+ 
 
 [![](docs/repo-qr.png)](https://github.com/kilroy-code/distributed-security)

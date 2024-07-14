@@ -1,7 +1,7 @@
 import dispatch from '@ki1r0y/jsonrpc';
 import Storage from './lib/storage.mjs';
 import {getUserDeviceSecret} from './lib/secret.mjs';
-import {hashBuffer, hashText, encodeBase64url, decodeBase64url} from './lib/utilities.mjs';
+import {hashBuffer, hashText, encodeBase64url, decodeBase64url, decodeClaims} from './lib/utilities.mjs';
 
 const entryUrl = new URL(import.meta.url),
       vaultUrl = new URL('vault.html', entryUrl),
@@ -43,7 +43,7 @@ const iframe = document.createElement('iframe'),
         ready,
 
         // Utilities.
-        hashBuffer, hashText, encodeBase64url, decodeBase64url,
+        hashBuffer, hashText, encodeBase64url, decodeBase64url, decodeClaims,
 
         // Application assigns these so that they can be used by the vault.
         get Storage() { return resourcesForIframe; },

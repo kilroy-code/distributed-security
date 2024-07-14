@@ -27,20 +27,22 @@ import {Krypto, MultiKrypto, InternalSecurity, KeySet, LocalCollection} from './
 // that gets resolved through package.json:
 //import {Krypto, MultiKrypto, InternalSecurity, KeySet, LocalCollection} from '#internals';
 
-// Define some globals in a browser for debugging.
-if (typeof(window) !== 'undefined') Object.assign(window, {Security, Krypto, MultiKrypto, Storage});
 // For testing sub hash.
-const subtle = (typeof(window) === 'undefined') ? (await import('node:crypto')).default.subtle : window.crypto.subtle;
-async function getHash(message) { // string to base64url, without using our own security code.
+import {crypto} from '../lib/utilities.mjs';
+async function getHash(message) { // string to base64url, without using our own security code (which exports hashText and base64url).
   // https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest
   // https://developer.mozilla.org/en-US/docs/Glossary/Base64
   const messageBuffer = new TextEncoder().encode(message),
-        digest = await subtle.digest("SHA-256", messageBuffer),
+        digest = await crypto.subtle.digest("SHA-256", messageBuffer),
         hash = new Uint8Array(digest),
         asStringData = Array.from(hash, byte => String.fromCodePoint(byte)).join(''),
         base64 = btoa(asStringData);
   return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
+
+// Define some globals in a browser for debugging.
+if (typeof(window) !== 'undefined') Object.assign(window, {Security, Krypto, MultiKrypto, Storage});
+
 
 describe('Distributed Security', function () {
   let message = makeMessage(),

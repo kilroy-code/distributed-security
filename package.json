@@ -1,6 +1,6 @@
 {
   "name": "@ki1r0y/distributed-security",
-  "version": "1.0.7",
+  "version": "1.1.0",
   "description": "Signed and encrypted document infrastructure based on public key encryption and self-organizing users.",
   "type": "module",
   "exports": {
@@ -8,6 +8,10 @@
     "default": "./index.mjs"
   },
   "imports": {
+    "#crypto": {
+      "node": "./lib/crypto-node.mjs",
+      "default": "./lib/crypto-browser.mjs"
+    },
     "#raw": {
       "node": "./lib/raw-node.mjs",
       "default": "./lib/raw-browser.mjs"

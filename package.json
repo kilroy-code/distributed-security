@@ -73,6 +73,7 @@
     "rollup": "^4.13.0"
   },
   "dependencies": {
+    "@ki1r0y/cache": "^1.0.1",
     "@ki1r0y/jsonrpc": "^1.0.1",
     "jose": "^5.2.3"
   }

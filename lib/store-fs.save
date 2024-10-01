@@ -1,0 +1,27 @@
+import * as path from 'node:path';
+import * as fs from 'node:fs/promises';
+
+// TODO: serialize requests
+// TODO: handle multiple processes working on the same resource
+
+class PersistedCollection {
+  // Asynchronous local storage using the Node file system.
+  constructor({collectionName = 'collection', dbName = 'asyncLocalStorage'} = {}) {
+    this.path = tag => path.join(dbName, collectionName, tag);
+    this.queue = fs.mkdir(path.join(dbName, collectionName), {recursive: true});
+  }
+  retrieve(tag) { // Promise to retrieve tag from collectionName.
+    return this.queue.next(() =>
+      fs.readFile(this.path(tag), {encoding: 'utf8'})
+	.catch(error => error.code !== 'ENOENT' && Promise.reject(error)));
+  }
+  store(tag, data) { // Promise to store data at tag in collectionName.
+    return this.queue.next(() =>
+      fs.writeFile(this.path(tag), data, {flush: true}));
+  }
+  remove(tag) { // Promise to remove tag from collectionName.
+    return this.queue.next(() =>
+      fs.rm(this.path(tag), {force: true, maxRetries: 4}));
+  }
+};
+export default PersistedCollection;

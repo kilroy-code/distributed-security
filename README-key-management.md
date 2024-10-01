@@ -82,6 +82,9 @@ console.log(encrypted, decrypted);
 ```
 
 ## Goodbye World
+
+(See runnable code in [goodbye-world](goodbye-world).)
+
 ```
 //  Company A:
 //  

@@ -17,7 +17,7 @@ No one else can decyrpt it -- not even the people who operate the cloud.
 
 3. As with all [public-key cryptography](https://en.wikipedia.org/wiki/Public-key_cryptography), a key has a public part and a private part. The public part is what is used to encrypt a message so that only the private part can decrypt it.
 4. Each key has a "tag" string that uniquely identifies it:
-   - The private parts of the two key-pairs are what we encrypt and place in the cloud, identified by tag.
+   - The private part of the key-pair is what we encrypt and place in the cloud, identified by tag.
    - The public part is _not_ encrypted, and placed directly in the cloud, identified by tag.
    - When we encrypt a key for it's member keys, we list the tag of each member in plain text. (This is [part](https://github.com/kilroy-code/distributed-security/blob/main/docs/in-jose-terms.md) of the IETF-standard for multi-key encryption.)
    
@@ -27,7 +27,7 @@ An app can make the recovery passphrase acceptance be dependent on a fingerprint
 
 ## Private Data for Self-Managed Groups
 
-5. Instead of trusting a server to keep data private, data is [encrypted at the client for a given tag](../README.md#basic-encryption), stored encrypted in the cloud, and decrypted only by the owner of the designated tag. Neither the cloud operator nor anyone who breaks in can read the data. (Additionally, there is no need for login or any access control lists to check for read permissions, which means that a Content Distribution Network does not need any knowledge of users or permissions, even for private data.)
+5. Instead of trusting a server to keep data private, data can be [encrypted at the client for a given tag](../README.md#basic-encryption), stored encrypted in the cloud, and decrypted only by the owner of the designated tag. Neither the cloud operator nor anyone who breaks in can read the data. (Additionally, there is no need for login or any access control lists to check for read permissions, which means that a Content Distribution Network does not need any knowledge of users or permissions, even for private data.)
 
 6. A "team" tag can be created whose members are other individuals or even other teams. (A team tag is no different from an individual tag. We're just using the term "team" to emphasize that the members are other cloud-stored tags rather than device-bound or passphrase-driven members.)
 
@@ -43,12 +43,12 @@ Thus several institutions can manage their own teams and teams-of-teams, while s
 
 Thus an institution can create a team and share the tag string with a second institution just once. Any recursive member of the team can sign a request or transaction, and the other institution can verify the signature for the expected tag. The first institution does not have to update the second with new tags or new access control lists as membership changes.
 
-9. A signature can be made that non-repudiably identifies not only the team, but the individual member of the team. (There is a [standard](https://datatracker.ietf.org/doc/html/rfc7515#section-7.2.1).) Verification checks both signatures, and optionally confirms that the individual is in-fact a member of the team at the time of verification. (Recall that the member tags are in plain-text of the cloud-stored keys.)
+9. A signature can be made that non-repudiably identifies not only the team, but the individual member of the team that is doing the signing. (There is a [standard](https://datatracker.ietf.org/doc/html/rfc7515#section-7.2.1).) Verification checks both signatures, and optionally confirms that the individual is in-fact a member of the team at the time of verification. (Recall that the member tags are in plain-text of the cloud-stored keys.)
 
 This means that, e.g., the individual member's institution can track the specific member who authorized the request, while another institution can check the overall authorization without knowing the specific membership. The two institutions don't even have to use the same cloud.
 
-10. Instead of separate access control lists, signed documents (whether encrypted or not) contain their own authorization by being dual-signed in this way. The entire signed payload is stored, providing a self-contained, tamper-evident, attributed package. When a signed payload is to be stored, the the storage system only needs to fully verify the signature and check that the team is the same team tag that was previously stored.
+10. Instead of separate access control lists, signed documents (whether encrypted or not) contain their own authorization by being dual-signed in this way. The entire signed payload is stored, providing a self-contained, tamper-evident, attributed package. When a signed payload is to be stored, the storage system only needs to fully verify the signature and check that the team is the same team tag that was previously stored.
 
 This is how Distributed Security itself operates when storing keys in the cloud.
 
-Organizational teams may be automatically produced and maintained from external directory systems. However, the cryptography directly enforces cross-institutional authorization and privacy without relying on sharing or agreement of such external directory systems.
+Organizational teams may be automatically produced and maintained from external directory systems. However, the cryptography directly enforces cross-institutional authorization and privacy without relying on sharing or agreement of such external directory systems between institutions.

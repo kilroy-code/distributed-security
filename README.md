@@ -10,7 +10,7 @@ This is Javascript code for **browsers and Node** that makes it easy for develop
 **Intros:**
 - ["hello, world"](https://github.com/kilroy-code/signed-cloud-server) in code.
 - [Nutshell](/docs/nutshell.md) - 10 points illustrating how we deliver:
-  - key that are recoverable but non-custodial
+  - keys that are recoverable but non-custodial
   - private data for self-managed groups
   - cross-insitutional authority
 - A [worked example](README-key-management.md) focusing on that last point.

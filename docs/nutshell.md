@@ -23,13 +23,13 @@ No one else can decyrpt it -- not even the people who operate the cloud.
    
 Thus any member can decrypt their cloud-encrypted key, and can _re-encrypt_ for each of the specified member tags. This allows a member to [add or remove devices or recovery passphrases](../README.md#creating-tags-and-changing-membership) -- without the cloud host or anyone else being able to see the unencrypted key.
 
-An app can make the recovery passphrase acceptance be dependent on harware such as a fingerprint or facial recognition or an authenticator, but there's no inherent dependency on key fobs or built-in trusted hardware.
+An app can make the recovery passphrase acceptance be dependent on a fingerprint or facial recognition or an authenticator, but there's no inherent dependency on key fobs or built-in trusted hardware.
 
 ## Private Data for Self-Managed Groups
 
 5. Instead of trusting a server to keep data private, data is [encrypted at the client for a given tag](../README.md#basic-encryption), stored encrypted in the cloud, and decrypted only by the owner of the designated tag. Neither the cloud operator nor anyone who breaks in can read the data. (Additionally, there is no need for login or any access control lists to check for read permissions, which means that a Content Distribution Network does not need any knowledge of users or permissions, even for private data.)
 
-6. A "team" tag can be created whose members are other indviduals or even other teams. (A team tag is no different from an individual tag. We're just using the term "team" to emphasize that the members are other cloud-stored tags rather than device-bound or passphrase-driven members.)
+6. A "team" tag can be created whose members are other individuals or even other teams. (A team tag is no different from an individual tag. We're just using the term "team" to emphasize that the members are other cloud-stored tags rather than device-bound or passphrase-driven members.)
 
 When content is encrypted for a team, the membership of the team can be changed by the members themselves. There is no need to re-encrypt the content because the team-tag's encrypting key-pair itself has not changed. 
 
@@ -45,10 +45,10 @@ Thus an institution can create a team and share the tag string with a second ins
 
 9. A signature can be made that non-repudiably identifies not only the team, but the individual member of the team. (There is a [standard](https://datatracker.ietf.org/doc/html/rfc7515#section-7.2.1).) Verification checks both signatures, and optionally confirms that the individual is in-fact a member of the team at the time of verification. (Recall that the member tags are in plain-text of the cloud-stored keys.)
 
-This means that, e.g., the individual member's institution can track the specific member who authorized the request, while another insitution can check the overall authorization without knowing the specific membership. The two institutions don't even have to use the same cloud.
+This means that, e.g., the individual member's institution can track the specific member who authorized the request, while another institution can check the overall authorization without knowing the specific membership. The two institutions don't even have to use the same cloud.
 
 10. Instead of separate access control lists, signed documents (whether encrypted or not) contain their own authorization by being dual-signed in this way. The entire signed payload is stored, providing a self-contained, tamper-evident, attributed package. When a signed payload is to be stored, the the storage system only needs to fully verify the signature and check that the team is the same team tag that was previously stored.
 
 This is how Distributed Security itself operates when storing keys in the cloud.
 
-Organizational teams may be automatically produced and maintained from external directory systems. However, the cryptography directly enforcely cross-institutional authorization and privacy without relying on sharing or agreement of such external directory systems.
+Organizational teams may be automatically produced and maintained from external directory systems. However, the cryptography directly enforces cross-institutional authorization and privacy without relying on sharing or agreement of such external directory systems.

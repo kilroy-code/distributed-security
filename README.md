@@ -7,10 +7,6 @@ This is Javascript code for **browsers and Node** that makes it easy for develop
 1. ... use the four standard cryptographic operations: **encrypt, decrypt, sign, and verify**.
 2. ... provide simple and secure **key management** directly to users.
 
-We take advantage of a number of separate APIs that **all modern browsers now support**, combined with a **new approach to key management**. While the benefits of cryptography have been available in some installable apps, desktop browser extensions, and in blockchain, they are now available in ordinary **desktop and mobile web pages** with **zero operating or transaction costs**, **no browser extensions**, and **no custodial wallets**.
-
-We accomplish this by inverting the typical key-management usage where keys are used to *authenticate* an individual user, and then the user's *authority* is looked up in a database. Instead, Distributed-Security allows applications to directly define hierarchies of keys for different groups, roles, and authorities, which are proven through cryptography of enumerated members.
-
 **Intros:**
 - ["hello, world"](https://github.com/kilroy-code/signed-cloud-server) in code.
 - [Nutshell](/docs/nutshell.md) - 10 points illustrating how we deliver:
@@ -18,6 +14,12 @@ We accomplish this by inverting the typical key-management usage where keys are 
   - private data for self-managed groups
   - cross-insitutional authority
 - A [worked example](README-key-management.md) focusing on that last point.
+
+
+We take advantage of a number of separate APIs that **all modern browsers now support**, combined with a **new approach to key management**. While the benefits of cryptography have been available in some installable apps, desktop browser extensions, and in blockchain, they are now available in ordinary **desktop and mobile web pages** with **zero operating or transaction costs**, **no browser extensions**, and **no custodial wallets**.
+
+We accomplish this by inverting the typical key-management usage where keys are used to *authenticate* an individual user, and then the user's *authority* is looked up in a database. Instead, Distributed-Security allows applications to directly define hierarchies of keys for different groups, roles, and authorities, which are proven through cryptography of enumerated members.
+
 
 This README covers:
 

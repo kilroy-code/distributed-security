@@ -53,7 +53,7 @@ Any recursive member of the team can sign a request or transaction, and the othe
 
 This means that, e.g., the individual member's institution can track the specific member who authorized the request, while another institution can check the overall authorization without knowing the specific membership. The two institutions don't even have to use the same cloud.
 
-10. In addition to signing requests and transactions, content can be dual-sign this way (whether encrypted or not). The entire signed payload is stored, providing a self-contained, tamper-evident package that identifies both the owning team and the individual member that stored this version of the content. When a signed payload is to be stored, the storage system only needs to fully verify the signature and check that the key identifier is what is expected (e.g., minimally that is the same as the one previously stored).
+10. In addition to signing requests and transactions, content can be dual-signed this way (whether encrypted or not). The entire signed payload is stored, providing a self-contained, tamper-evident package that identifies both the owning team and the individual member that stored this version of the content. When a signed payload is to be stored, the storage system only needs to fully verify the signature and check that the key identifiers are what is expected (e.g., minimally that is team is the same as the one previously stored).
 
 This is how Distributed Security itself operates when storing keys in the cloud.
 

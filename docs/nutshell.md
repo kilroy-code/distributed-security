@@ -39,6 +39,8 @@ When content is encrypted for a team, the membership of the team can be changed 
 
 Thus several institutions can manage their own teams and teams-of-teams, while sharing a cloud and private data with other institutions. There is no need to redistribute public keys when membership changes, because the stable public _team_ key is the one that is used to encrypt content for the team. To repeat: _An institution can create a team and only has to share the identifier string with a second institution once. Any changes to membership at the institution do not effect the decryption process or material at the second institution._
 
+Consider, e.g., a support ticket with contact info and the like. Support can create a team whose two members are the user and the support team, and keep the ticket information encrypted so that only the user and support team can read it -- even if somone else gains access to the server, and even as the support team's own membership changes.
+
 (In this example, any member can change the membership. Of course, the app or cloud can check authority as described next.)
 
 ## Cross-Institutional Authority

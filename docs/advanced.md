@@ -34,18 +34,18 @@ You can also specify options: `sign(message, {tags, contentType, time, team, mem
 - If a verification is made with a "member" option that has a value of the string "team", verification will fail if the JWS does not contain "iss" and "act" headers, and if there exists a current version of the issuing team in the cloud that does not list the specfied "act" as a member. (Verification *passes* if "iss" and "act" are specified, but the "iss" team does not yet exist.) "member" defaults to "team" if the JWS contains an "act" header.
 - If a verification is made with a truthy "notBefore", verification will fail if the JWS does not contain "iat", or if "iat" is earlier than the specfied "notBefore". If "notBefore" has the value "team", the "iat" cannot be earlier than the "iat" of the issuing team, if the team exists.
 
-> This is used by Distributed-Security itself in protecting the cloud storage that holds encrypted keys. The (encrypted) keys are signed as `sign(key, {team: tag, time})` so that "iss", "act", and "iat" headers are included in the signature. The cloud `store()` operation verifies this by `verify(JWS, {team: tag, notBefore: "team"})`. See [Storing Keys using the Cloud Storage API](../README.md#storing-keys-using-the-coud-storage-api).
+> This is used by Distributed-Security itself in protecting the cloud storage that holds encrypted keys. The (encrypted) keys are signed as `sign(key, {team: tag, time})` so that "iss", "act", and "iat" headers are included in the signature. The cloud `store()` operation verifies this by `verify(JWS, {team: tag, notBefore: "team"})`. See [Storing Keys using the Cloud Storage API](../README.md#storing-keys-using-the-cloud-storage-api).
 
 The base64url sha-256 hash of the payload appears as the "sub" header. This can controlled by supplying a value for the "subject" property of the options to sign. A falsy value prevents the header from appearing in the signature at all.
 
 ## Sharing Tags Across Applications
 
-A typical application loads its application code and the distributed-security library from two different [origins](https://developer.mozilla.org/en-US/docs/Glossary/Origin), both distinct from those used by other applications. For example, the application code might come from `https:/app.example.com`, and the distributed-security library from `https:/security.example.com`. When organized this way, the keys are in a distinct [browsing context](https://developer.mozilla.org/en-US/docs/Glossary/Browsing_context) (at security.example.com) that is isolated both from the application code (running in app.example.com) and from other applications (running at, say, competitor.com). The app at app.example.com can use the tag strings returned to the app from calls to `create()`, but not any app at competitor.com.
+A typical application loads its application code and the distributed-security library from two different [origins](https://developer.mozilla.org/en-US/docs/Glossary/Origin), both distinct from those used by other applications. For example, the application code might come from `https://app.example.com`, and the distributed-security library from `https://security.example.com`. When organized this way, the keys are in a distinct [browsing context](https://developer.mozilla.org/en-US/docs/Glossary/Browsing_context) (at security.example.com) that is isolated both from the application code (running in app.example.com) and from other applications (running at, say, competitor.com). The app at app.example.com can use the tag strings returned to the app from calls to `create()`, but not any app at competitor.com.
 
 
-One can have a set of cooperating applications that all share the same tags, even if the applications themselves are in different domains. For example, app.example.com and store.com could use the same tags by cooperating on a joint source named nft.org from which both applicqations load the distributes-security code. 
+One can have a set of cooperating applications that all share the same tags, even if the applications themselves are in different domains. For example, app.example.com and store.com could use the same tags by cooperating on a joint source named nft.org from which both applications load the distributes-security code.
 
-The loosest such cooperation requires then only requires that both applications provide the same cloud implementation when they each load distributed-security into their respective apps:
+The loosest such cooperation requires only that both applications provide the same cloud implementation when they each load distributed-security into their respective apps:
 
 ```
 import * as OurCloud from "https://nft.org/cloud.mjs";
@@ -54,7 +54,7 @@ Storage.Security = Security;
 Security.Storage = Storage;
 ...
 let userCreatedInOurApp = await Security.create(userDevice, userRecovery);
-let userCreatedInOtherApp = await fetch("https:/otherApp.com/someUser").then(response => response.text());
+let userCreatedInOtherApp = await fetch("https://otherApp.com/someUser").then(response => response.text());
 let crossAppUser = await Security.create(userCreatedInOurApp, userCreatedInOtherApp);
 let crossAppSignature = await Security.sign("some message", crossAppUser);
 await fetch(`https://otherApp.com/doSomething?sig=${crossAppSignature}`);

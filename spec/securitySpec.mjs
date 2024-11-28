@@ -6,7 +6,7 @@ import testMultiKrypto from "./multiKryptoTests.mjs";
 import { makeMessage, isBase64URL, sameTypedArray} from "./support/messageText.mjs";
 
 // Setup.
-//jasmine.getEnv().configure({random: false});
+jasmine.getEnv().configure({random: false});
 let thisDeviceSecret = "secret",
     secret = thisDeviceSecret;
 async function withSecret(thunk) {
@@ -531,7 +531,6 @@ describe('Distributed Security', function () {
               currentEncryptedSignature = await Storage.retrieve('Team', team),
               verified = await Security.verify(currentEncryptedSignature),
               currentEncryptedKey = verified?.json;
-	  console.log({team, signatures: currentEncryptedSignature?.signatures, direct: Storage.Team[team]});
           if (!verified) throw new Error(`Unable to verify '${currentEncryptedSignature?.text}'`);
           function signIt() {
             return Security.sign(currentEncryptedKey, {team, member: testMember, time: Date.now()})

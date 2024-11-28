@@ -531,6 +531,7 @@ describe('Distributed Security', function () {
               currentEncryptedSignature = await Storage.retrieve('Team', team),
               verified = await Security.verify(currentEncryptedSignature),
               currentEncryptedKey = verified?.json;
+	  console.log({team, signatures: currentEncryptedSignature.signatures, currentEncryptedSignature, verified});
           if (!verified) throw new Error(`Unable to verify '${currentEncryptedSignature?.text}'`);
           function signIt() {
             return Security.sign(currentEncryptedKey, {team, member: testMember, time: Date.now()})

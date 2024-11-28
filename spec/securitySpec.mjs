@@ -6,7 +6,7 @@ import testMultiKrypto from "./multiKryptoTests.mjs";
 import { makeMessage, isBase64URL, sameTypedArray} from "./support/messageText.mjs";
 
 // Setup.
-jasmine.getEnv().configure({random: false});
+//jasmine.getEnv().configure({random: false});
 let thisDeviceSecret = "secret",
     secret = thisDeviceSecret;
 async function withSecret(thunk) {
@@ -73,7 +73,7 @@ describe('Distributed Security', function () {
         scope.create(),
         scope.create({prompt: "what?"}),
         scope.create({prompt: "nope!"})
-      ])
+      ]);
       let otherDevice, otherUser;
       await withSecret(async function () {
         otherDevice = await scope.create();
@@ -196,8 +196,8 @@ describe('Distributed Security', function () {
           //console.log({elapsed, per});
           expect(per).toBeLessThan(0.1);
           rereads.forEach(readResult => expect(readResult).toBe(""));
-        }, 15e5)
-      })
+        }, 15e5);
+      });
     });
 
     describe("API", function () {
@@ -326,7 +326,7 @@ describe('Distributed Security', function () {
                 describe('when mixing multi-tag lengths', function () {
                   it('fails with mismatched signing tag.', async function () {
                     let signature = await Security.sign(message, {tags: [otherOwnedTag, oneMore], ...options}),
-                        verified = await Security.verify(signature, tag, oneMore)
+                        verified = await Security.verify(signature, tag, oneMore);
                     expect(verified).toBeUndefined();
                   });
                   it('fails with extra verifying tag.', async function () {
@@ -511,7 +511,7 @@ describe('Distributed Security', function () {
                     message = "<something else>",
                     encrypted = await Security.encrypt(message, {tags: [tag, otherOwnedTag], contentType, time}),
                     decrypted = await Security.decrypt(encrypted, {tags: [tag], ...options}),
-                    header = Krypto.decodeProtectedHeader(encrypted)
+                    header = Krypto.decodeProtectedHeader(encrypted);
                 expect(header.cty).toBe(contentType);
                 expect(header.iat).toBe(time);
                 expect(decrypted.text).toBe(message);
@@ -533,7 +533,7 @@ describe('Distributed Security', function () {
               currentEncryptedKey = verified?.json;
           if (!verified) throw new Error(`Unable to verify '${currentEncryptedSignature?.text}'`);
           function signIt() {
-            return Security.sign(currentEncryptedKey, {team, member: testMember, time: Date.now()})
+            return Security.sign(currentEncryptedKey, {team, member: testMember, time: Date.now()});
           }
           await Security.changeMembership({tag: team, add: [testMember]});
           let signatureWhileMember = await signIt();
@@ -551,7 +551,7 @@ describe('Distributed Security', function () {
               currentSignature = await Storage.retrieve('EncryptionKey', team),
               currentKey = (await Security.verify(currentSignature)).json;
           function signIt() {
-            return Security.sign(currentKey, {team, member: testMember, time: Date.now()})
+            return Security.sign(currentKey, {team, member: testMember, time: Date.now()});
           }
           await Security.changeMembership({tag: team, add: [testMember]});
           let signatureWhileMember = await signIt();
@@ -569,7 +569,7 @@ describe('Distributed Security', function () {
               currentSignature = await Storage.retrieve('EncryptionKey', testDevice),
               currentKey = (await Security.verify(currentSignature)).json;
           function signIt(tag) {
-            return Security.sign(currentKey, {tags: [tag], time: Date.now()})
+            return Security.sign(currentKey, {tags: [tag], time: Date.now()});
           }
           let signatureOfOwner = await signIt(testDevice);
           expect(await Storage.store('EncryptionKey', testDevice, signatureOfOwner)).toBeDefined(); // That's fine
@@ -578,7 +578,7 @@ describe('Distributed Security', function () {
           // Device owner can restore.  This is subtle:
           // There is no team key in the cloud to compare the time with. We do compare against the current value (as shown below),
           // but we do not prohibit the same timestamp from being reused.
-          expect(await Storage.store('EncryptionKey', testDevice, signatureOfOwner)).toBeDefined;
+          expect(await Storage.store('EncryptionKey', testDevice, signatureOfOwner)).toBeDefined();
           expect(await Storage.store('EncryptionKey', testDevice, currentSignature).catch(() => 'failed')).toBe('failed'); // Can't replay exact previous sig.
           await Security.destroy(testDevice);
           await Security.destroy(anotherDevice);
@@ -711,7 +711,7 @@ describe('Distributed Security', function () {
           let aliceTag = await Security.create(tags.device),
               cfoTag = await Security.create(aliceTag),
               alicePO = await Security.sign("some purchase order", {team: cfoTag, member: aliceTag}), // On Alice's computer
-              cfoEyesOnly = await Security.encrypt("the other set of books", cfoTag)
+              cfoEyesOnly = await Security.encrypt("the other set of books", cfoTag);
           expect(await Security.verify(alicePO)).toBeTruthy();
           expect(await Security.verify(alicePO, {team: cfoTag, member: false})).toBeTruthy();
           expect(await Security.decrypt(cfoEyesOnly)).toBeTruthy(); // On Alice's computer

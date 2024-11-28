@@ -1,6 +1,5 @@
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import json from '@rollup/plugin-json';
-import eslint from '@rollup/plugin-eslint';
 import terser from '@rollup/plugin-terser';
 
 const devMode = (process.env.NODE_ENV === 'development');
@@ -16,12 +15,12 @@ function target(input, output) { // roll up input to output
       sourcemap: devMode ? 'inline' : false
     },
     plugins: [
-      eslint({
-	exclude: [
-	  "**/*bundle.mjs",
-	  "lib/package-loader.mjs"
-	  ]
-      }),
+      // eslint({ // @rollup/eslint has some bad dependencies that are not appropriate for security code
+      // 	exclude: [
+      // 	  "**/*bundle.mjs",
+      // 	  "lib/package-loader.mjs"
+      // 	  ]
+      // }),
       nodeResolve({browser: true, preferBuiltins: false}), // Resolve package.json imports.
       // api.mjs => package-loader.mjs pulls in the package.json to report the name and version.
       // Some system's implementations of 'import' do not yet support that, so unroll it here.

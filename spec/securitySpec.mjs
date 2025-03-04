@@ -641,7 +641,7 @@ describe('Distributed Security', function () {
           });
           afterAll(async function () {
             await Security.destroy(member);
-          });
+          }, 10e3);
           it('fails by default.', async function () {
             let verified = await Security.verify(signature, member);
             expect(verified).toBeUndefined();

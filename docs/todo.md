@@ -5,6 +5,7 @@
 - [ ] explainer video
 
 ## code
+- [ ] Require specific algorithm to verify/decrypt. Test cases to prove it.
 - [ ] how do we guard against rewrite of device EncryptionKey? (since devices have no members, so signature is compact)
 - [ ] Use symbols/getters/internals for internals?
 - [ ] Browsers that support dynamic state paritioning will not be able to share device tags across applications from different domains, even when they share the same module domain. (They will still be able to share team tags.) Formalize this as a requirement in the doc, and store referrer with the device tag to effectively implement our own dynamic state partitioning. How do we unit-test this?  
@@ -45,7 +46,10 @@
 
 ## future
 - Allow other apps to use cloud.ki1r0y.com, either allowing reguest origin in Access-Control-Allow-Origin, or through a registration
+- Fast, self-contained membership test for removed members. (Bloom filter of removed members?)
+- Support Zero-Knowledge Proofs. Specifically, allow a user to prove membership without revealing which member and without re-use. ([Semaphore](https://docs.semaphore.pse.dev/)?)
 - Use Web credentials for secret, particularly public-key. (This can be done by an app now, but it would be nice to ship with "batteries included".)
 - Hidden rosters - can we make it so each tag key in the roster dictionary can only be read by the members? But what about storage system checking that the submitter is a member of the team? (Maybe instead of kid, label each member by hash(tag + iat)?)
+- Large membership rosters - Built-in support for partitioning.
 - Is there a way to derive a public encryption key from a public verification key (i.e., from a tag), so that we don't need to store public encryption keys in the cloud? This would allow device keys to self-contained on the device, without leaving any garbage in the cloud when the device is abandoned.
-- An application-provider can be sure of the code that it provides as the vault implementation, but the end-user is trusting that the application-provider is sure. It would be nice if the vault could sign its own code in memory, and make that signature available to users. (The code to securely get the live source of the module code would itself have to be signed by a trusted source.)  Such a secure execution context would be generally useful for mobile code. For example, a user-customized or even user-written search algorithm running on a server or p2p cloud could sign its results, so that the user can be sure of the recommendations.
+- Can we verify that the code is correct? (Vault code, and particularly server code that doesn't use a vault. Browser's have subresource integrity, but not NodeJS (and someone could make a false NodeJS).) An application-provider can be sure of the code that it provides as the vault implementation, but the end-user is trusting that the application-provider is sure. It would be nice if the vault could sign its own code in memory, and make that signature available to users. (The code to securely get the live source of the module code would itself have to be signed by a trusted source.)  Such a secure execution context would be generally useful for mobile code. For example, a user-customized or even user-written search algorithm running on a server or p2p cloud could sign its results, so that the user can be sure of the recommendations. 

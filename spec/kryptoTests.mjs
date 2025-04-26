@@ -157,7 +157,7 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
     }
 
     describe(`of signing keys`, function () {
-      const privateSigningSize = 253; // 248 raw
+      const privateSigningSize = 253; // 248 raw. 253 ECDSA. 143 Ed25519
       it(`works with the private signing key as a ${privateSigningSize} byte serialization.`, async function () {
         let keypair = await krypto.generateSigningKey(),
             serializedPrivateKey = await exportKey(keypair.privateKey),
@@ -166,7 +166,7 @@ export default function testKrypto (krypto, // Pass either Krypto or MultiKrypto
         expect(serializedPrivateKey.length).toBe(privateSigningSize);
         expect(await krypto.verify(keypair.publicKey, signature)).toBeTruthy();
       });
-      const publicSigningSize = 182; // 132 raw
+      const publicSigningSize = 182; // 132 raw. 182 ECDSA. 93 Ed25519
       it(`works with the public verifying key as a ${publicSigningSize} byte serialization.`, async function () {
         let keypair = await krypto.generateSigningKey(),
             serializedPublicKey = await exportKey(keypair.publicKey),

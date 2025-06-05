@@ -38,13 +38,13 @@ From an application standpoint, a [tag](../README.md#operations-and-tags) repres
 
 ```
 {myDecryptingKey: [a private RSA key], 
- mySigningKey: [a private ECDSA key]}
+ mySigningKey: [a private Ed25519 key]}
 ```
 is exported by MultiKrypto as, effectively:
 
 ```
 {"myDecryptingKey": "[about 3k bytes of exported private RSA key]",
- "mySigningKey": "[a couple hundred btyes of exported private ECDSA key]"}
+ "mySigningKey": "[about 160 bytes of exported private Ed25519 key]"}
 ```
 
 ### Encrypting for Members

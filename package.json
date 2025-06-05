@@ -4,8 +4,14 @@
   "description": "Signed and encrypted document infrastructure based on public key encryption and self-organizing users.",
   "type": "module",
   "exports": {
-    "node": "./lib/api.mjs",
-    "default": "./index.mjs"
+    ".": {
+      "node": "./lib/api.mjs",
+      "default": "./index.mjs"
+    },
+    "./spec.mjs": {
+      "node": "./spec/securitySpec.mjs",
+      "default": "dist/securitySpec-bundle.mjs"
+    }
   },
   "imports": {
     "#crypto": {

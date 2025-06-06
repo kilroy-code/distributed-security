@@ -41,7 +41,7 @@ async function getHash(message) { // string to base64url, without using our own 
 }
 
 // Define some globals in a browser for debugging.
-if (typeof(window) !== 'undefined') Object.assign(window, {Security, Krypto, MultiKrypto, Storage});
+if (typeof(window) !== 'undefined') Object.assign(window, {Security, Krypto, MultiKrypto, Storage, LocalCollection});
 
 
 describe('Distributed Security', function () {
@@ -146,23 +146,19 @@ describe('Distributed Security', function () {
       describe('local store', function () {
         var store; 
         beforeAll(async function () {
-          store = new LocalCollection({dbName: 'testStore', collectionName: 'Foo'});
+          store = new LocalCollection({name: 'testFoo'});
           await new Promise(resolve => setTimeout(resolve, 2e3)); // fixme remove
         });
         it('can remove without existing.', async function () {
           let tag = 'nonExistant';
-          expect(await store.remove(tag)).toBe("");
-        });
-        it('can retrieve without existing.', async function () {
-          let tag = 'nonExistant';
-          expect(await store.retrieve(tag)).toBe("");
+          expect(await store.delete(tag)).toBe(false);
         });
         it('retrieves and can remove what is stored.', async function () {
           let tag = 'x', message = "hello";
-          expect(await store.store(tag, message)).not.toBeUndefined();
-          expect(await store.retrieve(tag)).toBe(message);
-          expect(await store.remove(tag)).toBe("");
-          expect(await store.retrieve(tag)).toBe("");
+          expect(await store.put(tag, message)).toBeUndefined();
+          expect(await store.get(tag)).toBe(message);
+          expect(await store.delete(tag)).toBe(true);
+          expect(await store.get(tag)).toBeUndefined();
         });
         it('can write a lot without getting jumbled.', async function () {
           let count = 1000, prefix = "y", tags = [];
@@ -170,32 +166,32 @@ describe('Distributed Security', function () {
           let start, elapsed, per;
 
           start = Date.now();
-          let stores = await Promise.all(tags.map((tag, index) => store.store(tag, index.toString())));
+          let stores = await Promise.all(tags.map((tag, index) => store.put(tag, index.toString())));
           elapsed = Date.now() - start; per = elapsed/count;
           //console.log({elapsed, per});
           expect(per).toBeLessThan(60);
-          stores.forEach(storeResult => expect(storeResult).not.toBeUndefined());
+          stores.forEach(storeResult => expect(storeResult).toBeUndefined());
 
           start = Date.now();
-          let reads = await Promise.all(tags.map(tag => store.retrieve(tag)));
+          let reads = await Promise.all(tags.map(tag => store.get(tag)));
           elapsed = Date.now() - start; per = elapsed/count;
           //console.log({elapsed, per});
           expect(per).toBeLessThan(3);
           reads.forEach((readResult, index) => expect(readResult).toBe(index.toString()));
 
           start = Date.now();
-          let removes = await Promise.all(tags.map(tag => store.remove(tag)));
+          let removes = await Promise.all(tags.map(tag => store.delete(tag)));
           elapsed = Date.now() - start; per = elapsed/count;
           //console.log({elapsed, per});
           expect(per).toBeLessThan(8);
-          removes.forEach(removeResult => expect(removeResult).toBe(""));
+          removes.forEach(removeResult => expect(removeResult).toBe(true));
 
           start = Date.now();
-          let rereads = await Promise.all(tags.map(tag => store.retrieve(tag)));
+          let rereads = await Promise.all(tags.map(tag => store.get(tag)));
           elapsed = Date.now() - start; per = elapsed/count;
           //console.log({elapsed, per});
           expect(per).toBeLessThan(0.1);
-          rereads.forEach(readResult => expect(readResult).toBe(""));
+          rereads.forEach(readResult => expect(readResult).toBeUndefined());
         }, 15e5);
       });
     });

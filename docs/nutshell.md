@@ -16,7 +16,7 @@ This is how we achieve each of three unique capabilities:
 
 Thus an individual's keypair can be downloaded from the cloud and decrypted on any of the user's devices, or from any device using their recovery passphrase.
 
-_No one else can decyrpt it -- not even the people who operate the cloud._
+_No one else can decrypt it -- not even the people who operate the cloud._
 
 3. As with all [public-key cryptography](https://en.wikipedia.org/wiki/Public-key_cryptography), a keypair has a public part and a private part:
    - The private part of the key-pair (used to decrypt) is what we encrypt and place in the cloud. The member key identifiers are listed in the data (per [standard](https://github.com/kilroy-code/distributed-security/blob/main/docs/in-jose-terms.md) for multi-key encryption).

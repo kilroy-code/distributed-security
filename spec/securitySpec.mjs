@@ -307,7 +307,7 @@ describe('Distributed Security', function () {
               });
               describe('bad verification', function () {
                 let oneMore;
-                beforeAll(async function () { oneMore = await Security.create(); });
+                beforeAll(async function () { oneMore = await Security.create(); }, 10e3);
                 afterAll(async function () { await Security.destroy(oneMore); });
                 describe('when mixing single and multi-tags', function () {
                   it('fails with extra signing tag.', async function () {

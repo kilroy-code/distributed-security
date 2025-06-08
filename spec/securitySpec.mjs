@@ -149,6 +149,9 @@ describe('Distributed Security', function () {
           store = new LocalCollection({name: 'testFoo'});
           await new Promise(resolve => setTimeout(resolve, 2e3)); // fixme remove
         });
+	afterAll(async function () {
+	  await store.destroy();
+	});
         it('can remove without existing.', async function () {
           let tag = 'nonExistant';
           expect(await store.delete(tag)).toBe(false);

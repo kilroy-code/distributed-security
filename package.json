@@ -1,6 +1,6 @@
 {
   "name": "@ki1r0y/distributed-security",
-  "version": "1.2.0",
+  "version": "1.2.2",
   "description": "Signed and encrypted document infrastructure based on public key encryption and self-organizing users.",
   "type": "module",
   "exports": {
@@ -62,15 +62,15 @@
   "homepage": "https://github.com/kilroy-code/distributed-security#readme",
   "devDependencies": {
     "@rollup/plugin-json": "^6.1.0",
-    "@rollup/plugin-node-resolve": "15.3",
+    "@rollup/plugin-node-resolve": "16.0.1",
     "@rollup/plugin-terser": "^0.4.4",
-    "jasmine": "^5.4.0",
-    "rollup": "4.27"
+    "jasmine": "^5.7.1",
+    "rollup": "4.41.1"
   },
   "dependencies": {
     "@ki1r0y/cache": "^1.0.1",
     "@ki1r0y/jsonrpc": "^1.0.1",
-    "@ki1r0y/storage": "^1.0.2",
-    "jose": "5.9"
+    "@ki1r0y/storage": "^1.0.3",
+    "jose": "5.9.6"
   }
 }

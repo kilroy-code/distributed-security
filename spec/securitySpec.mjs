@@ -715,11 +715,11 @@ describe('Distributed Security', function () {
           expect(await Security.verify(alicePO, {team: cfoTag, member: false})).toBeTruthy();
           expect(await Security.decrypt(cfoEyesOnly)).toBeTruthy(); // On Alice's computer
 
-          // Now Alice is replace with Bob, and Carol added for the transition
+          // Now Alice is replaced with Bob, and Carol added for the transition
           let bobTag = await Security.create(tags.device);
           let carolTag = await Security.create(tags.device);
           await Security.changeMembership({tag: cfoTag, remove: [aliceTag], add: [bobTag, carolTag]});
-          await Security.destroy(aliceTag)
+          await Security.destroy(aliceTag);
 
           expect(await Security.sign("bogus PO", {team: cfoTag, member: aliceTag}).catch(() => undefined)).toBeUndefined(); // Alice can no longer sign.
           let bobPO = await Security.sign("new PO", {team: cfoTag, member: bobTag}); // On Bob's computer

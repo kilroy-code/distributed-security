@@ -40,6 +40,7 @@ const iframe = document.createElement('iframe'),
         changeMembership({tag, add, remove} = {}) { return postIframe('changeMembership', {tag, add, remove}); },
         destroy(tagOrOptions) { return postIframe('destroy', tagOrOptions); },
         clear(tag = null) { return postIframe('clear', tag); },
+        wipeDeviceKeys() { return postIframe('wipeDeviceKeys'); },
         ready,
 
         // Utilities.
